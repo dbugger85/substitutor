@@ -1,5 +1,7 @@
 # Substitutor – Implementation Plan
 
+> **Status (2026-09-26):** built and live at https://dbugger85.github.io/substitutor/. This file records the original plan and the user's decisions (section 8). For how the code actually works, see [CLAUDE.md](CLAUDE.md). The final file layout differs slightly: `js/match.js` holds both the timer and the substitution logic, and `js/app.js` holds the UI.
+
 ## 1. Tech stack
 Plain HTML + CSS + JavaScript (ES modules). No framework, no build step. It deploys to GitHub Pages as-is and is simple for a beginner. `node --test` is used only to test the substitution algorithm.
 
