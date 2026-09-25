@@ -1,6 +1,6 @@
 // Screens, buttons and popups. The match rules live in match.js.
 
-import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch } from './storage.js';
+import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTheme } from './storage.js';
 import * as M from './match.js';
 import { unlockAudio, startAlarm, stopAlarm, keepScreenOn, releaseScreen } from './alerts.js';
 
@@ -136,6 +136,9 @@ function renderSetup() {
 function renderStarters() {
   const s = team.settings;
   const needed = Math.max(0, (s.fieldSize || 0) - 1);
+  if (s.autoStarters && team.lastMinutes) {
+    s.starterIds = M.suggestStarters(team.players, team.lastMinutes, s.gkId, needed);
+  }
   const full = s.starterIds.length >= needed;
   $('starter-list').replaceChildren(
     ...team.players
@@ -148,6 +151,7 @@ function renderStarters() {
             checked,
             disabled: !checked && full,
             onchange: (e) => {
+              s.autoStarters = false;
               s.starterIds = e.target.checked
                 ? [...s.starterIds, p.id]
                 : s.starterIds.filter((id) => id !== p.id);
@@ -159,7 +163,28 @@ function renderStarters() {
       }),
   );
   $('starter-count').textContent = `(${s.starterIds.length} of ${needed})`;
+  renderStarterNote();
   updateSetupStatus();
+}
+
+// Explains the suggested starters, or offers to suggest them again.
+function renderStarterNote() {
+  const note = $('starter-note');
+  note.hidden = !team.lastMinutes;
+  if (team.settings.autoStarters) {
+    note.replaceChildren('✓ Suggested: the players who played least last match start.');
+  } else {
+    note.replaceChildren(
+      el('button', {
+        type: 'button',
+        class: 'link',
+        onclick: () => {
+          team.settings.autoStarters = true;
+          renderStarters();
+        },
+      }, 'Suggest starters from last match'),
+    );
+  }
 }
 
 function updateSetupStatus() {
@@ -246,6 +271,10 @@ function updateClock() {
 
   $('countdown').textContent = fmt(remaining, Math.ceil);
   $('countdown').classList.toggle('due', remaining <= 0);
+  $('clock').classList.toggle('due', remaining <= 0);
+  $('clock').classList.toggle('paused', !running);
+  const done = 1 - remaining / match.settings.intervalMs;
+  $('sub-progress').style.width = `${Math.min(100, Math.max(0, done * 100))}%`;
   $('match-time').textContent = fmt(t);
   $('paused-badge').hidden = running;
   $('pause').textContent = running ? 'Pause' : 'Resume';
@@ -303,6 +332,9 @@ $('end-match').addEventListener('click', () => {
       .sort((a, b) => M.fieldTime(b, t) - M.fieldTime(a, t))
       .map((p) => el('li', {}, [el('span', {}, p.name), el('span', { class: 'mins' }, fmt(M.fieldTime(p, t)))])),
   );
+  team.lastMinutes = M.minutesPlayed(match, t);
+  team.settings.autoStarters = true;
+  saveTeam(team);
   clearMatch();
   match = null;
   stopAlarm();
@@ -456,6 +488,30 @@ $('swap-dialog').addEventListener('cancel', (e) => {
   e.preventDefault();
   if (swap?.mode === 'adhoc') closeSwap();
 });
+
+// ---------- theme ----------
+
+const THEMES = { auto: '🌓 Auto', light: '☀ Light', dark: '☾ Dark' };
+const NEXT_THEME = { auto: 'light', light: 'dark', dark: 'auto' };
+const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+let theme = loadTheme();
+
+function applyTheme() {
+  if (theme === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+  $('theme-toggle').textContent = THEMES[theme];
+  $('theme-toggle').setAttribute('aria-label', `Theme: ${theme}. Tap to change.`);
+  const dark = theme === 'dark' || (theme === 'auto' && darkQuery.matches);
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#15391f' : '#1b7f3b';
+}
+
+$('theme-toggle').addEventListener('click', () => {
+  theme = NEXT_THEME[theme];
+  saveTheme(theme);
+  applyTheme();
+});
+darkQuery.addEventListener('change', applyTheme);
+applyTheme();
 
 // ---------- start ----------
 

@@ -26,15 +26,15 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 
 - Plain HTML, CSS and JavaScript ES modules. **No framework, no bundler, no runtime dependencies.** `playwright-core` is a dev dependency used only for the e2e test.
 - Only relative paths (`./style.css`, `./js/app.js`), because the site lives under `/substitutor/`.
-- Light theme only, with high contrast for sunlight. Tap targets are at least 48px, and the layout is designed for a phone around 390px wide.
+- Light and dark themes. Light is the default and stays high-contrast for sunlight. All colours are CSS variables: the light set is in `:root`, and the dark set is repeated in `@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`, so change both when you change one. Never hard-code colours in rules. Tap targets are at least 48px, and the layout is designed for a phone around 390px wide.
 - Keep `js/match.js` free of DOM code so it stays unit-testable. Add a test in `test/match.test.js` for any rule change.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `index.html` | All three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and three `<dialog>`s: swap, player actions, summary |
-| `style.css` | All styles; colours are CSS variables in `:root` |
+| `index.html` | A tiny inline script that applies the saved theme before the page draws, plus all three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and three `<dialog>`s: swap, player actions, summary |
+| `style.css` | All styles; colours are CSS variables (light and dark sets) |
 | `js/app.js` | UI: rendering, event handlers, the 500 ms tick (`updateClock`) that updates clocks and opens the substitution popup |
 | `js/match.js` | Pure match logic: time accounting, ranking, swaps |
 | `js/storage.js` | localStorage load and save |
@@ -52,7 +52,8 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - The number of players swapped each time is min(perSub, outfield on the field, bench). If the bench is empty, the timer restarts with a toast and no popup.
 - The suggested swaps can be edited, added or removed in the popup before confirming.
 - Ad-hoc swaps (the Swap button, or tapping a player) do **not** reset the countdown. An injured player goes to status `out`.
-- The match is open-ended with Pause. There's one team, and no history: the end-of-match summary is shown once, then the match is deleted.
+- **Next match's starters:** when a match ends, each player's minutes are saved as `team.lastMinutes`. Match setup then ticks the players who played least as starters (`suggestStarters`). The goalkeeper is still chosen by hand, and players who weren't in the last match count as 0 minutes. The suggestion updates when the GK or field size changes, until the coach ticks or unticks someone (`autoStarters` becomes false). The "Suggest starters from last match" link turns it back on.
+- The match is open-ended with Pause. There's one team, and no history: the end-of-match summary is shown once, then the match is deleted (only the minutes are kept, for suggesting the next starters).
 
 ### Time
 - Everything is **match time** in ms, meaning time the clock has run excluding pauses: `elapsed = clockMs + (now − runningSince)`. `runningSince` is null while paused.
@@ -62,8 +63,9 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - The alarm beeps and vibrates every 5 s until the popup is answered. A scheduled popup can't be dismissed with Escape or the back button.
 
 ### State (localStorage)
-- `substitutor.team`: `{ v: 1, players: [{id, name}], settings: {fieldSize, intervalMin, perSub, gkId, starterIds} }`. Saved on every edit.
+- `substitutor.team`: `{ v: 1, players: [{id, name}], settings: {fieldSize, intervalMin, perSub, gkId, starterIds, autoStarters}, lastMinutes?: {[id]: ms} }`. Saved on every edit.
 - `substitutor.match`: `{ v: 1, settings: {fieldSize, intervalMs, perSub}, players: [{id, name, status: 'gk'|'field'|'bench'|'out', fieldMs, benchMs, since}], clockMs, runningSince, nextSubAt }`. Saved after every change. If present on load, the app goes straight back to the match screen.
+- `substitutor.theme`: `'light'` or `'dark'`, a plain string. If it's missing, the app follows the phone (Auto). The theme button in the top bar cycles Auto → Light → Dark (`applyTheme` in `app.js`).
 - Data with a different `v` is ignored. If you change the saved shape, bump `v` or migrate it in `storage.js`.
 
 ### Browser gotchas

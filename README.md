@@ -10,7 +10,7 @@ A phone-friendly web app for fair substitutions in kids' football matches.
 2. **Match setup:**
    - players on the field (including the goalkeeper)
    - the goalkeeper
-   - the starting players
+   - the starting players (after your first match, the players who played least last time are ticked for you)
    - minutes between substitutions
    - players per substitution
 3. **Match:**
@@ -26,6 +26,7 @@ The screen stays on during the match, and the timer stays correct if the phone l
 **Tips:**
 - On iPhone, turn off silent mode to hear the beep. iPhones can't vibrate from a web page.
 - Try a practice match with a 1-minute interval before match day.
+- The button in the top-right corner switches between **Auto** (follows your phone's dark mode setting), **Light** and **Dark**. Light is easiest to read in bright sunlight.
 
 ## Development
 

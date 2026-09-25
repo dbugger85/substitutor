@@ -33,6 +33,7 @@ try {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('dialog', (d) => (d.type() === 'prompt' ? d.accept('Late Lisa') : d.accept()));
+  const popup = (name) => page.waitForTimeout(300).then(() => page.screenshot({ path: `${shots}/${name}.png` })); // after the fade-in
   const names = (sel) => page.$$eval(sel, (els) => els.map((e) => e.firstChild.textContent));
 
   await page.goto(base);
@@ -61,7 +62,7 @@ try {
   // Scheduled substitution
   await page.waitForSelector('#swap-dialog[open]', { timeout: 6000 });
   assert.equal(await page.textContent('#swap-title'), 'Substitution time!');
-  await page.screenshot({ path: `${shots}/4-prompt.png` });
+  await popup('4-prompt');
   await page.click('#swap-confirm');
   assert.deepEqual(await names('#field-list .name'), ['Mia', 'Carl', 'Dana', 'Erik', 'Fia']);
   assert.deepEqual(await names('#bench-list .name'), ['Anna', 'Ben']);
@@ -73,7 +74,7 @@ try {
   // Injury: Carl goes out, a bench player comes on
   await page.click('#field-list li:nth-child(2) button');
   await page.click('#action-list button:has-text("Injured")');
-  await page.screenshot({ path: `${shots}/5-injury.png` });
+  await popup('5-injury');
   await page.click('#swap-confirm');
   assert.deepEqual(await names('#out-list .name'), ['Carl']);
 
@@ -83,10 +84,39 @@ try {
   await page.click('#pause');
   assert.ok(await page.isVisible('#paused-badge'));
   await page.screenshot({ path: `${shots}/6-paused.png`, fullPage: true });
+
+  // Theme button: Auto -> Light -> Dark, remembered after a reload
+  const theme = () => page.evaluate(() => document.documentElement.dataset.theme ?? 'auto');
+  assert.equal(await theme(), 'auto');
+  await page.click('#theme-toggle');
+  await page.click('#theme-toggle');
+  assert.equal(await theme(), 'dark');
+  await page.reload();
+  assert.equal(await theme(), 'dark');
+  await page.screenshot({ path: `${shots}/6-dark.png`, fullPage: true });
+  await page.click('#swap-now');
+  await popup('6-dark-popup');
+  await page.click('#swap-cancel');
+
   await page.click('#end-match');
-  await page.screenshot({ path: `${shots}/7-summary.png` });
+  await popup('7-summary');
   await page.click('#summary-close');
-  assert.ok(await page.isVisible('#screen-team'));
+  await page.waitForSelector('#screen-team', { state: 'visible', timeout: 2000 });
+
+  // Next match: players who played least are ticked as starters
+  const ticked = () => page.$$eval('#starter-list label', (ls) => ls.filter((l) => l.querySelector('input').checked).map((l) => l.textContent));
+  await page.click('#to-setup');
+  const starters = await ticked();
+  assert.equal(starters.length, 4);
+  for (const n of ['Late Lisa', 'Erik', 'Fia']) assert.ok(starters.includes(n), `${n} should start`);
+  for (const n of ['Mia', 'Dana', 'Carl']) assert.ok(!starters.includes(n), `${n} should rest`);
+  assert.match(await page.textContent('#starter-note'), /played least/);
+  await page.screenshot({ path: `${shots}/8-next-setup.png`, fullPage: true });
+  // Changing a pick by hand stops the suggestion, and the link brings it back
+  await page.click('#starter-list label:has-text("Erik")');
+  assert.equal((await ticked()).length, 3);
+  await page.click('#starter-note button');
+  assert.deepEqual(await ticked(), starters);
 
   assert.deepEqual(errors, []);
   console.log(`✔ e2e passed against ${base} (screenshots in test/screenshots/)`);

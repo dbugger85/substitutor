@@ -124,3 +124,20 @@ export function makeGoalkeeper(match, id, t) {
 export function addPlayer(match, { id, name }, t) {
   match.players.push({ id, name, status: 'bench', fieldMs: 0, benchMs: 0, since: t });
 }
+
+// Minutes each player got in a match, to suggest who starts the next one.
+export function minutesPlayed(match, t) {
+  return Object.fromEntries(match.players.map((p) => [p.id, fieldTime(p, t)]));
+}
+
+// Suggested starters (besides the goalkeeper) for the next match: the players
+// who played least last match, then roster order. Players who weren't in last
+// match count as 0 minutes.
+export function suggestStarters(players, lastMinutes, gkId, count) {
+  return players
+    .map((p, i) => ({ p, i, ms: lastMinutes[p.id] ?? 0 }))
+    .filter(({ p }) => p.id !== gkId)
+    .sort((a, b) => a.ms - b.ms || a.i - b.i)
+    .slice(0, Math.max(0, count))
+    .map(({ p }) => p.id);
+}

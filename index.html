@@ -7,10 +7,20 @@
   <title>Substitutor</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
   <link rel="stylesheet" href="./style.css">
+  <script>
+    // Apply the saved theme before the page draws, so it doesn't flash.
+    try {
+      const t = localStorage.getItem('substitutor.theme');
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    } catch {}
+  </script>
   <script type="module" src="./js/app.js"></script>
 </head>
 <body>
-  <header class="topbar"><h1>⚽ Substitutor</h1></header>
+  <header class="topbar">
+    <h1>⚽ Substitutor</h1>
+    <button id="theme-toggle" type="button" class="theme" aria-label="Theme"></button>
+  </header>
 
   <main>
     <!-- Screen 1: team -->
@@ -39,6 +49,7 @@
         <legend>Starting players <span id="starter-count" class="muted"></span></legend>
         <div id="starter-list" class="choices"></div>
       </fieldset>
+      <p id="starter-note" class="note small" hidden></p>
       <label class="field">Minutes between substitutions
         <input id="interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
       </label>
@@ -54,9 +65,10 @@
 
     <!-- Screen 3: match -->
     <section id="screen-match" class="screen" hidden>
-      <div class="clock">
+      <div id="clock" class="clock">
         <div class="muted small">Next substitution</div>
         <div id="countdown" class="countdown">0:00</div>
+        <div class="progress" aria-hidden="true"><div id="sub-progress"></div></div>
         <div class="muted small">Match time <span id="match-time">0:00</span>
           <span id="paused-badge" class="badge paused" hidden>PAUSED</span></div>
       </div>
@@ -104,6 +116,7 @@
     <h2>Match over</h2>
     <p class="muted">Match time <span id="summary-time"></span>. Minutes played:</p>
     <ul id="summary-list" class="list"></ul>
+    <p class="muted small">Next match, the players who played least will be suggested to start.</p>
     <button id="summary-close" type="button" class="primary big">Close</button>
   </dialog>
 

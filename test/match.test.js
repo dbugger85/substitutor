@@ -99,3 +99,18 @@ test('invalid swaps are rejected', () => {
   const m = newMatch();
   assert.throws(() => M.applySwaps(m, [{ offId: 'E', onId: 'F' }], MIN));
 });
+
+test('players who played least last match start the next one', () => {
+  const m = newMatch(2);
+  M.applySwaps(m, M.pickSubstitution(m.players, 2, 5 * MIN), 5 * MIN); // A, B off; E, F on
+  const minutes = M.minutesPlayed(m, 8 * MIN);
+  assert.deepEqual(minutes, { GK: 8 * MIN, A: 5 * MIN, B: 5 * MIN, C: 8 * MIN, D: 8 * MIN, E: 3 * MIN, F: 3 * MIN });
+
+  // Same goalkeeper: E and F (3 min) start, then A and B (5 min).
+  assert.deepEqual(M.suggestStarters(team, minutes, 'GK', 4), ['E', 'F', 'A', 'B']);
+  // New goalkeeper C: the old GK played the whole match, so they rest.
+  assert.deepEqual(M.suggestStarters(team, minutes, 'C', 4), ['E', 'F', 'A', 'B']);
+  // A new player who wasn't in last match counts as 0 minutes and starts.
+  const bigger = [...team, { id: 'N', name: 'N' }];
+  assert.deepEqual(M.suggestStarters(bigger, minutes, 'GK', 2), ['N', 'E']);
+});
