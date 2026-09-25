@@ -118,6 +118,16 @@ try {
   await page.click('#starter-note button');
   assert.deepEqual(await ticked(), starters);
 
+  // Installable, and opens without internet
+  const manifest = await (await page.request.get(new URL('manifest.webmanifest', base).href)).json();
+  assert.equal(manifest.display, 'standalone');
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.context().setOffline(true);
+  await page.reload();
+  assert.ok(await page.isVisible('#screen-team'));
+  assert.equal(await page.$$eval('#team-list li', (li) => li.length), 8);
+  await page.context().setOffline(false);
+
   assert.deepEqual(errors, []);
   console.log(`✔ e2e passed against ${base} (screenshots in test/screenshots/)`);
 } finally {

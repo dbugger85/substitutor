@@ -525,6 +525,9 @@ document.addEventListener('visibilitychange', () => {
 });
 setInterval(updateClock, 500);
 
+// Offline support and installing as an app (needs HTTPS or localhost).
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+
 if (match) {
   renderMatch();
   show('match');

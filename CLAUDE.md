@@ -39,6 +39,8 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `js/match.js` | Pure match logic: time accounting, ranking, swaps |
 | `js/storage.js` | localStorage load and save |
 | `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
+| `sw.js` | Service worker for offline use: network first, falls back to the cache after 3 s or when offline |
+| `manifest.webmanifest`, `icons/` | Makes the app installable. `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert` |
 | `test/match.test.js` | Unit tests for the rules |
 | `test/e2e.mjs` | Playwright browser test |
 | `PLAN.md` | The original plan and the user's decisions |
@@ -69,12 +71,12 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - Data with a different `v` is ignored. If you change the saved shape, bump `v` or migrate it in `storage.js`.
 
 ### Browser gotchas
+- **When you add, rename or remove a file the app loads, update `FILES` in `sw.js`**, or it will be missing offline. Because the worker is network-first, you don't need to bump `CACHE` for normal changes.
 - Sound needs a user gesture first, so `unlockAudio()` runs on every pointerdown and click. iPhones play no sound in silent mode, and iOS ignores `navigator.vibrate`.
 - Wake Lock needs HTTPS or localhost and is released when the page is hidden, so it's re-requested on `visibilitychange`.
 - `crypto.randomUUID` needs a secure context. `newId()` has a fallback for testing over a LAN on http.
 
 ## Ideas not built yet
-- A PWA manifest and service worker for offline use and installing as an app
 - Several teams
 - Match history
 - Showing bench waiting time

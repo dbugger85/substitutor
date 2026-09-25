@@ -2,7 +2,13 @@
 
 A phone-friendly web app for fair substitutions in kids' football matches.
 
-**Open it:** https://dbugger85.github.io/substitutor/. On your phone, choose "Add to Home Screen" so it works like an app.
+**Open it:** https://dbugger85.github.io/substitutor/
+
+**Install it as an app** (opens full screen from your home screen, and works with no signal):
+- **iPhone:** open the link in Safari, tap the Share button, then **Add to Home Screen**.
+- **Android:** open the link in Chrome, tap the ⋮ menu, then **Install app** (or **Add to Home screen**).
+
+On iPhone, the installed app keeps its own saved team, separate from Safari, so add your players in the installed app.
 
 ## Using it
 
