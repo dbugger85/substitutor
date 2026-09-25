@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b7f3b">
+  <title>Substitutor</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./js/app.js"></script>
+</head>
+<body>
+  <header class="topbar"><h1>⚽ Substitutor</h1></header>
+
+  <main>
+    <!-- Screen 1: team -->
+    <section id="screen-team" class="screen" hidden>
+      <h2>Team</h2>
+      <form id="add-player-form" class="row">
+        <input id="new-player-name" placeholder="Player name" autocomplete="off" enterkeyhint="done">
+        <button type="submit" class="primary">Add</button>
+      </form>
+      <ul id="team-list" class="list"></ul>
+      <p id="team-empty" class="muted">Add the players in your team.</p>
+      <button id="to-setup" class="primary big">Set up match</button>
+    </section>
+
+    <!-- Screen 2: match setup -->
+    <section id="screen-setup" class="screen" hidden>
+      <h2>Match setup</h2>
+      <label class="field">Players on the field (including goalkeeper)
+        <input id="field-size" type="number" min="2" max="11" inputmode="numeric">
+      </label>
+      <fieldset>
+        <legend>Goalkeeper</legend>
+        <div id="gk-list" class="choices"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Starting players <span id="starter-count" class="muted"></span></legend>
+        <div id="starter-list" class="choices"></div>
+      </fieldset>
+      <label class="field">Minutes between substitutions
+        <input id="interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
+      </label>
+      <label class="field">Players per substitution
+        <input id="per-sub" type="number" min="1" inputmode="numeric">
+      </label>
+      <p id="setup-error" class="error"></p>
+      <div class="row">
+        <button id="setup-back" type="button">Back</button>
+        <button id="start-match" type="button" class="primary grow">Start match</button>
+      </div>
+    </section>
+
+    <!-- Screen 3: match -->
+    <section id="screen-match" class="screen" hidden>
+      <div class="clock">
+        <div class="muted small">Next substitution</div>
+        <div id="countdown" class="countdown">0:00</div>
+        <div class="muted small">Match time <span id="match-time">0:00</span>
+          <span id="paused-badge" class="badge paused" hidden>PAUSED</span></div>
+      </div>
+      <p id="match-warning" class="warning" hidden></p>
+      <div class="controls">
+        <button id="pause" type="button">Pause</button>
+        <button id="swap-now" type="button">Swap</button>
+        <button id="add-late" type="button">Add player</button>
+      </div>
+      <h3>On the field</h3>
+      <ul id="field-list" class="list"></ul>
+      <h3>Bench</h3>
+      <ul id="bench-list" class="list"></ul>
+      <div id="out-section" hidden>
+        <h3>Out of the match</h3>
+        <ul id="out-list" class="list"></ul>
+      </div>
+      <p class="muted small">Minutes show total time played. Tap a player for more options.</p>
+      <button id="end-match" type="button" class="danger">End match</button>
+    </section>
+  </main>
+
+  <!-- Substitution / swap popup -->
+  <dialog id="swap-dialog">
+    <h2 id="swap-title">Substitution</h2>
+    <p class="muted small">Change a player by tapping their name.</p>
+    <div id="swap-rows"></div>
+    <button id="swap-add" type="button" class="link">+ Add another swap</button>
+    <p id="swap-error" class="error"></p>
+    <div class="row">
+      <button id="swap-skip" type="button">Skip</button>
+      <button id="swap-cancel" type="button">Cancel</button>
+      <button id="swap-confirm" type="button" class="primary grow">Done</button>
+    </div>
+  </dialog>
+
+  <!-- Player options -->
+  <dialog id="action-dialog">
+    <h2 id="action-title"></h2>
+    <div id="action-list" class="stack"></div>
+  </dialog>
+
+  <!-- End of match summary -->
+  <dialog id="summary-dialog">
+    <h2>Match over</h2>
+    <p class="muted">Match time <span id="summary-time"></span>. Minutes played:</p>
+    <ul id="summary-list" class="list"></ul>
+    <button id="summary-close" type="button" class="primary big">Close</button>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
