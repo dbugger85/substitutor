@@ -16,6 +16,8 @@ const FILES = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
+  './fonts/inter.woff2',
+  './fonts/barlow-condensed-700.woff2',
 ];
 
 self.addEventListener('install', (e) => {

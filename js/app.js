@@ -502,7 +502,7 @@ function applyTheme() {
   $('theme-toggle').textContent = THEMES[theme];
   $('theme-toggle').setAttribute('aria-label', `Theme: ${theme}. Tap to change.`);
   const dark = theme === 'dark' || (theme === 'auto' && darkQuery.matches);
-  document.querySelector('meta[name="theme-color"]').content = dark ? '#15391f' : '#1b7f3b';
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#0a0f1c' : '#f1eee8';
 }
 
 $('theme-toggle').addEventListener('click', () => {

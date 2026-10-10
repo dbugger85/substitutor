@@ -1,6 +1,6 @@
-# Substitutor ⚽
+# Substitutor
 
-A phone-friendly web app for fair substitutions in kids' football matches.
+A phone-friendly web app for fair substitutions in kids' sports matches.
 
 **Open it:** https://dbugger85.github.io/substitutor/
 

@@ -1,6 +1,6 @@
 # Substitutor
 
-A phone-first web app that helps a coach make fair substitutions in kids' football matches. It's used live at the sideline, so reliability during a match matters more than features.
+A phone-first web app that helps a coach make fair substitutions in kids' sports matches. It's used live at the sideline, so reliability during a match matters more than features.
 
 - **Live:** https://dbugger85.github.io/substitutor/
 - **Repo:** https://github.com/dbugger85/substitutor (public, branch `main`)
@@ -27,6 +27,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - Plain HTML, CSS and JavaScript ES modules. **No framework, no bundler, no runtime dependencies.** `playwright-core` is a dev dependency used only for the e2e test.
 - Only relative paths (`./style.css`, `./js/app.js`), because the site lives under `/substitutor/`.
 - Light and dark themes. Light is the default and stays high-contrast for sunlight. All colours are CSS variables: the light set is in `:root`, and the dark set is repeated in `@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`, so change both when you change one. Never hard-code colours in rules. Tap targets are at least 48px, and the layout is designed for a phone around 390px wide.
+- The look is "glass", styled after the owner's PrimeTime app: a warm off-white page (navy in dark mode), a logo tile plus an uppercase Barlow Condensed title and a tagline (hidden on the match screen), and see-through, blurred panels (`backdrop-filter`) with a rim light over a still colour glow (`body::before`, still to save battery during a match), in the Glass section near the end of `style.css`. Real blur only on the big panels and popups; buttons and inputs fake it. The app works for any sport, so no football-specific pictures or words.
 - Keep `js/match.js` free of DOM code so it stays unit-testable. Add a test in `test/match.test.js` for any rule change.
 
 ## Files
@@ -39,6 +40,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `js/match.js` | Pure match logic: time accounting, ranking, swaps |
 | `js/storage.js` | localStorage load and save |
 | `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
+| `fonts/` | Inter and Barlow Condensed (bold), stored with the app so they work offline (both under the SIL Open Font License) |
 | `sw.js` | Service worker for offline use: network first, falls back to the cache after 3 s or when offline |
 | `manifest.webmanifest`, `icons/` | Makes the app installable. `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert` |
 | `test/match.test.js` | Unit tests for the rules |
