@@ -1,6 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#1b7f3b"/>
-  <rect x="126" y="146" width="260" height="220" rx="32" fill="#ffffff"/>
-  <path fill="#1b7f3b" d="M206 180 L252 236 H222 V330 H190 V236 H160 Z"/>
-  <path fill="#c62828" d="M306 332 L260 276 H290 V182 H322 V276 H352 Z"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2ea356"/>
+      <stop offset="1" stop-color="#136a2e"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.3" cy="0" r="0.9">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#shine)"/>
+  <g fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M196 376 V148 M132 208 L196 144 L260 208"/>
+    <path d="M316 136 V364 M252 304 L316 368 L380 304" stroke-opacity="0.72"/>
+  </g>
 </svg>
