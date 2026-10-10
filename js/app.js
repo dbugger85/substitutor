@@ -1,6 +1,6 @@
 // Screens, buttons and popups. The match rules live in match.js.
 
-import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTheme } from './storage.js';
+import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTheme, loadInstallHidden, saveInstallHidden } from './storage.js';
 import * as M from './match.js';
 import { unlockAudio, startAlarm, stopAlarm, keepScreenOn, releaseScreen } from './alerts.js';
 
@@ -597,6 +597,43 @@ setInterval(updateClock, 500);
 
 // Offline support and installing as an app (needs HTTPS or localhost).
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+
+// ---------- install button ----------
+// Chrome and Edge (Android, computers) fire beforeinstallprompt, so our button opens their install popup.
+// iPhones and iPads can only install from Safari's Share menu, so there the button shows the steps.
+// Hidden inside the installed app, and after "Not now".
+
+function setupInstall() {
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (installed || loadInstallHidden()) return;
+  const card = $('install-card');
+  let installPrompt = null;
+  addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    card.hidden = false;
+  });
+  addEventListener('appinstalled', () => (card.hidden = true));
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios) card.hidden = false;
+
+  $('install-btn').addEventListener('click', async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      installPrompt = null;
+      if (outcome === 'accepted') card.hidden = true;
+    } else if (ios) {
+      $('ios-install-dialog').showModal();
+    }
+  });
+  $('install-hide').addEventListener('click', () => {
+    card.hidden = true;
+    saveInstallHidden();
+  });
+  $('ios-install-close').addEventListener('click', () => $('ios-install-dialog').close());
+}
+setupInstall();
 
 if (match) {
   renderMatch();

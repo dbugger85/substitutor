@@ -43,7 +43,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
 | `fonts/` | Inter and Barlow Condensed (bold), stored with the app so they work offline (both under the SIL Open Font License) |
 | `sw.js` | Service worker for offline use: network first, falls back to the cache after 3 s or when offline |
-| `manifest.webmanifest`, `icons/` | Makes the app installable. `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert` |
+| `manifest.webmanifest`, `icons/` | Makes the app installable. An install card on the team screen (`setupInstall()` in `app.js`) uses Chrome's `beforeinstallprompt`, or on iPhone/iPad opens `#ios-install-dialog` with the Share → Add to Home Screen steps; it's hidden in the installed app and after "Not now" (`substitutor.installHidden`). `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert` |
 | `test/match.test.js` | Unit tests for the rules |
 | `test/e2e.mjs` | Playwright browser test |
 | `PLAN.md` | The original plan and the user's decisions |

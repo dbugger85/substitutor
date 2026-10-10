@@ -43,6 +43,15 @@
       <ul id="team-list" class="list"></ul>
       <p id="team-empty" class="muted">Add the players in your team.</p>
       <button id="to-setup" class="primary big">Set up match</button>
+      <div id="install-card" class="install-card" hidden>
+        <img src="./icons/icon.svg" alt="">
+        <div class="grow">
+          <strong>Install the app</strong>
+          <div class="muted small">Quick to open, works without signal.</div>
+        </div>
+        <button id="install-btn" type="button" class="primary">Install</button>
+        <button id="install-hide" type="button" class="icon" aria-label="Not now">✕</button>
+      </div>
     </section>
 
     <!-- Screen 2: match setup -->
@@ -148,6 +157,17 @@
         <button id="ask-ok" type="submit" class="primary grow">OK</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- How to install on iPhone and iPad (Safari has no install button) -->
+  <dialog id="ios-install-dialog">
+    <h2>Install on iPhone</h2>
+    <ol class="steps">
+      <li>Tap the <strong>Share</strong> button <span class="share-icon" aria-hidden="true"></span> in Safari’s toolbar.</li>
+      <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+      <li>Tap <strong>Add</strong>. Substitutor is now on your home screen.</li>
+    </ol>
+    <button id="ios-install-close" type="button" class="primary big">Got it</button>
   </dialog>
 
   <div id="toast" class="toast" role="status" hidden></div>

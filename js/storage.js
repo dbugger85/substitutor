@@ -3,6 +3,7 @@
 const TEAM_KEY = 'substitutor.team';
 const MATCH_KEY = 'substitutor.match';
 const THEME_KEY = 'substitutor.theme';
+const INSTALL_KEY = 'substitutor.installHidden';
 
 const DEFAULT_SETTINGS = { fieldSize: 5, intervalMin: 5, perSub: 1, gkId: null, starterIds: [], autoStarters: false };
 
@@ -53,5 +54,20 @@ export function saveTheme(theme) {
   try {
     if (theme === 'auto') localStorage.removeItem(THEME_KEY);
     else localStorage.setItem(THEME_KEY, theme);
+  } catch {}
+}
+
+// "Not now" on the install card: a plain '1'.
+export function loadInstallHidden() {
+  try {
+    return localStorage.getItem(INSTALL_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function saveInstallHidden() {
+  try {
+    localStorage.setItem(INSTALL_KEY, '1');
   } catch {}
 }

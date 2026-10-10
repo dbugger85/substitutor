@@ -141,6 +141,33 @@ try {
   assert.ok(await page.isVisible('#screen-team'));
   assert.equal(await page.$$eval('#team-list li', (li) => li.length), 8);
   await page.context().setOffline(false);
+  // Chrome's own check finds nothing missing (the test browser is always incognito, which Chrome never installs from)
+  const cdp = await page.context().newCDPSession(page);
+  const { installabilityErrors } = await cdp.send('Page.getInstallabilityErrors');
+  assert.deepEqual(installabilityErrors.map((e) => e.errorId).filter((id) => id !== 'in-incognito'), [], 'the page is not installable');
+  for (const icon of manifest.icons) assert.ok((await page.request.get(new URL(icon.src, base).href)).ok, `icon ${icon.src} is missing`);
+  // No install prompt from Chrome here, so no install card
+  assert.ok(await page.$eval('#install-card', (e) => e.hidden));
+
+  // iPhone: the install card shows, and its button explains Safari's Share → Add to Home Screen
+  const iphone = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+  });
+  iphone.on('pageerror', (e) => errors.push(e.message));
+  await iphone.goto(base);
+  await iphone.waitForSelector('#install-card:not([hidden])');
+  await iphone.screenshot({ path: `${shots}/9-install-card.png` });
+  await iphone.click('#install-btn');
+  await iphone.waitForSelector('#ios-install-dialog[open]');
+  await iphone.waitForTimeout(300);
+  await iphone.screenshot({ path: `${shots}/9-install-iphone.png` });
+  await iphone.click('#ios-install-close');
+  // "Not now" is remembered
+  await iphone.click('#install-hide');
+  await iphone.reload();
+  assert.ok(await iphone.$eval('#install-card', (e) => e.hidden));
 
   assert.deepEqual(errors, []);
   assert.deepEqual(nativeDialogs, [], 'the browser\'s own popups were used');
