@@ -246,23 +246,51 @@ input, select { width: 100%; padding: 0 12px; }
 label.field { display: block; margin: 16px 0; font-weight: 500; }
 label.field input { margin-top: 6px; }
 fieldset {
+  min-width: 0;
   margin: 16px 0;
-  padding: 4px 12px;
+  padding: 0 16px 4px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--card);
   box-shadow: var(--shadow);
 }
-legend { padding: 0 4px; font-weight: 500; }
+/* The heading sits inside the box (float takes the legend off the border line). */
+legend { float: left; width: 100%; padding: 14px 0 6px; font-weight: 600; }
+legend + * { clear: both; }
 .choices label {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 48px;
+  padding: 4px 0;
   border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+  cursor: pointer;
 }
-.choices label:first-child { border-top: 0; }
-.choices input { width: 22px; height: 22px; min-height: 0; margin: 0; accent-color: var(--green); }
+.choices input {
+  flex: none;
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--muted);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.choices input[type="radio"] { border-radius: 50%; }
+.choices input:checked { border-color: var(--green); background-color: var(--green); }
+.choices input::after { content: ""; opacity: 0; transition: opacity 0.15s ease; }
+.choices input:checked::after { opacity: 1; }
+/* A tick for checkboxes, a dot for the goalkeeper choice */
+.choices input[type="checkbox"]::after { width: 7px; height: 13px; margin-top: -3px; border: solid var(--on-green); border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.choices input[type="radio"]::after { width: 10px; height: 10px; border-radius: 50%; background: var(--on-green); }
+.choices input:disabled { opacity: 0.4; cursor: not-allowed; }
 .choices label.disabled { color: var(--muted); }
 .error { color: var(--red); min-height: 1.4em; margin: 8px 0; }
 .note { margin: -4px 0 16px; color: var(--green); font-weight: 500; }
@@ -333,7 +361,25 @@ dialog h2 { margin-top: 0; }
   border-top: 1px solid var(--line);
 }
 .swap-row .pick { display: flex; flex-direction: column; gap: 8px; }
-.swap-row label { display: flex; align-items: center; gap: 8px; }
+.pick-row { display: flex; align-items: center; gap: 8px; }
+/* The button that opens the player list */
+button.picker {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  text-align: left;
+}
+button.picker::after { content: ""; flex: none; width: 8px; height: 8px; margin: -4px 2px 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+button.picker:disabled::after { display: none; }
+.pick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#pick-list { margin-top: 4px; max-height: 60dvh; overflow-y: auto; }
+#pick-list button.chosen { background: var(--green-soft); box-shadow: inset 5px 0 var(--green); font-weight: 700; }
+#ask-dialog input { margin: 4px 0 8px; }
+#ask-text { margin: 0 0 8px; }
+button.danger-fill { background-color: var(--red); border-color: var(--red); color: var(--card); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3), 0 6px 18px color-mix(in srgb, var(--red) 35%, transparent); }
 .tag {
   flex: 0 0 44px;
   padding: 4px 0;
@@ -398,7 +444,8 @@ button.primary {
   background-image: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent 60%);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 6px 18px color-mix(in srgb, var(--green) 35%, transparent);
 }
-.choices input { box-shadow: none; background: none; }
+.choices input { box-shadow: none; background-image: none; }
+.choices input:not(:checked) { background-color: transparent; }
 .clock.due { background-color: var(--red-soft); border-color: var(--red); }
 .progress { background: color-mix(in srgb, var(--text) 10%, transparent); }
 .countdown { font-family: "Barlow Condensed", system-ui, sans-serif; font-weight: 700; font-size: 96px; line-height: 1; letter-spacing: 0; }

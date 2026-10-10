@@ -130,6 +130,26 @@
     <button id="summary-close" type="button" class="primary big">Close</button>
   </dialog>
 
+  <!-- Pick a player for a swap -->
+  <dialog id="pick-dialog">
+    <h2 id="pick-title"></h2>
+    <ul id="pick-list" class="list"></ul>
+    <button id="pick-cancel" type="button" class="big">Cancel</button>
+  </dialog>
+
+  <!-- Questions: end the match, a new player's name -->
+  <dialog id="ask-dialog">
+    <form id="ask-form">
+      <h2 id="ask-title"></h2>
+      <p id="ask-text" class="muted"></p>
+      <input id="ask-input" autocomplete="off" enterkeyhint="done">
+      <div class="row">
+        <button id="ask-cancel" type="button">Cancel</button>
+        <button id="ask-ok" type="submit" class="primary grow">OK</button>
+      </div>
+    </form>
+  </dialog>
+
   <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>

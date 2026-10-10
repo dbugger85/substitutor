@@ -24,6 +24,33 @@ function el(tag, props = {}, children = []) {
   return e;
 }
 
+// Our own popup instead of the browser's confirm() and prompt(). Resolves to true (or the typed text) for OK, or null.
+function ask({ title, text = '', input = '', ok = 'OK', danger = false }) {
+  const dlg = $('ask-dialog');
+  const field = $('ask-input');
+  $('ask-title').textContent = title;
+  $('ask-text').textContent = text;
+  $('ask-text').hidden = !text;
+  field.hidden = !input;
+  field.placeholder = input;
+  field.value = '';
+  $('ask-ok').textContent = ok;
+  $('ask-ok').className = danger ? 'primary grow danger-fill' : 'primary grow';
+  return new Promise((resolve) => {
+    $('ask-form').onsubmit = (e) => {
+      e.preventDefault();
+      if (input && !field.value.trim()) return field.focus();
+      dlg.onclose = null;
+      dlg.close();
+      resolve(input ? field.value : true);
+    };
+    $('ask-cancel').onclick = () => dlg.close();
+    dlg.onclose = () => resolve(null);
+    dlg.showModal();
+    if (input) field.focus();
+  });
+}
+
 function fmt(ms, round = Math.floor) {
   const s = Math.max(0, round(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -313,8 +340,8 @@ $('swap-now').addEventListener('click', () => {
   openSwap('adhoc', pairs);
 });
 
-$('add-late').addEventListener('click', () => {
-  const name = prompt('Name of the new player')?.trim();
+$('add-late').addEventListener('click', async () => {
+  const name = (await ask({ title: 'Add player', input: 'Player name', ok: 'Add' }))?.trim();
   if (!name) return;
   const p = { id: M.newId(), name };
   team.players.push(p);
@@ -323,8 +350,9 @@ $('add-late').addEventListener('click', () => {
   toast(`${name} is on the bench and will come on at the next substitution.`);
 });
 
-$('end-match').addEventListener('click', () => {
-  if (!confirm('End the match?')) return;
+$('end-match').addEventListener('click', async () => {
+  const sure = await ask({ title: 'End the match?', text: 'The minutes are saved for next match’s starters.', ok: 'End match', danger: true });
+  if (!sure) return;
   const t = now();
   $('summary-time').textContent = fmt(t);
   $('summary-list').replaceChildren(
@@ -396,14 +424,53 @@ function openSwap(mode, rows, injuredId = null) {
   $('swap-dialog').showModal();
 }
 
-function playerSelect(players, value, onchange, t) {
+// A button that shows the chosen player and opens a list to pick another (instead of the phone's own dropdown).
+function playerPicker(players, value, onchange, t, title) {
+  const label = (p) => [
+    el('span', { class: 'pick-name' }, `${p.name}${p.status === 'gk' ? ' (GK)' : ''}`),
+    el('span', { class: 'mins' }, fmt(M.fieldTime(p, t))),
+  ];
+  const chosen = players.find((p) => p.id === value);
   return el(
-    'select',
-    { onchange: (e) => onchange(e.target.value) },
-    players.map((p) =>
-      el('option', { value: p.id, selected: p.id === value }, `${p.name}${p.status === 'gk' ? ' (GK)' : ''} – ${fmt(M.fieldTime(p, t))}`),
-    ),
+    'button',
+    {
+      type: 'button',
+      class: 'picker',
+      onclick: () =>
+        pickPlayer(title, players, value, t).then((id) => {
+          if (id && id !== value) {
+            onchange(id);
+            renderSwap();
+          }
+        }),
+    },
+    chosen ? label(chosen) : el('span', { class: 'pick-name muted' }, 'Choose…'),
   );
+}
+
+function pickPlayer(title, players, value, t) {
+  const dlg = $('pick-dialog');
+  $('pick-title').textContent = title;
+  return new Promise((resolve) => {
+    const done = (id) => {
+      dlg.onclose = null;
+      dlg.close();
+      resolve(id);
+    };
+    $('pick-list').replaceChildren(
+      ...players.map((p) =>
+        el('li', { class: 'player' }, [
+          el('button', { type: 'button', class: p.id === value ? 'chosen' : '', onclick: () => done(p.id) }, [
+            el('span', { class: 'name' }, `${p.name}${p.status === 'gk' ? ' (GK)' : ''}`),
+            el('span', { class: 'mins' }, fmt(M.fieldTime(p, t))),
+          ]),
+        ]),
+      ),
+    );
+    $('pick-cancel').onclick = () => done(null);
+    dlg.onclose = () => resolve(null);
+    dlg.showModal();
+  });
 }
 
 function nextFreePair(t) {
@@ -424,12 +491,15 @@ function renderSwap() {
 
   const rows = swap.rows.map((row, i) => {
     const locked = row.offId === swap.injuredId;
-    const offSelect = playerSelect(offOptions, row.offId, (v) => (row.offId = v), t);
-    offSelect.disabled = locked;
+    const offPicker = playerPicker(offOptions, row.offId, (v) => (row.offId = v), t, 'Who comes off?');
+    offPicker.disabled = locked;
     return el('div', { class: 'swap-row' }, [
       el('div', { class: 'pick' }, [
-        el('label', {}, [el('span', { class: 'tag off' }, 'OFF'), offSelect]),
-        el('label', {}, [el('span', { class: 'tag on' }, 'ON'), playerSelect(onOptions, row.onId, (v) => (row.onId = v), t)]),
+        el('div', { class: 'pick-row' }, [el('span', { class: 'tag off' }, 'OFF'), offPicker]),
+        el('div', { class: 'pick-row' }, [
+          el('span', { class: 'tag on' }, 'ON'),
+          playerPicker(onOptions, row.onId, (v) => (row.onId = v), t, 'Who comes on?'),
+        ]),
       ]),
       locked
         ? el('span')

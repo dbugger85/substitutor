@@ -32,7 +32,8 @@ try {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
-  page.on('dialog', (d) => (d.type() === 'prompt' ? d.accept('Late Lisa') : d.accept()));
+  const nativeDialogs = [];
+  page.on('dialog', (d) => { nativeDialogs.push(d.type()); d.dismiss(); }); // the app should only use its own popups
   const popup = (name) => page.waitForTimeout(300).then(() => page.screenshot({ path: `${shots}/${name}.png` })); // after the fade-in
   const names = (sel) => page.$$eval(sel, (els) => els.map((e) => e.firstChild.textContent));
 
@@ -80,6 +81,10 @@ try {
 
   // Late player, pause, end
   await page.click('#add-late');
+  await page.waitForSelector('#ask-dialog[open]');
+  await popup('5-add-player');
+  await page.fill('#ask-input', 'Late Lisa');
+  await page.click('#ask-ok');
   assert.ok((await names('#bench-list .name')).includes('Late Lisa'));
   await page.click('#pause');
   assert.ok(await page.isVisible('#paused-badge'));
@@ -96,9 +101,18 @@ try {
   await page.screenshot({ path: `${shots}/6-dark.png`, fullPage: true });
   await page.click('#swap-now');
   await popup('6-dark-popup');
+  // Pick another player from our own list (not the phone's dropdown)
+  await page.click('#swap-rows .pick-row:nth-child(2) button.picker');
+  await page.waitForSelector('#pick-dialog[open]');
+  await popup('6-dark-picker');
+  await page.click('#pick-list button:has-text("Ben")');
+  assert.match(await page.textContent('#swap-rows .pick-row:nth-child(2)'), /Ben/);
   await page.click('#swap-cancel');
 
   await page.click('#end-match');
+  await page.waitForSelector('#ask-dialog[open]');
+  await popup('7-end-ask');
+  await page.click('#ask-ok');
   await popup('7-summary');
   await page.click('#summary-close');
   await page.waitForSelector('#screen-team', { state: 'visible', timeout: 2000 });
@@ -129,6 +143,7 @@ try {
   await page.context().setOffline(false);
 
   assert.deepEqual(errors, []);
+  assert.deepEqual(nativeDialogs, [], 'the browser\'s own popups were used');
   console.log(`✔ e2e passed against ${base} (screenshots in test/screenshots/)`);
 } finally {
   await browser.close();

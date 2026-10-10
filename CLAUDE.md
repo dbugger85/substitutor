@@ -28,13 +28,14 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - Only relative paths (`./style.css`, `./js/app.js`), because the site lives under `/substitutor/`.
 - Light and dark themes. Light is the default and stays high-contrast for sunlight. All colours are CSS variables: the light set is in `:root`, and the dark set is repeated in `@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`, so change both when you change one. Never hard-code colours in rules. Tap targets are at least 48px, and the layout is designed for a phone around 390px wide.
 - The look is "glass", styled after the owner's PrimeTime app: a warm off-white page (navy in dark mode), a logo tile plus an uppercase Barlow Condensed title and a tagline (hidden on the match screen), and see-through, blurred panels (`backdrop-filter`) with a rim light over a still colour glow (`body::before`, still to save battery during a match), in the Glass section near the end of `style.css`. Real blur only on the big panels and popups; buttons and inputs fake it. The app works for any sport, so no football-specific pictures or words.
+- Never use the browser's own `alert`/`confirm`/`prompt` or `<select>` dropdowns: use `ask()` and `playerPicker()`. The e2e test fails if a browser popup appears. Checkboxes and radio buttons are custom-drawn (`.choices input`).
 - Keep `js/match.js` free of DOM code so it stays unit-testable. Add a test in `test/match.test.js` for any rule change.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `index.html` | A tiny inline script that applies the saved theme before the page draws, plus all three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and three `<dialog>`s: swap, player actions, summary |
+| `index.html` | A tiny inline script that applies the saved theme before the page draws, plus all three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and five `<dialog>`s: swap, player picker (used by the swap popup), player actions, summary, and `ask-dialog` (the app's own confirm/name popup, `ask()` in `app.js`) |
 | `style.css` | All styles; colours are CSS variables (light and dark sets) |
 | `js/app.js` | UI: rendering, event handlers, the 500 ms tick (`updateClock`) that updates clocks and opens the substitution popup |
 | `js/match.js` | Pure match logic: time accounting, ranking, swaps |
