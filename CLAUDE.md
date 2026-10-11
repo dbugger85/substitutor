@@ -35,7 +35,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 
 | File | Purpose |
 |---|---|
-| `index.html` | A tiny inline script that applies the saved theme before the page draws, plus all three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and five `<dialog>`s: swap, player picker (used by the swap popup), player actions, summary, and `ask-dialog` (the app's own confirm/name popup, `ask()` in `app.js`) |
+| `index.html` | A tiny inline script that applies the saved theme before the page draws, plus all three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and six `<dialog>`s: swap, player picker (used by the swap popup), player actions, summary, `ask-dialog` (the app's own confirm/name popup, `ask()` in `app.js`) and `ios-install-dialog` (install steps for iPhone/iPad) |
 | `style.css` | All styles; colours are CSS variables (light and dark sets) |
 | `js/app.js` | UI: rendering, event handlers, the 500 ms tick (`updateClock`) that updates clocks and opens the substitution popup |
 | `js/match.js` | Pure match logic: time accounting, ranking, swaps |
@@ -71,6 +71,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - `substitutor.team`: `{ v: 1, players: [{id, name}], settings: {fieldSize, intervalMin, perSub, gkId, starterIds, autoStarters}, lastMinutes?: {[id]: ms} }`. Saved on every edit.
 - `substitutor.match`: `{ v: 1, settings: {fieldSize, intervalMs, perSub}, players: [{id, name, status: 'gk'|'field'|'bench'|'out', fieldMs, benchMs, since}], clockMs, runningSince, nextSubAt }`. Saved after every change. If present on load, the app goes straight back to the match screen.
 - `substitutor.theme`: `'light'` or `'dark'`, a plain string. If it's missing, the app follows the phone (Auto). The theme button in the top bar cycles Auto → Light → Dark (`applyTheme` in `app.js`).
+- `substitutor.installHidden`: `'1'` after the coach taps ✕ ("Not now") on the install card, so it stays hidden on that phone.
 - Data with a different `v` is ignored. If you change the saved shape, bump `v` or migrate it in `storage.js`.
 
 ### Browser gotchas
