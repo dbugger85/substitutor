@@ -22,6 +22,7 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
 3. **Match:**
    - When it's time, the phone beeps and vibrates and shows who goes **off** and who comes **on**. You can change the suggestion, then press **Done** to restart the timer. **Skip** restarts it without changes.
    - **Swap** or tapping a player: swap anyone at any time, take off an injured player, change the goalkeeper, or remove a player.
+   - **↻** (top-right of the clock) restarts the countdown to the next substitution from the full time, without swapping anyone.
    - **Pause** for half-time. **Add player** is for a late arrival, who comes on at the next substitution.
    - **Move to another phone** sends a link with the team and the match. Open it on the other phone and the match carries on there, clock and all.
    - **End match** shows the minutes each player played.

@@ -68,6 +68,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - Each player has `fieldMs` / `benchMs` plus `since` (the match time of their last status change). `setStatus()` settles the elapsed time into the old status before switching. Never change `status` directly.
 - `nextSubAt` is the match time of the next substitution. While the popup waits, the clock keeps running and players keep accruing minutes. Done or Skip calls `scheduleNext()`, so the next interval starts from the moment of confirmation.
 - Players on the field also show a small grey **stint time** (`.stint`, time since they last came on: `t − since`), updated in `updateClock`. It's left blank while it equals their total (first time on), so starters only get it after they've been off once.
+- The ↻ button in the corner of the clock (`#restart-countdown`) calls `scheduleNext()` straight away, with no swap and no confirm, and shows a toast. It works while paused too.
 - The alarm beeps and vibrates every 5 s until the popup is answered. A scheduled popup can't be dismissed with Escape or the back button.
 
 ### State (localStorage)

@@ -343,6 +343,12 @@ function change(fn) {
 
 $('pause').addEventListener('click', () => change(() => (M.isRunning(match) ? M.pause(match) : M.resume(match))));
 
+// Start the countdown again from the full interval, without a substitution.
+$('restart-countdown').addEventListener('click', () => {
+  change(() => M.scheduleNext(match));
+  toast(`Countdown restarted: next substitution in ${fmt(match.settings.intervalMs)}.`);
+});
+
 $('swap-now').addEventListener('click', () => {
   const pairs = M.pickSubstitution(match.players, 1, now());
   if (!pairs.length) return toast('Nobody on the bench to swap with.');

@@ -88,6 +88,9 @@ try {
   assert.ok((await names('#bench-list .name')).includes('Late Lisa'));
   await page.click('#pause');
   assert.ok(await page.isVisible('#paused-badge'));
+  // Restart the countdown: back to the full 3 seconds
+  await page.click('#restart-countdown');
+  assert.equal(await page.textContent('#countdown'), '0:03');
   await page.screenshot({ path: `${shots}/6-paused.png`, fullPage: true });
 
   // Move to another phone: the link opens the same match on a fresh phone
