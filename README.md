@@ -12,7 +12,7 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
 
 ## Using it
 
-1. **Team:** add your players. The list is saved on the phone.
+1. **Team:** add your players. The list is saved on the phone. Tap a name to fix its spelling.
 2. **Match setup:**
    - players on the field (including the goalkeeper)
    - the goalkeeper

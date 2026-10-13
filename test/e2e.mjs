@@ -42,10 +42,19 @@ try {
   await page.reload();
 
   // Team
-  for (const n of ['Mia', 'Anna', 'Ben', 'Carl', 'Dana', 'Erik', 'Fia']) {
+  for (const n of ['Mia', 'Anna', 'Ben', 'Carl', 'Dana', 'Erik']) {
     await page.fill('#new-player-name', n);
     await page.press('#new-player-name', 'Enter');
   }
+  // Rename a misspelt player by tapping their name
+  await page.fill('#new-player-name', 'Fai');
+  await page.press('#new-player-name', 'Enter');
+  await page.click('#team-list button.rename:has-text("Fai")');
+  await page.waitForSelector('#ask-dialog[open]');
+  assert.equal(await page.inputValue('#ask-input'), 'Fai');
+  await page.fill('#ask-input', 'Fia');
+  await page.click('#ask-ok');
+  assert.deepEqual(await page.$$eval('#team-list button.rename', (b) => b.map((x) => x.textContent)), ['Mia', 'Anna', 'Ben', 'Carl', 'Dana', 'Erik', 'Fia']);
   await page.screenshot({ path: `${shots}/1-team.png`, fullPage: true });
 
   // Setup: 5 on the field incl. GK, substitution every 3 seconds, 2 at a time
@@ -78,6 +87,16 @@ try {
   await popup('5-injury');
   await page.click('#swap-confirm');
   assert.deepEqual(await names('#out-list .name'), ['Carl']);
+  // Rename during a match, from the player options
+  await page.click('#out-list li button');
+  await page.click('#action-list button:has-text("Rename")');
+  await page.fill('#ask-input', 'Carlos');
+  await page.click('#ask-ok');
+  assert.deepEqual(await names('#out-list .name'), ['Carlos']);
+  await page.click('#out-list li button');
+  await page.click('#action-list button:has-text("Rename")');
+  await page.fill('#ask-input', 'Carl');
+  await page.click('#ask-ok');
 
   // Late player, pause, end
   await page.click('#add-late');

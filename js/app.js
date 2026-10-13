@@ -80,7 +80,7 @@ function renderTeam() {
   $('team-list').replaceChildren(
     ...team.players.map((p) =>
       el('li', {}, [
-        el('span', {}, p.name),
+        el('button', { type: 'button', class: 'rename', 'aria-label': `Rename ${p.name}`, onclick: () => renamePlayer(p.id) }, p.name),
         el('button', {
           type: 'button',
           class: 'icon',
@@ -97,6 +97,21 @@ function renderTeam() {
   $('team-empty').hidden = team.players.length > 0;
   $('to-setup').disabled = team.players.length < 2;
   $('share-team').hidden = !team.players.length;
+}
+
+// Fix a misspelt name: in the team list and, during a match, in the player options.
+async function renamePlayer(id) {
+  const p = team.players.find((x) => x.id === id) ?? player(id);
+  const name = (await ask({ title: 'Rename player', input: 'Player name', value: p.name, ok: 'Save' }))?.trim();
+  if (!name || name === p.name) return;
+  for (const x of [...team.players, ...(match?.players ?? [])]) if (x.id === id) x.name = name;
+  saveTeam(team);
+  if (match) {
+    saveMatch(match);
+    renderMatch();
+  } else {
+    renderTeam();
+  }
 }
 
 $('add-player-form').addEventListener('submit', (e) => {
@@ -482,6 +497,7 @@ function openActions(id) {
   } else {
     action('Back to bench', () => change(() => M.setStatus(p, 'bench', t)));
   }
+  action('Rename', () => renamePlayer(id));
   action('Cancel', () => {});
 
   $('action-title').textContent = p.name;

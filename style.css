@@ -212,6 +212,8 @@ input, select { width: 100%; padding: 0 12px; }
   border-top: 1px solid var(--line);
 }
 .list li:first-child { border-top: 0; }
+/* The name in the team list: tap to rename. Looks like plain text. */
+.list li button.rename { flex: 1; min-width: 0; min-height: 52px; padding: 0; border: 0; background: transparent; box-shadow: none; text-align: left; font: inherit; color: var(--text); overflow-wrap: anywhere; }
 .list li.player { padding: 0; }
 .player button {
   display: flex;
