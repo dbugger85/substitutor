@@ -41,7 +41,11 @@ self.addEventListener('fetch', (e) => {
 
 async function fromNetworkOrCache(request) {
   const cache = await caches.open(CACHE);
-  const network = fetch(request).then((response) => {
+  // GitHub Pages lets browsers keep files for 10 minutes without asking. 'no-cache'
+  // makes the browser check for a newer copy every time (a quick "not modified"
+  // when nothing changed), so a new page never gets an old style.css or app.js.
+  // Page loads themselves are left alone, so redirects keep working.
+  const network = fetch(request.mode === 'navigate' ? request : new Request(request, { cache: 'no-cache' })).then((response) => {
     if (response.ok) cache.put(request, response.clone());
     return response;
   });

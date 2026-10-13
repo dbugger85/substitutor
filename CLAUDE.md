@@ -92,7 +92,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - The substitution popup waits while an `ask()` popup is open.
 
 ### Browser gotchas
-- **When you add, rename or remove a file the app loads, update `FILES` in `sw.js`**, or it will be missing offline. Because the worker is network-first, you don't need to bump `CACHE` for normal changes.
+- **When you add, rename or remove a file the app loads, update `FILES` in `sw.js`**, or it will be missing offline. Because the worker is network-first, you don't need to bump `CACHE` for normal changes. GitHub Pages sends `cache-control: max-age=600`, so the worker fetches files (not page loads) with `cache: 'no-cache'`; otherwise a phone could get a new `index.html` with a 10-minute-old `style.css`.
 - Sound needs a user gesture first, so `unlockAudio()` runs on every pointerdown and click. iPhones play no sound in silent mode, and iOS ignores `navigator.vibrate`.
 - Wake Lock needs HTTPS or localhost and is released when the page is hidden, so it's re-requested on `visibilitychange`.
 - `crypto.randomUUID` needs a secure context. `newId()` has a fallback for testing over a LAN on http.
