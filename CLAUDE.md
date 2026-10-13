@@ -10,7 +10,7 @@ A phone-first web app that helps a coach make fair substitutions in kids' sports
 
 ```sh
 npm start        # serve at http://localhost:8000 (python3 http.server; ES modules don't work from file://)
-npm test         # unit tests for js/match.js (node --test), no install needed
+npm test         # unit tests for js/match.js and js/share.js (node --test), no install needed
 npm install      # only needed for the browser test
 npm run e2e      # browser test of a full match in headless Chromium (/usr/bin/chromium)
 BASE_URL=https://dbugger85.github.io/substitutor/ npm run e2e   # same test against the live site
@@ -40,11 +40,13 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `js/app.js` | UI: rendering, event handlers, the 500 ms tick (`updateClock`) that updates clocks and opens the substitution popup |
 | `js/match.js` | Pure match logic: time accounting, ranking, swaps |
 | `js/storage.js` | localStorage load and save |
+| `js/share.js` | Packs the team and match into a link and reads it back (no DOM code) |
 | `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
 | `fonts/` | Inter and Barlow Condensed (bold), stored with the app so they work offline (both under the SIL Open Font License) |
 | `sw.js` | Service worker for offline use: network first, falls back to the cache after 3 s or when offline |
 | `manifest.webmanifest`, `icons/` | Makes the app installable. An install card on the team screen (`setupInstall()` in `app.js`) uses Chrome's `beforeinstallprompt`, or on iPhone/iPad opens `#ios-install-dialog` with the Share → Add to Home Screen steps; it's hidden in the installed app and after "Not now" (`substitutor.installHidden`). `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert` |
 | `test/match.test.js` | Unit tests for the rules |
+| `test/share.test.js` | Unit tests for share links |
 | `test/e2e.mjs` | Playwright browser test |
 | `PLAN.md` | The original plan and the user's decisions |
 
@@ -65,6 +67,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - Timing uses timestamps, never tick counting, so it stays correct when the screen is locked, the tab is in the background, or the page reloads.
 - Each player has `fieldMs` / `benchMs` plus `since` (the match time of their last status change). `setStatus()` settles the elapsed time into the old status before switching. Never change `status` directly.
 - `nextSubAt` is the match time of the next substitution. While the popup waits, the clock keeps running and players keep accruing minutes. Done or Skip calls `scheduleNext()`, so the next interval starts from the moment of confirmation.
+- Players on the field also show a small grey **stint time** (`.stint`, time since they last came on: `t − since`), updated in `updateClock`. It's left blank while it equals their total (first time on), so starters only get it after they've been off once.
 - The alarm beeps and vibrates every 5 s until the popup is answered. A scheduled popup can't be dismissed with Escape or the back button.
 
 ### State (localStorage)
@@ -74,6 +77,15 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - `substitutor.installHidden`: `'1'` after the coach taps ✕ ("Not now") on the install card, so it stays hidden on that phone.
 - Data with a different `v` is ignored. If you change the saved shape, bump `v` or migrate it in `storage.js`.
 
+### Moving to another phone
+- "Move to another phone" (match screen) and "Share team" (team screen) call `shareLink()` in `app.js`: the phone's share menu (`navigator.share`), else copy to the clipboard, else an `ask()` popup showing the link.
+- The link is `<app address>#share=` + `z` (deflate-raw via `CompressionStream`) or `j` (plain JSON, if the browser can't compress), base64url-encoded. It holds `{ v: 1, at, team, match }`: the same shapes as in localStorage. The part after `#` is never sent to a server. About 1,000 characters for 15 players.
+- Opening the link, or "Paste a shared link" on the team screen, calls `loadShared()`. It asks first if this phone already has players or a match, then replaces both and calls `start()`. The `#share=` part is removed from the address bar so a reload doesn't load it again.
+- The match keeps its absolute `runningSince` timestamp, so the clock carries on as if the match never stopped (assumes both phones' clocks are about right). A substitution that came due in between pops up straight away.
+- The paste option exists because on iPhone an app installed on the home screen has its own storage, separate from Safari, so a tapped link would open in Safari instead.
+- The old phone keeps its match until someone ends it there.
+- The substitution popup waits while an `ask()` popup is open.
+
 ### Browser gotchas
 - **When you add, rename or remove a file the app loads, update `FILES` in `sw.js`**, or it will be missing offline. Because the worker is network-first, you don't need to bump `CACHE` for normal changes.
 - Sound needs a user gesture first, so `unlockAudio()` runs on every pointerdown and click. iPhones play no sound in silent mode, and iOS ignores `navigator.vibrate`.
@@ -81,6 +93,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - `crypto.randomUUID` needs a secure context. `newId()` has a fallback for testing over a LAN on http.
 
 ## Ideas not built yet
+- A QR code for share links (needs a hand-written QR generator, as there are no outside libraries)
 - Several teams
 - Match history
 - Showing bench waiting time

@@ -90,6 +90,24 @@ try {
   assert.ok(await page.isVisible('#paused-badge'));
   await page.screenshot({ path: `${shots}/6-paused.png`, fullPage: true });
 
+  // Move to another phone: the link opens the same match on a fresh phone
+  await page.evaluate(() => (navigator.share = async ({ url }) => (window.sharedUrl = url)));
+  await page.click('#share-match');
+  const link = await page.waitForFunction(() => window.sharedUrl).then((h) => h.jsonValue());
+  const phone2 = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  phone2.on('pageerror', (e) => errors.push(e.message));
+  phone2.on('dialog', (d) => { nativeDialogs.push(d.type()); d.dismiss(); });
+  await phone2.goto(link);
+  await phone2.waitForSelector('#screen-match:not([hidden])');
+  for (const list of ['#field-list', '#bench-list', '#out-list']) {
+    assert.deepEqual(await phone2.$$eval(`${list} .name`, (els) => els.map((e) => e.firstChild.textContent)), await names(`${list} .name`));
+  }
+  assert.equal(await phone2.textContent('#match-time'), await page.textContent('#match-time'));
+  assert.ok(await phone2.isVisible('#paused-badge'));
+  assert.ok(!phone2.url().includes('#share='), 'the link stays in the address bar');
+  await phone2.screenshot({ path: `${shots}/6-phone2.png`, fullPage: true });
+  await phone2.close();
+
   // Theme button: Auto -> Light -> Dark, remembered after a reload
   const theme = () => page.evaluate(() => document.documentElement.dataset.theme ?? 'auto');
   assert.equal(await theme(), 'auto');
@@ -131,6 +149,22 @@ try {
   assert.equal((await ticked()).length, 3);
   await page.click('#starter-note button');
   assert.deepEqual(await ticked(), starters);
+
+  // Paste a shared link on a phone that already has a team: asks first, then carries on the match
+  await page.click('#setup-back');
+  await page.click('#paste-link');
+  await page.waitForSelector('#ask-dialog[open]');
+  await page.fill('#ask-input', `Here: ${link}`);
+  await page.click('#ask-ok');
+  await page.waitForFunction(() => document.querySelector('#ask-title').textContent === 'Load the shared team?');
+  await popup('8-paste-ask');
+  await page.click('#ask-ok');
+  await page.waitForSelector('#screen-match:not([hidden])');
+  assert.ok((await names('#bench-list .name')).includes('Late Lisa'));
+  await page.screenshot({ path: `${shots}/8-pasted.png`, fullPage: true });
+  await page.click('#end-match');
+  await page.click('#ask-ok');
+  await page.click('#summary-close');
 
   // Installable, and opens without internet
   const manifest = await (await page.request.get(new URL('manifest.webmanifest', base).href)).json();

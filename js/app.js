@@ -2,11 +2,12 @@
 
 import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTheme, loadInstallHidden, saveInstallHidden } from './storage.js';
 import * as M from './match.js';
+import { makeLink, readLink, hasShare } from './share.js';
 import { unlockAudio, startAlarm, stopAlarm, keepScreenOn, releaseScreen } from './alerts.js';
 
 const $ = (id) => document.getElementById(id);
 
-const team = loadTeam();
+let team = loadTeam();
 let match = loadMatch();
 let swap = null; // open swap popup: { mode: 'scheduled' | 'adhoc', rows: [{ offId, onId }], injuredId }
 
@@ -25,7 +26,8 @@ function el(tag, props = {}, children = []) {
 }
 
 // Our own popup instead of the browser's confirm() and prompt(). Resolves to true (or the typed text) for OK, or null.
-function ask({ title, text = '', input = '', ok = 'OK', danger = false }) {
+// `value` fills the text box in advance.
+function ask({ title, text = '', input = '', value = '', ok = 'OK', danger = false }) {
   const dlg = $('ask-dialog');
   const field = $('ask-input');
   $('ask-title').textContent = title;
@@ -33,7 +35,7 @@ function ask({ title, text = '', input = '', ok = 'OK', danger = false }) {
   $('ask-text').hidden = !text;
   field.hidden = !input;
   field.placeholder = input;
-  field.value = '';
+  field.value = value;
   $('ask-ok').textContent = ok;
   $('ask-ok').className = danger ? 'primary grow danger-fill' : 'primary grow';
   return new Promise((resolve) => {
@@ -47,7 +49,7 @@ function ask({ title, text = '', input = '', ok = 'OK', danger = false }) {
     $('ask-cancel').onclick = () => dlg.close();
     dlg.onclose = () => resolve(null);
     dlg.showModal();
-    if (input) field.focus();
+    if (input) value ? field.select() : field.focus();
   });
 }
 
@@ -94,6 +96,7 @@ function renderTeam() {
   );
   $('team-empty').hidden = team.players.length > 0;
   $('to-setup').disabled = team.players.length < 2;
+  $('share-team').hidden = !team.players.length;
 }
 
 $('add-player-form').addEventListener('submit', (e) => {
@@ -259,6 +262,7 @@ function playerRow(p) {
   return el('li', { class: `player ${p.status}` }, [
     el('button', { type: 'button', onclick: () => openActions(p.id) }, [
       el('span', { class: 'name' }, [p.name, ...(p.status === 'gk' ? [el('span', { class: 'badge gk' }, 'GK')] : [])]),
+      el('span', { class: 'stint', 'data-stint': p.id }),
       el('span', { class: 'mins', 'data-id': p.id }),
     ]),
   ]);
@@ -310,8 +314,13 @@ function updateClock() {
     const p = player(span.dataset.id);
     if (p) span.textContent = fmt(M.fieldTime(p, t));
   }
+  // Time since they last came on. Left out while it's the same as the total (their first time on).
+  for (const span of document.querySelectorAll('.stint[data-stint]')) {
+    const p = player(span.dataset.stint);
+    span.textContent = p && M.onPitch(p.status) && p.fieldMs > 0 ? fmt(t - p.since) : '';
+  }
 
-  if (remaining <= 0 && running && !swap && !$('action-dialog').open) substitutionDue();
+  if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open) substitutionDue();
 }
 
 function substitutionDue() {
@@ -559,6 +568,64 @@ $('swap-dialog').addEventListener('cancel', (e) => {
   if (swap?.mode === 'adhoc') closeSwap();
 });
 
+// ---------- moving to another phone ----------
+// A link with the team, the setup and the match in it (see share.js).
+
+async function shareLink() {
+  const link = await makeLink(location.href, team, match);
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Substitutor', url: link });
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return; // the coach closed the share menu
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('Link copied. Send it to the other phone and open it there.');
+  } catch {
+    await ask({ title: 'Copy this link', text: 'Send it to the other phone and open it there.', input: 'Link', value: link, ok: 'Done' });
+  }
+}
+
+$('share-team').addEventListener('click', shareLink);
+$('share-match').addEventListener('click', shareLink);
+
+$('paste-link').addEventListener('click', async () => {
+  const text = await ask({ title: 'Paste a shared link', text: 'Copy the link from the other phone and paste it here.', input: 'Paste the link here', ok: 'Load' });
+  if (text) await loadShared(text);
+});
+
+// Replace this phone's team and match with the ones in a shared link.
+async function loadShared(text) {
+  const shared = await readLink(text);
+  if (!shared) return toast('That link doesn’t work. Ask for a new one.');
+  if (team.players.length || match) {
+    const sure = await ask({
+      title: 'Load the shared team?',
+      text: shared.match
+        ? 'This phone’s team and match are replaced by the shared ones. The match carries on from where the other phone is.'
+        : 'This phone’s team and match are replaced by the shared team and setup.',
+      ok: 'Load',
+    });
+    if (!sure) return;
+  }
+  if (swap) {
+    swap = null;
+    $('swap-dialog').close();
+  }
+  stopAlarm();
+  team = shared.team;
+  saveTeam(team);
+  team = loadTeam(); // fills in any missing settings
+  match = shared.match;
+  if (match) saveMatch(match);
+  else clearMatch();
+  start();
+  toast(match ? 'Match loaded. Carry on from here.' : 'Team loaded.');
+}
+
 // ---------- theme ----------
 
 const THEMES = { auto: '🌓 Auto', light: '☀ Light', dark: '☾ Dark' };
@@ -635,11 +702,22 @@ function setupInstall() {
 }
 setupInstall();
 
-if (match) {
-  renderMatch();
-  show('match');
-  keepScreenOn();
-} else {
-  renderTeam();
-  show('team');
+function start() {
+  if (match) {
+    renderMatch();
+    show('match');
+    keepScreenOn();
+  } else {
+    releaseScreen();
+    renderTeam();
+    show('team');
+  }
+}
+start();
+
+// Opened from a shared link: load it, and take it out of the address bar so a reload doesn't load it again.
+if (hasShare(location.hash)) {
+  const link = location.href;
+  history.replaceState(null, '', location.pathname + location.search);
+  loadShared(link);
 }

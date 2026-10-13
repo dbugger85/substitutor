@@ -11,6 +11,7 @@ const FILES = [
   './js/match.js',
   './js/storage.js',
   './js/alerts.js',
+  './js/share.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',

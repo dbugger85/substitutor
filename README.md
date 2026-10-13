@@ -23,7 +23,12 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
    - When it's time, the phone beeps and vibrates and shows who goes **off** and who comes **on**. You can change the suggestion, then press **Done** to restart the timer. **Skip** restarts it without changes.
    - **Swap** or tapping a player: swap anyone at any time, take off an injured player, change the goalkeeper, or remove a player.
    - **Pause** for half-time. **Add player** is for a late arrival, who comes on at the next substitution.
+   - **Move to another phone** sends a link with the team and the match. Open it on the other phone and the match carries on there, clock and all.
    - **End match** shows the minutes each player played.
+
+**Switching phones:** tap **Move to another phone** during a match, or **Share team** on the Team screen, and send the link (Messages, WhatsApp, AirDrop…). If the other phone uses the installed app on iPhone, copy the link, open the app, and tap **Paste a shared link** on the Team screen instead (the installed app can't read links opened in Safari).
+
+Each player shows their total minutes. Players on the field who have been off before also show, in small grey, how long they've been on since they last came on.
 
 Players with the most minutes come off first, and players with the fewest come on first, so playing time evens out over the match. The goalkeeper is never substituted unless you choose to.
 

@@ -184,6 +184,8 @@ input, select { width: 100%; padding: 0 12px; }
 .row { display: flex; gap: 8px; margin: 12px 0; }
 .row input { flex: 1; }
 .grow { flex: 1; }
+.share-links { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.share-links button.link { min-height: 48px; }
 .stack { display: flex; flex-direction: column; gap: 8px; }
 .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
 .controls button { padding: 0 8px; box-shadow: var(--shadow); font-weight: 600; }
@@ -227,6 +229,7 @@ input, select { width: 100%; padding: 0 12px; }
 .player.gk { box-shadow: inset 5px 0 var(--amber); }
 .player button:active:not(:disabled) { transform: none; background: var(--green-soft); }
 .player.out .name { color: var(--muted); text-decoration: line-through; }
+.stint { margin-left: auto; padding-right: 12px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .mins { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 600; }
 .player.field .mins, .player.gk .mins { color: var(--text); }
 
