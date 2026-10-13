@@ -61,6 +61,8 @@ function fmt(ms, round = Math.floor) {
 function show(name) {
   for (const s of document.querySelectorAll('.screen')) s.hidden = s.id !== `screen-${name}`;
   window.scrollTo(0, 0);
+  $('match-pages').scrollLeft = 0; // the match screen opens on the list
+  setArranging(false);
 }
 
 function toast(message) {
@@ -239,6 +241,8 @@ function renderPositions() {
   const needed = Math.max(0, (s.fieldSize || 0) - 1);
   s.posIds = M.assignSpots(s.starterIds, s.posIds, needed);
   $('use-positions').checked = s.usePositions;
+  $('use-field-view').checked = s.fieldView;
+  $('field-view-option').hidden = !s.usePositions;
   if (!s.usePositions) return $('position-list').replaceChildren();
   const starters = team.players.filter((p) => s.starterIds.includes(p.id));
   $('position-list').replaceChildren(
@@ -267,6 +271,11 @@ function renderPositions() {
     ),
   );
 }
+
+$('use-field-view').addEventListener('change', (e) => {
+  team.settings.fieldView = e.target.checked;
+  saveTeam(team);
+});
 
 $('use-positions').addEventListener('change', (e) => {
   team.settings.usePositions = e.target.checked;
@@ -359,8 +368,132 @@ function renderMatch() {
   $('match-warning').textContent = warning;
   $('match-warning').hidden = !warning;
 
+  const fieldView = !!(match.settings.positions && team.settings.fieldView);
+  $('field-page').hidden = !fieldView;
+  $('page-dots').hidden = !fieldView;
+  if (fieldView) renderField();
   updateClock();
 }
+
+// ---------- field view ----------
+// A picture of the field with each position and who plays there, and the bench
+// below it. Swipe left from the list to see it. Press and hold a position to
+// arrange them (they wiggle, like app icons on an iPhone) and drag them where you
+// want; the places are saved in team.settings.layout.
+
+const HOLD_MS = 450;
+let arranging = false; // positions wiggle and can be dragged (like moving app icons on an iPhone)
+let dragging = false; // a marker is being dragged: the tap that follows mustn't open the options
+
+function renderField() {
+  const names = match.settings.positions;
+  const layout = M.layoutFor(team.settings.layout, names.length);
+  const gk = match.players.find((p) => p.status === 'gk');
+  const marker = (key, label, p, place) =>
+    el('button', {
+      type: 'button',
+      class: `marker${key === 'gk' ? ' gk' : ''}${p ? '' : ' empty'}`,
+      style: `left: ${place.x * 100}%; top: ${place.y * 100}%`,
+      onclick: () => !arranging && !dragging && p && openActions(p.id),
+      onpointerdown: (e) => markerDown(e, key),
+      oncontextmenu: (e) => e.preventDefault(), // Android's long-press menu
+    }, [el('span', { class: 'marker-pos' }, label), el('span', { class: 'marker-name' }, p ? p.name : '–')]);
+  $('pitch-markers').replaceChildren(
+    marker('gk', 'GK', gk, layout.gk),
+    ...names.map((name, i) => marker(i, name, match.players.find((p) => p.status === 'field' && p.pos === i), layout.spots[i])),
+  );
+
+  $('field-bench').replaceChildren(
+    ...M.rankOn(match.players, now()).map((p) => {
+      const last = M.lastPositionName(match, p);
+      return el('li', {}, [
+        el('button', { type: 'button', onclick: () => openActions(p.id) }, [
+          el('span', { class: 'bench-name' }, p.name),
+          ...(last ? [el('span', { class: 'bench-last' }, last)] : []),
+        ]),
+      ]);
+    }),
+  );
+}
+
+function setArranging(on) {
+  arranging = on;
+  $('pitch').classList.toggle('arranging', on);
+  $('match-pages').classList.toggle('locked', on); // no swiping to the list meanwhile
+  $('field-done').hidden = !on;
+  $('field-tip').textContent = on
+    ? 'Drag the positions where you want them, then tap Done.'
+    : 'Tip: press and hold a position to move it.';
+}
+
+// Press and hold a position to start arranging; while arranging, any position
+// can be dragged straight away. Moving before the hold is up counts as a swipe,
+// and a quick tap still opens the player options. key is 'gk' or the spot number.
+function markerDown(e, key) {
+  const m = e.currentTarget;
+  if (arranging) return startDrag(e, m, key);
+  const x0 = e.clientX;
+  const y0 = e.clientY;
+  const cancel = () => {
+    clearTimeout(timer);
+    m.onpointermove = m.onpointerup = m.onpointercancel = null;
+  };
+  const timer = setTimeout(() => {
+    cancel();
+    setArranging(true);
+    navigator.vibrate?.(15);
+    startDrag(e, m, key);
+  }, HOLD_MS);
+  m.onpointermove = (ev) => Math.hypot(ev.clientX - x0, ev.clientY - y0) > 10 && cancel();
+  m.onpointerup = m.onpointercancel = cancel;
+}
+
+function startDrag(e, m, key) {
+  const clamp = (v) => Math.round(Math.min(0.94, Math.max(0.06, v)) * 1000) / 1000;
+  let place = null;
+  dragging = true;
+  try {
+    m.setPointerCapture(e.pointerId);
+  } catch {} // the finger may already be gone
+  m.classList.add('lifted');
+  m.onpointermove = (ev) => {
+    const box = $('pitch').getBoundingClientRect();
+    place = { x: clamp((ev.clientX - box.left) / box.width), y: clamp((ev.clientY - box.top) / box.height) };
+    m.style.left = `${place.x * 100}%`;
+    m.style.top = `${place.y * 100}%`;
+  };
+  m.onpointerup = m.onpointercancel = () => {
+    m.onpointermove = m.onpointerup = m.onpointercancel = null;
+    m.classList.remove('lifted');
+    setTimeout(() => (dragging = false)); // after the click that follows the release
+    if (!place) return;
+    const layout = M.layoutFor(team.settings.layout, match.settings.positions.length);
+    if (key === 'gk') layout.gk = place;
+    else layout.spots[key] = place;
+    team.settings.layout = layout;
+    saveTeam(team);
+  };
+}
+
+// While dragging, the finger moves the position instead of scrolling the page.
+$('pitch').addEventListener('touchmove', (e) => dragging && e.preventDefault(), { passive: false });
+// Done, or a tap on an empty part of the field, stops arranging.
+$('field-done').addEventListener('click', () => setArranging(false));
+$('pitch').addEventListener('click', (e) => arranging && !e.target.closest('.marker, #field-done') && setArranging(false));
+
+// The dots above the pages show which one is open, and can be tapped too.
+$('match-pages').addEventListener('scroll', () => {
+  const pages = $('match-pages');
+  const i = Math.round(pages.scrollLeft / pages.clientWidth);
+  $('page-dots').querySelectorAll('button').forEach((b, j) => b.classList.toggle('active', i === j));
+});
+$('page-dots').addEventListener('click', (e) => {
+  const page = e.target.closest('button')?.dataset.page;
+  if (page == null) return;
+  setArranging(false);
+  const pages = $('match-pages');
+  pages.scrollTo({ left: page * pages.clientWidth, behavior: 'smooth' });
+});
 
 // Runs twice a second: updates the clocks and opens the popup when it's time.
 function updateClock() {
@@ -370,13 +503,20 @@ function updateClock() {
   const running = M.isRunning(match);
 
   $('countdown').textContent = fmt(remaining, Math.ceil);
-  $('countdown').classList.toggle('due', remaining <= 0);
-  $('clock').classList.toggle('due', remaining <= 0);
-  $('clock').classList.toggle('paused', !running);
-  const done = 1 - remaining / match.settings.intervalMs;
-  $('sub-progress').style.width = `${Math.min(100, Math.max(0, done * 100))}%`;
-  $('match-time').textContent = fmt(t);
-  $('paused-badge').hidden = running;
+  $('field-countdown').textContent = fmt(remaining, Math.ceil);
+  const done = `${Math.min(100, Math.max(0, (1 - remaining / match.settings.intervalMs) * 100))}%`;
+  // The big clock on the list, and the small one above the field view
+  for (const [clock, countdown, progress, time, badge] of [
+    ['clock', 'countdown', 'sub-progress', 'match-time', 'paused-badge'],
+    ['field-clock', 'field-countdown', 'field-progress', 'field-match-time', 'field-paused'],
+  ]) {
+    $(countdown).classList.toggle('due', remaining <= 0);
+    $(clock).classList.toggle('due', remaining <= 0);
+    $(clock).classList.toggle('paused', !running);
+    $(progress).style.width = done;
+    $(time).textContent = fmt(t);
+    $(badge).hidden = running;
+  }
   $('pause').textContent = running ? 'Pause' : 'Resume';
 
   for (const span of document.querySelectorAll('.mins[data-id]')) {

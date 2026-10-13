@@ -185,6 +185,28 @@ export function swapPositions(match, aId, bId) {
   [a.pos, b.pos] = [b.pos, a.pos];
 }
 
+// ---------- field view ----------
+// Where the markers sit on the field picture: x and y are fractions of the
+// field's width and height, with our own goal at the bottom.
+
+// Outfield spots in rows of up to three, from the back (near our goal) to the front.
+export function defaultLayout(count) {
+  const rowCount = Math.ceil(count / 3);
+  const spots = [];
+  for (let r = 0; r < rowCount; r++) {
+    const inRow = Math.floor(count / rowCount) + (r < count % rowCount ? 1 : 0);
+    const y = rowCount === 1 ? 0.45 : Math.round((0.68 - (r * 0.5) / (rowCount - 1)) * 1000) / 1000;
+    for (let j = 0; j < inRow; j++) spots.push({ x: (j + 1) / (inRow + 1), y });
+  }
+  return { gk: { x: 0.5, y: 0.88 }, spots };
+}
+
+// The coach's saved layout, with the default for anything not placed yet.
+export function layoutFor(saved, count) {
+  const def = defaultLayout(count);
+  return { gk: saved?.gk ?? def.gk, spots: def.spots.map((d, i) => saved?.spots?.[i] ?? d) };
+}
+
 export const positionName = (match, p) => (p.pos != null ? match.settings.positions?.[p.pos] : null) ?? null;
 
 export function lastPositionName(match, p) {

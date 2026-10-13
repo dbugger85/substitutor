@@ -201,6 +201,7 @@ try {
   await page.click(`#pick-list button:has-text("${thirdStarter}")`); // swaps the first and third
   assert.equal(await page.textContent('#position-list .pos-row:nth-child(3) .pick-name'), firstStarter);
   await page.screenshot({ path: `${shots}/10-positions-setup.png`, fullPage: true });
+  await page.click('label:has(#use-field-view)');
   await page.click('#start-match');
   const posOf = (n) => page.textContent(`#field-list li:has-text("${n}") .badge.pos`);
   assert.equal(await posOf(thirdStarter), 'Left');
@@ -223,6 +224,58 @@ try {
   assert.equal(await page.textContent(`#bench-list li:has-text("${frontPlayer}") .badge.last`), 'Front');
   assert.equal(await page.$$eval('#field-list .badge.pos', (b) => b.filter((x) => x.textContent === 'Front').length), 1);
   assert.ok(await page.isVisible('#last-pos-hint'));
+
+  // Field view: swipe left to see the positions on a field, with the bench beside it
+  assert.ok(await page.isVisible('#page-dots'));
+  await page.$eval('#match-pages', (e) => e.scrollTo({ left: e.clientWidth }));
+  await page.waitForFunction(() => document.querySelector('#page-dots button:nth-child(2)').classList.contains('active'));
+  const markers = () => page.$$eval('#pitch-markers .marker', (ms) => ms.map((m) => m.innerText.replace(/\s+/g, ' ').trim()));
+  const onField = await markers();
+  assert.equal(onField.length, 5);
+  assert.ok(onField.includes('GK Mia'));
+  assert.ok(onField.includes(`Front Anna`) || onField.some((m) => m.startsWith('Front ')));
+  assert.ok((await page.$$eval('#field-bench .bench-name', (b) => b.map((x) => x.textContent))).includes(frontPlayer));
+  assert.equal(await page.$eval('#match-pages', (e) => e.scrollLeft), 390);
+  await page.screenshot({ path: `${shots}/11-field.png` });
+  // Press and hold "Left", then drag it to the top-left; it's remembered
+  const left = await page.$('#pitch-markers .marker:nth-child(2)');
+  const lb = await left.boundingBox();
+  const pb = await (await page.$('#pitch')).boundingBox();
+  await page.mouse.move(lb.x + lb.width / 2, lb.y + lb.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(600);
+  await page.mouse.move(pb.x + pb.width * 0.2, pb.y + pb.height * 0.3, { steps: 5 });
+  await page.screenshot({ path: `${shots}/11-field-drag.png` });
+  await page.mouse.up();
+  await page.waitForTimeout(100);
+  assert.ok(!(await page.isVisible('#action-dialog')), 'letting go after a drag should not open the player options');
+  // Now arranging: everything wiggles, and another position can be dragged without holding
+  assert.ok(await page.$eval('#pitch', (e) => e.classList.contains('arranging')));
+  assert.ok(await page.$eval('#pitch-markers .marker:nth-child(3)', (e) => getComputedStyle(e).animationName === 'wiggle'));
+  const right = await page.$('#pitch-markers .marker:nth-child(3)');
+  const rb = await right.boundingBox();
+  await page.mouse.move(rb.x + rb.width / 2, rb.y + rb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(pb.x + pb.width * 0.8, pb.y + pb.height * 0.3, { steps: 5 });
+  await page.mouse.up();
+  await page.click('#field-done');
+  assert.ok(!(await page.$eval('#pitch', (e) => e.classList.contains('arranging'))));
+  // A quick drag without holding moves nothing
+  const front = await page.$('#pitch-markers .marker:nth-child(5)');
+  const fb = await front.boundingBox();
+  await page.mouse.move(fb.x + fb.width / 2, fb.y + fb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(fb.x + 80, fb.y + 80, { steps: 3 });
+  await page.mouse.up();
+  assert.deepEqual(await front.boundingBox(), fb);
+  // A quick tap still opens the player options
+  await page.click('#pitch-markers .marker:nth-child(1)');
+  await page.waitForSelector('#action-dialog[open]');
+  await page.click('#action-list button:has-text("Cancel")');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.team')).settings.layout.spots);
+  assert.ok(Math.abs(saved[0].x - 0.2) < 0.03 && Math.abs(saved[0].y - 0.3) < 0.03, `saved ${JSON.stringify(saved[0])}`);
+  assert.ok(Math.abs(saved[1].x - 0.8) < 0.03 && Math.abs(saved[1].y - 0.3) < 0.03, `saved ${JSON.stringify(saved[1])}`);
+  await page.$eval('#match-pages', (e) => e.scrollTo({ left: 0 }));
   await page.screenshot({ path: `${shots}/10-positions-match.png`, fullPage: true });
   await page.click('#end-match');
   await page.click('#ask-ok');

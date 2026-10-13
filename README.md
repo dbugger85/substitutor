@@ -20,11 +20,13 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
    - minutes between substitutions
    - players per substitution
    - **positions** (optional): tick "Give players positions", type a name for each spot (like Left back or Forward), and choose who starts where
+   - **field view** (optional, with positions): tick "Field view in the match"
 3. **Match:**
    - When it's time, the phone beeps and vibrates and shows who goes **off** and who comes **on**. You can change the suggestion, then press **Done** to restart the timer. **Skip** restarts it without changes.
    - **Swap** or tapping a player: swap anyone at any time, take off an injured player, change the goalkeeper, or remove a player.
    - **↻** (top-right of the clock) restarts the countdown to the next substitution from the full time, without swapping anyone.
    - With positions on, each player on the field shows their position. Whoever comes on takes the position of who went off. Tap a player and choose **Change position with…** to swap two players. Bench players show where they last played in a grey tag, and the swap lists show positions too, so you can bring on a player for a particular position.
+   - With the field view on, **swipe left** to see a field with every position and who plays there, and the bench below it. Handy for showing the kids. Press and hold a position to arrange them: they wiggle like app icons on an iPhone, and you can drag them where you want (remembered for the next match). Tap **Done** when finished.
    - **Pause** for half-time. **Add player** is for a late arrival, who comes on at the next substitution.
    - **Move to another phone** sends a link with the team and the match. Open it on the other phone and the match carries on there, clock and all.
    - **End match** shows the minutes each player played.

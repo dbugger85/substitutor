@@ -196,3 +196,21 @@ test('positions: setup keeps earlier choices and fills the gaps', () => {
   assert.deepEqual(M.assignSpots(['A', 'B', 'C'], ['C', 'X', 'A'], 3), ['C', 'B', 'A']);
   assert.deepEqual(M.assignSpots(['A'], [], 3), ['A', null, null]);
 });
+
+test('field view: default layout puts every spot on the field, in rows of up to three', () => {
+  for (let n = 1; n <= 10; n++) {
+    const { gk, spots } = M.defaultLayout(n);
+    assert.equal(spots.length, n);
+    for (const s of [gk, ...spots]) assert.ok(s.x > 0 && s.x < 1 && s.y > 0 && s.y < 1);
+    assert.ok(new Set(spots.map((s) => s.y)).size === Math.ceil(n / 3), `rows for ${n}`);
+  }
+  assert.deepEqual(M.defaultLayout(4).spots.map((s) => s.y), [0.68, 0.68, 0.18, 0.18]);
+});
+
+test('field view: saved places are kept, new spots get the default', () => {
+  const saved = { spots: [{ x: 0.1, y: 0.2 }] };
+  const layout = M.layoutFor(saved, 3);
+  assert.deepEqual(layout.spots[0], { x: 0.1, y: 0.2 });
+  assert.deepEqual(layout.spots[1], M.defaultLayout(3).spots[1]);
+  assert.deepEqual(layout.gk, M.defaultLayout(3).gk);
+});
