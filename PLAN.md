@@ -1,6 +1,6 @@
 # Substitutor – Implementation Plan
 
-> **Status (2026-09-26):** built and live at https://dbugger85.github.io/substitutor/. This file records the original plan and the user's decisions (section 8). For how the code actually works, see [CLAUDE.md](CLAUDE.md). The final file layout differs slightly: `js/match.js` holds both the timer and the substitution logic, and `js/app.js` holds the UI.
+> **Status (2026-10-13):** built and live at https://dbugger85.github.io/substitutor/ (moving to substitutor.no). This file records the original plan, the user's first decisions (section 8) and every decision since (section 10). Where they differ, section 10 wins: for example, substitutions now rotate instead of evening out total minutes (section 3). For how the code actually works, see [CLAUDE.md](CLAUDE.md). The final file layout differs slightly: `js/match.js` holds both the timer and the substitution logic, and `js/app.js` holds the UI.
 
 ## 1. Tech stack
 Plain HTML + CSS + JavaScript (ES modules). No framework, no build step. It deploys to GitHub Pages as-is and is simple for a beginner. `node --test` is used only to test the substitution algorithm.
@@ -50,3 +50,22 @@ Create a public GitHub repo, then choose Settings → Pages → branch `main` / 
 
 ## 9. Build order
 Skeleton → Roster → Match setup → Algorithm + tests → Match screen + timer → Substitution prompt → Alerts + wake lock → Match persistence → Edge cases → Deploy → Nice-to-haves (summary, edit pairs, installable app).
+
+## 10. Decisions since (newest last)
+All confirmed by the user. For how each one works in the code, see [CLAUDE.md](CLAUDE.md).
+
+**2026-09-26 to 2026-10-10**
+- The starters for the next match are suggested from the minutes played in the last one: the players who played least start.
+- A glass look styled after the owner's PrimeTime app, with Auto/Light/Dark themes. The app is worded for any sport, not just football.
+- The app's own popups replace the browser's (no `alert`/`confirm`/`prompt` or dropdowns).
+- An Install button on the Team screen, with step-by-step help on iPhone.
+
+**2026-10-13**
+- **Move to another phone:** a link carries the team, the setup and the match in progress, and the clock keeps running. "Paste a shared link" exists for the installed iPhone app. The first phone keeps its match until someone ends it. A QR code was left out (it would need outside code).
+- **Time since coming on:** a small grey time next to each field player's total, shown once they've been off at least once.
+- **Restart countdown:** a round ↻ button on the clock restarts the countdown without a swap or a confirm.
+- **Substitutions rotate** (replaces section 3's rule): whoever has been on the field longest since they last came on goes off, and whoever has waited longest on the bench comes on. Total time only breaks ties. The reason: a player who'd been goalkeeper for a half kept being taken off.
+- **Positions** (optional, in setup): the coach types the position names; the player coming on takes the spot of who went off; "Change position with…" swaps two; positions are shown as tags in the list (not a pitch drawing). Bench players show where they last played, and the swap lists show positions so you can substitute by position. Positions don't change who comes off or on.
+- **Rename players** by tapping their name (team list) or from the player options (during a match), without adding clutter.
+- **Field view** (optional, needs positions): swipe left on the match screen for a field with every position and who plays there, the bench below and a small clock. Simple field lines (outline, halfway line, centre circle, a box at each end). Arrange the positions by pressing and holding one, iPhone-style with wiggling. The layout is remembered.
+- **Domain:** substitutor.no, bought at Domeneshop, with ".no" after the name in the header like PrimeTime's ".re". Phones don't need their saved team moved to the new address.

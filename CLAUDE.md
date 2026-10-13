@@ -20,7 +20,12 @@ Run `npm test` and `npm run e2e` after any change. The e2e test saves phone-size
 
 ## Deploying
 
-GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploys the site in about a minute. Check it with `curl -sI https://dbugger85.github.io/substitutor/` or the live e2e run above. Commit and push only when the user asks.
+GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploys the site in about a minute. Check it with `curl -sI https://dbugger85.github.io/substitutor/` or the live e2e run above. Right after a push the live run can fail once while GitHub is half-way through updating; run it again. Commit and push only when the user asks. Never put the claude.ai session link in commits.
+
+### Custom domain substitutor.no (in progress)
+- Bought 2026-10-13 at Domeneshop. DNS there: four A records for the bare domain (185.199.108–111.153) and `www` CNAME `dbugger85.github.io`. No AAAA records (the owner chose to skip them).
+- Still to do once the domain resolves on the internet (Norid publishes new .no domains with a delay): set the custom domain in the repo's Pages settings (adds a `CNAME` file), turn on Enforce HTTPS once the certificate is issued, then change the URLs in this file, README and the live e2e command. Don't set the custom domain before DNS works, or the old address redirects to a dead one.
+- Moving changes the site's origin, so phones start with an empty team there. The owner said that's fine (they'll retype the names). Old `#share=` links keep working, because the redirect keeps the part after `#`. All paths are relative, so nothing in the code needs to change.
 
 ## Stack and rules
 
@@ -35,10 +40,10 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 
 | File | Purpose |
 |---|---|
-| `index.html` | A tiny inline script that applies the saved theme before the page draws, plus all three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and six `<dialog>`s: swap, player picker (used by the swap popup), player actions, summary, `ask-dialog` (the app's own confirm/name popup, `ask()` in `app.js`) and `ios-install-dialog` (install steps for iPhone/iPad) |
+| `index.html` | A tiny inline script that applies the saved theme before the page draws, plus all three screens (`#screen-team`, `#screen-setup`, `#screen-match`) and six `<dialog>`s: swap, player picker (used by the swap popup and setup), player actions, summary, `ask-dialog` (the app's own confirm/name popup, `ask()` in `app.js`) and `ios-install-dialog` (install steps for iPhone/iPad). The match screen holds two swipeable pages: the list and the field view (`#field-page`) |
 | `style.css` | All styles; colours are CSS variables (light and dark sets) |
-| `js/app.js` | UI: rendering, event handlers, the 500 ms tick (`updateClock`) that updates clocks and opens the substitution popup |
-| `js/match.js` | Pure match logic: time accounting, ranking, swaps |
+| `js/app.js` | UI, in sections: helpers (`el`, `ask`, `toast`), team screen (incl. renaming), match setup (incl. positions), match screen, field view, player options, swap popup, moving to another phone (`shareLink`, `loadShared`), theme, install card, and start-up. The 500 ms tick (`updateClock`) updates the clocks and opens the substitution popup |
+| `js/match.js` | Pure match logic: time accounting, ranking (rotation), swaps, positions (`assignSpots`, `fillSpots`, `swapPositions`) and the field view's default layout |
 | `js/storage.js` | localStorage load and save |
 | `js/share.js` | Packs the team and match into a link and reads it back (no DOM code) |
 | `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
@@ -48,7 +53,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `test/match.test.js` | Unit tests for the rules |
 | `test/share.test.js` | Unit tests for share links |
 | `test/e2e.mjs` | Playwright browser test |
-| `PLAN.md` | The original plan and the user's decisions |
+| `PLAN.md` | The original plan, plus a dated log of every decision since |
 
 ## How it works
 
@@ -60,10 +65,23 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - The suggested swaps can be edited, added or removed in the popup before confirming.
 - Ad-hoc swaps (the Swap button, or tapping a player) do **not** reset the countdown. An injured player goes to status `out`.
 - **Next match's starters** still use total minutes: when a match ends, each player's minutes are saved as `team.lastMinutes`. Match setup then ticks the players who played least as starters (`suggestStarters`). The goalkeeper is still chosen by hand, and players who weren't in the last match count as 0 minutes. The suggestion updates when the GK or field size changes, until the coach ticks or unticks someone (`autoStarters` becomes false). The "Suggest starters from last match" link turns it back on.
-- **Positions (optional, decided 2026-10-13):** "Give players positions" in match setup. The coach types a name for each outfield spot (empty → "Position N") and picks which starter plays there (picking someone who already has a spot swaps the two; `assignSpots`). On the match screen field players show a green position tag and are listed in position order. The player coming on **takes the spot of who went off**; "Change position with…" (tap a field player) swaps two spots; the old goalkeeper takes the new goalkeeper's spot. `fillSpots()` (called by `applySwaps`, `makeGoalkeeper` and `change()`) moves the spot of anyone no longer on the field to `lastPos` (or `'gk'` for the goalkeeper) and gives a free spot to field players without one. Bench players show their last position as a grey outlined tag (`lastPositionName`). `tags(p)` in `app.js` makes these tags for the match list and both pickers, so the swap popup's lists show positions too (for substituting by position). Positions don't affect who comes off or on.
-- **Renaming:** tap a name in the team list (it's a plain-looking `button.rename`), or "Rename" in the player options during a match. `renamePlayer()` opens `ask()` with the name filled in and updates both the team and the match copy.
-- **Field view (optional, decided 2026-10-13):** with positions on, "Field view in the match" in the Positions box (`team.settings.fieldView`) adds a second page to the match screen: swipe left from the list (CSS scroll snapping in `.pages`, two `.page`s, dots in `#page-dots`). It shows a drawn field (`#pitch`, inline SVG lines, own goal at the bottom) with a marker per position (position name + who plays there, GK included) and the bench as a row of chips below it, plus a compact copy of the clock (`#field-clock`, `.clock.mini`; `updateClock` updates both clocks). The field and markers are glass like the rest of the app (the field has real blur; the markers fake it, to save battery). Tapping a marker or bench player opens the player options. **Pressing and holding** a marker (450 ms, `markerDown()`) starts arranging, iPhone-style: all markers wiggle (`.pitch.arranging`, off with reduced motion), any marker can then be dragged straight away (`startDrag()`, pointer events plus a non-passive `touchmove` that stops page scrolling while dragging), and **Done** or a tap on an empty part of the field stops it (`setArranging()`). Moving the finger before the hold is up counts as a swipe; `.pages.locked` stops swiping while arranging. A small tip under the bench explains the long press. Places are fractions of the field's size, saved in `team.settings.layout` `{gk: {x, y}, spots: [{x, y}]}` and remembered for later matches; `layoutFor()`/`defaultLayout()` in `match.js` fill in anything not placed (rows of up to three).
 - The match is open-ended with Pause. There's one team, and no history: the end-of-match summary is shown once, then the match is deleted (only the minutes are kept, for suggesting the next starters).
+- **Renaming:** tap a name in the team list (it's a plain-looking `button.rename`), or "Rename" in the player options during a match. `renamePlayer()` opens `ask()` with the name filled in and updates both the team and the match copy.
+
+### Positions (optional, decided 2026-10-13)
+- "Give players positions" in match setup. The coach types a name for each outfield spot (empty → "Position N") and picks which starter plays there (picking someone who already has a spot swaps the two; `assignSpots`). The setup pickers use `playerPicker()` with no match time, so they show names only.
+- On the match screen, field players show a green position tag and are listed in position order.
+- The player coming on **takes the spot of who went off**. "Change position with…" (tap a field player) swaps two spots (`swapPositions`). The old goalkeeper takes the new goalkeeper's spot (`makeGoalkeeper`).
+- `fillSpots()` (called by `applySwaps`, `makeGoalkeeper` and `change()`) moves the spot of anyone no longer on the field to `lastPos` (or `'gk'` for the goalkeeper) and gives a free spot to field players without one.
+- Bench players show their last position as a grey outlined tag (`lastPositionName`). `tags(p)` in `app.js` makes the GK / position / last-position tags for the match list and both pickers, so the swap popup's lists show positions too (for substituting by position).
+- Positions don't affect who comes off or on.
+
+### Field view (optional, decided 2026-10-13)
+- With positions on, "Field view" in the Positions box (`team.settings.fieldView`) adds a second page to the match screen: swipe left from the list. It's native CSS scroll snapping (`.pages` with two `.page`s), with dots in `#page-dots` that show the page and can be tapped. `show()` always opens the match screen on the list.
+- The page has a compact copy of the clock (`#field-clock`, `.clock.mini`; `updateClock` updates both clocks), a drawn field (`#pitch`, inline SVG lines in a 200×260 viewBox matching `aspect-ratio: 10 / 13`, own goal at the bottom) with a marker per position (position name + who plays there, GK included), the bench as a row of chips below it, and a tip about the long press (`#field-tip`).
+- The field is tinted glass with real blur; the markers are deep-green glass with white text and fake the blur, to save battery. Tapping a marker or bench player opens the player options.
+- **Arranging, iPhone-style:** pressing and holding a marker (450 ms, `markerDown()`) starts arranging. All markers wiggle (`.pitch.arranging`, off with reduced motion), and any marker can then be dragged straight away (`startDrag()`: pointer events plus a non-passive `touchmove` that stops page scrolling while dragging). **Done** (`#field-done`) or a tap on an empty part of the field stops it (`setArranging()`). Moving the finger more than 10px before the hold is up counts as a swipe. `.pages.locked` stops swiping while arranging, and the `dragging` flag stops the tap that ends a drag from opening the player options.
+- Places are fractions of the field's size, saved in `team.settings.layout` `{gk: {x, y}, spots: [{x, y}]}` and remembered for later matches. `layoutFor()` / `defaultLayout()` in `match.js` fill in anything not placed yet (rows of up to three, from the back).
 
 ### Time
 - Everything is **match time** in ms, meaning time the clock has run excluding pauses: `elapsed = clockMs + (now − runningSince)`. `runningSince` is null while paused.
@@ -101,4 +119,4 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - A QR code for share links (needs a hand-written QR generator, as there are no outside libraries)
 - Several teams
 - Match history
-- Showing bench waiting time
+- Showing bench waiting time (the bench is already sorted by it)
