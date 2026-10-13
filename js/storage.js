@@ -5,7 +5,7 @@ const MATCH_KEY = 'substitutor.match';
 const THEME_KEY = 'substitutor.theme';
 const INSTALL_KEY = 'substitutor.installHidden';
 
-const DEFAULT_SETTINGS = { fieldSize: 5, intervalMin: 5, perSub: 1, gkId: null, starterIds: [], autoStarters: false };
+const DEFAULT_SETTINGS = { fieldSize: 5, intervalMin: 5, perSub: 1, gkId: null, starterIds: [], autoStarters: false, usePositions: false, positions: [], posIds: [] };
 
 function read(key) {
   try {

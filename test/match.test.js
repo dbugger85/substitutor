@@ -37,6 +37,24 @@ test('playing time evens out over a match', () => {
   assert.ok(Math.max(...mins) - Math.min(...mins) <= 5, `uneven minutes: ${mins}`);
 });
 
+test('a long-time goalkeeper who moves out to the field is not taken off straight away', () => {
+  const m = newMatch(1);
+  // Goalkeeper for the first 20 minutes, then A takes over in goal.
+  M.makeGoalkeeper(m, 'A', 20 * MIN);
+  assert.equal(status(m).GK, 'field');
+  // At 25 min the old goalkeeper has the most total time (25 min) but has
+  // only been out on the field for 5, so B (25 min on, since kick-off) goes off.
+  const [pair] = M.pickSubstitution(m.players, 1, 25 * MIN);
+  assert.equal(pair.offId, 'B');
+  assert.equal(pair.onId, 'E');
+});
+
+test('the player who waited longest on the bench comes on', () => {
+  const m = newMatch(1);
+  M.applySwaps(m, [{ offId: 'A', onId: 'E' }], 5 * MIN); // A to the bench at 5 min (F has waited since 0)
+  assert.deepEqual(M.rankOn(m.players, 10 * MIN).map((p) => p.id), ['F', 'A']);
+});
+
 test('substitutes no more than the bench has', () => {
   const m = newMatch();
   assert.equal(M.pickSubstitution(m.players, 4, MIN).length, 2);
@@ -113,4 +131,68 @@ test('players who played least last match start the next one', () => {
   // A new player who wasn't in last match counts as 0 minutes and starts.
   const bigger = [...team, { id: 'N', name: 'N' }];
   assert.deepEqual(M.suggestStarters(bigger, minutes, 'GK', 2), ['N', 'E']);
+});
+
+// Positions: GK + 4 outfield spots
+function positionMatch() {
+  return M.createMatch(team, {
+    fieldSize: 5, intervalMin: 5, perSub: 1, gkId: 'GK', starterIds: ['A', 'B', 'C', 'D'],
+    usePositions: true, positions: ['LB', 'RB', '', 'FW'], posIds: ['D', 'C', 'B', 'A'],
+  }, 0);
+}
+const spots = (m) => Object.fromEntries(m.players.filter((p) => p.pos != null).map((p) => [m.settings.positions[p.pos], p.id]));
+
+test('positions: starters get their chosen spots, and empty names get a default', () => {
+  const m = positionMatch();
+  assert.deepEqual(m.settings.positions, ['LB', 'RB', 'Position 3', 'FW']);
+  assert.deepEqual(spots(m), { LB: 'D', RB: 'C', 'Position 3': 'B', FW: 'A' });
+  assert.equal(M.positionName(m, m.players[0]), null); // the goalkeeper has no spot
+});
+
+test('positions: no positions unless switched on', () => {
+  const m = newMatch();
+  assert.equal(m.settings.positions, undefined);
+  assert.ok(m.players.every((p) => !('pos' in p)));
+});
+
+test('positions: the player coming on takes the spot of who went off', () => {
+  const m = positionMatch();
+  M.applySwaps(m, [{ offId: 'C', onId: 'E' }], MIN);
+  assert.equal(spots(m).RB, 'E');
+  const c = m.players.find((p) => p.id === 'C');
+  assert.equal(c.pos, null);
+  assert.equal(M.lastPositionName(m, c), 'RB'); // shown on the bench
+});
+
+test('positions: two players can swap', () => {
+  const m = positionMatch();
+  M.swapPositions(m, 'A', 'D');
+  assert.deepEqual(spots(m), { LB: 'A', RB: 'C', 'Position 3': 'B', FW: 'D' });
+});
+
+test('positions: the old goalkeeper takes the new goalkeeper\'s spot', () => {
+  const m = positionMatch();
+  M.makeGoalkeeper(m, 'B', MIN);
+  assert.equal(spots(m)['Position 3'], 'GK');
+  const b = m.players.find((p) => p.id === 'B');
+  assert.equal(b.pos, null);
+  // If B later goes to the bench, they last played in goal.
+  M.applySwaps(m, [{ offId: 'B', onId: 'E' }], 2 * MIN);
+  assert.equal(M.lastPositionName(m, b), 'GK');
+  assert.equal(M.lastPositionName(m, m.players.find((p) => p.id === 'F')), null); // never played
+});
+
+test('positions: an injured player\'s spot is filled when someone is put on', () => {
+  const m = positionMatch();
+  M.setStatus(m.players.find((p) => p.id === 'A'), 'out', MIN);
+  M.fillSpots(m);
+  assert.equal(spots(m).FW, undefined);
+  M.setStatus(m.players.find((p) => p.id === 'F'), 'field', 2 * MIN);
+  M.fillSpots(m);
+  assert.equal(spots(m).FW, 'F');
+});
+
+test('positions: setup keeps earlier choices and fills the gaps', () => {
+  assert.deepEqual(M.assignSpots(['A', 'B', 'C'], ['C', 'X', 'A'], 3), ['C', 'B', 'A']);
+  assert.deepEqual(M.assignSpots(['A'], [], 3), ['A', null, null]);
 });

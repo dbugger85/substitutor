@@ -10,9 +10,11 @@ export function newId() {
 
 export const onPitch = (status) => status === 'field' || status === 'gk';
 
-export function createMatch(players, { fieldSize, intervalMin, perSub, gkId, starterIds }, now = Date.now()) {
+export function createMatch(players, { fieldSize, intervalMin, perSub, gkId, starterIds, usePositions, positions = [], posIds = [] }, now = Date.now()) {
   const intervalMs = Math.round(intervalMin * 60000);
-  return {
+  const spots = fieldSize - 1;
+  const ids = usePositions ? assignSpots(starterIds, posIds, spots) : [];
+  const match = {
     v: 1,
     settings: { fieldSize, intervalMs, perSub },
     players: players.map((p) => ({
@@ -22,11 +24,14 @@ export function createMatch(players, { fieldSize, intervalMin, perSub, gkId, sta
       fieldMs: 0,
       benchMs: 0,
       since: 0,
+      ...(usePositions && { pos: ids.includes(p.id) ? ids.indexOf(p.id) : null }),
     })),
     clockMs: 0,
     runningSince: now,
     nextSubAt: intervalMs,
   };
+  if (usePositions) match.settings.positions = Array.from({ length: spots }, (_, i) => positions[i]?.trim() || `Position ${i + 1}`);
+  return match;
 }
 
 export function elapsed(match, now = Date.now()) {
@@ -67,23 +72,28 @@ export function setStatus(p, status, t) {
   p.since = t;
 }
 
+// Substitutions rotate: whoever has been on the field longest since they last
+// came on goes off, and whoever has waited longest on the bench comes on. A
+// smaller `since` means a longer spell. Total time only breaks ties, so a
+// player who was goalkeeper for a long time isn't taken off again and again.
+
 // Outfield players on the field, best candidate to come off first:
-// most total playing time, then longest current stint, then roster order.
+// longest current spell, then most total playing time, then roster order.
 export function rankOff(players, t) {
   return players
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => p.status === 'field')
-    .sort((a, b) => fieldTime(b.p, t) - fieldTime(a.p, t) || a.p.since - b.p.since || a.i - b.i)
+    .sort((a, b) => a.p.since - b.p.since || fieldTime(b.p, t) - fieldTime(a.p, t) || a.i - b.i)
     .map(({ p }) => p);
 }
 
 // Bench players, best candidate to come on first:
-// least total playing time, then waited longest, then roster order.
+// waited longest, then least total playing time, then roster order.
 export function rankOn(players, t) {
   return players
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => p.status === 'bench')
-    .sort((a, b) => fieldTime(a.p, t) - fieldTime(b.p, t) || a.p.since - b.p.since || a.i - b.i)
+    .sort((a, b) => a.p.since - b.p.since || fieldTime(a.p, t) - fieldTime(b.p, t) || a.i - b.i)
     .map(({ p }) => p);
 }
 
@@ -108,7 +118,9 @@ export function applySwaps(match, pairs, t, injuredId = null) {
     const role = off.status;
     setStatus(off, off.id === injuredId ? 'out' : 'bench', t);
     setStatus(on, role, t);
+    if (match.settings.positions) on.pos = off.pos ?? null; // takes the spot of who went off
   }
+  fillSpots(match);
 }
 
 // Make a field or bench player the goalkeeper. The old goalkeeper takes
@@ -119,10 +131,65 @@ export function makeGoalkeeper(match, id, t) {
   const place = p.status;
   if (oldGk) setStatus(oldGk, place, t);
   setStatus(p, 'gk', t);
+  if (match.settings.positions && oldGk) oldGk.pos = place === 'field' ? p.pos ?? null : null; // the old goalkeeper takes their spot
+  fillSpots(match);
 }
 
 export function addPlayer(match, { id, name }, t) {
   match.players.push({ id, name, status: 'bench', fieldMs: 0, benchMs: 0, since: t });
+}
+
+// ---------- positions (only when match.settings.positions is set) ----------
+// Each outfield player on the field has `pos`, an index into settings.positions.
+// Everyone else has pos null, and `lastPos`: the spot they last played, or 'gk'.
+// lastPos is shown on the bench.
+
+// Which starter plays in each of `count` spots: keeps the earlier choices
+// (`previous`, ids by spot) for players who still start, then fills the empty
+// spots with the other starters in order.
+export function assignSpots(starterIds, previous, count) {
+  const spots = Array.from({ length: count }, (_, i) => (starterIds.includes(previous[i]) ? previous[i] : null));
+  const rest = starterIds.filter((id) => !spots.includes(id));
+  return spots.map((id) => id ?? rest.shift() ?? null);
+}
+
+// Moves the spot of anyone no longer on the field as an outfield player to
+// lastPos, and gives field players without a spot the first free one. Safe to
+// call after any change.
+export function fillSpots(match) {
+  const names = match.settings.positions;
+  if (!names) return;
+  for (const p of match.players) {
+    if (p.status === 'gk') p.lastPos = 'gk';
+    else if (p.status !== 'field' && p.pos != null) p.lastPos = p.pos;
+    if (p.status !== 'field') p.pos = null;
+  }
+  const taken = new Set();
+  for (const p of match.players) {
+    if (p.status !== 'field' || p.pos == null) continue;
+    if (taken.has(p.pos) || p.pos >= names.length) p.pos = null;
+    else taken.add(p.pos);
+  }
+  for (const p of match.players) {
+    if (p.status !== 'field' || p.pos != null) continue;
+    const free = names.findIndex((_, i) => !taken.has(i));
+    if (free < 0) break;
+    p.pos = free;
+    taken.add(free);
+  }
+}
+
+export function swapPositions(match, aId, bId) {
+  const a = match.players.find((p) => p.id === aId);
+  const b = match.players.find((p) => p.id === bId);
+  [a.pos, b.pos] = [b.pos, a.pos];
+}
+
+export const positionName = (match, p) => (p.pos != null ? match.settings.positions?.[p.pos] : null) ?? null;
+
+export function lastPositionName(match, p) {
+  if (!match.settings.positions || p.lastPos == null) return null;
+  return p.lastPos === 'gk' ? 'GK' : match.settings.positions[p.lastPos] ?? null;
 }
 
 // Minutes each player got in a match, to suggest who starts the next one.

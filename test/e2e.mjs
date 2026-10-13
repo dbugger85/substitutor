@@ -169,6 +169,46 @@ try {
   await page.click('#ask-ok');
   await page.click('#summary-close');
 
+  // Positions: switched on in setup, shown on the match screen, and two players can swap
+  await page.click('#to-setup');
+  await page.fill('#interval', '10');
+  await page.click('label:has(#use-positions)');
+  const posInputs = await page.$$('#position-list input');
+  assert.equal(posInputs.length, 4);
+  for (const [i, n] of ['Left', 'Right', 'Middle', 'Front'].entries()) await posInputs[i].fill(n);
+  const firstStarter = await page.textContent('#position-list .pos-row:nth-child(1) .pick-name');
+  const thirdStarter = await page.textContent('#position-list .pos-row:nth-child(3) .pick-name');
+  await page.click('#position-list .pos-row:nth-child(1) button.picker');
+  await page.click(`#pick-list button:has-text("${thirdStarter}")`); // swaps the first and third
+  assert.equal(await page.textContent('#position-list .pos-row:nth-child(3) .pick-name'), firstStarter);
+  await page.screenshot({ path: `${shots}/10-positions-setup.png`, fullPage: true });
+  await page.click('#start-match');
+  const posOf = (n) => page.textContent(`#field-list li:has-text("${n}") .badge.pos`);
+  assert.equal(await posOf(thirdStarter), 'Left');
+  assert.equal(await posOf(firstStarter), 'Middle');
+  await page.click(`#field-list li:has-text("${thirdStarter}") button`);
+  await page.click('#action-list button:has-text("Change position")');
+  await page.waitForSelector('#pick-dialog[open]');
+  await popup('10-positions-swap');
+  await page.click(`#pick-list button:has-text("${firstStarter}")`);
+  assert.equal(await posOf(thirdStarter), 'Middle');
+  assert.equal(await posOf(firstStarter), 'Left');
+  // Substitute by position: the lists show positions, and the player who comes off keeps a grey "last position" tag on the bench
+  await page.click('#swap-now');
+  await page.click('#swap-rows .pick-row:nth-child(1) button.picker');
+  await page.waitForSelector('#pick-dialog[open]');
+  await page.click('#pick-list button:has-text("Front")');
+  const frontPlayer = await page.$eval('#swap-rows .pick-row:nth-child(1) .pick-name', (e) => e.firstChild.textContent);
+  await popup('10-positions-swap-popup');
+  await page.click('#swap-confirm');
+  assert.equal(await page.textContent(`#bench-list li:has-text("${frontPlayer}") .badge.last`), 'Front');
+  assert.equal(await page.$$eval('#field-list .badge.pos', (b) => b.filter((x) => x.textContent === 'Front').length), 1);
+  assert.ok(await page.isVisible('#last-pos-hint'));
+  await page.screenshot({ path: `${shots}/10-positions-match.png`, fullPage: true });
+  await page.click('#end-match');
+  await page.click('#ask-ok');
+  await page.click('#summary-close');
+
   // Installable, and opens without internet
   const manifest = await (await page.request.get(new URL('manifest.webmanifest', base).href)).json();
   assert.equal(manifest.display, 'standalone');

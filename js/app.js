@@ -194,6 +194,7 @@ function renderStarters() {
   );
   $('starter-count').textContent = `(${s.starterIds.length} of ${needed})`;
   renderStarterNote();
+  renderPositions();
   updateSetupStatus();
 }
 
@@ -216,6 +217,47 @@ function renderStarterNote() {
     );
   }
 }
+
+// Optional positions: a name for each outfield spot, and which starter plays there.
+function renderPositions() {
+  const s = team.settings;
+  const needed = Math.max(0, (s.fieldSize || 0) - 1);
+  s.posIds = M.assignSpots(s.starterIds, s.posIds, needed);
+  $('use-positions').checked = s.usePositions;
+  if (!s.usePositions) return $('position-list').replaceChildren();
+  const starters = team.players.filter((p) => s.starterIds.includes(p.id));
+  $('position-list').replaceChildren(
+    ...s.posIds.map((id, i) =>
+      el('div', { class: 'pos-row' }, [
+        el('input', {
+          value: s.positions[i] ?? '',
+          placeholder: `Position ${i + 1}`,
+          'aria-label': `Name of position ${i + 1}`,
+          autocomplete: 'off',
+          enterkeyhint: 'done',
+          oninput: (e) => {
+            s.positions[i] = e.target.value;
+            saveTeam(team);
+          },
+        }),
+        playerPicker(starters, id, (v) => {
+          // Picking someone who already has a spot swaps the two.
+          const j = s.posIds.indexOf(v);
+          if (j >= 0) s.posIds[j] = id;
+          s.posIds[i] = v;
+          renderPositions();
+          saveTeam(team);
+        }, null, `Who plays ${s.positions[i]?.trim() || `position ${i + 1}`}?`),
+      ]),
+    ),
+  );
+}
+
+$('use-positions').addEventListener('change', (e) => {
+  team.settings.usePositions = e.target.checked;
+  renderPositions();
+  saveTeam(team);
+});
 
 function updateSetupStatus() {
   const s = team.settings;
@@ -258,10 +300,21 @@ $('start-match').addEventListener('click', () => {
 
 // ---------- screen 3: match ----------
 
+// Small tags after a name: GK, the position they play (green), or on the
+// bench the position they last played (grey outline).
+function tags(p) {
+  if (!match) return [];
+  if (p.status === 'gk') return [el('span', { class: 'badge gk' }, 'GK')];
+  const pos = M.positionName(match, p);
+  if (pos) return [el('span', { class: 'badge pos' }, pos)];
+  const last = p.status === 'bench' && M.lastPositionName(match, p);
+  return last ? [el('span', { class: 'badge last', title: 'Last played' }, last)] : [];
+}
+
 function playerRow(p) {
   return el('li', { class: `player ${p.status}` }, [
     el('button', { type: 'button', onclick: () => openActions(p.id) }, [
-      el('span', { class: 'name' }, [p.name, ...(p.status === 'gk' ? [el('span', { class: 'badge gk' }, 'GK')] : [])]),
+      el('span', { class: 'name' }, [p.name, ...tags(p)]),
       el('span', { class: 'stint', 'data-stint': p.id }),
       el('span', { class: 'mins', 'data-id': p.id }),
     ]),
@@ -271,7 +324,7 @@ function playerRow(p) {
 function renderMatch() {
   const t = now();
   const gk = match.players.filter((p) => p.status === 'gk');
-  const field = match.players.filter((p) => p.status === 'field');
+  const field = match.players.filter((p) => p.status === 'field').sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99));
   const bench = M.rankOn(match.players, t);
   const out = match.players.filter((p) => p.status === 'out');
 
@@ -280,6 +333,7 @@ function renderMatch() {
   if (!bench.length) $('bench-list').replaceChildren();
   $('out-list').replaceChildren(...out.map(playerRow));
   $('out-section').hidden = !out.length;
+  $('last-pos-hint').hidden = !match.settings.positions;
 
   const onField = gk.length + field.length;
   const warning = !gk.length
@@ -337,6 +391,7 @@ function substitutionDue() {
 
 function change(fn) {
   fn();
+  M.fillSpots(match);
   saveMatch(match);
   renderMatch();
 }
@@ -410,6 +465,14 @@ function openActions(id) {
         ? openSwap('adhoc', [{ offId: id, onId: bench[0].id }], id)
         : change(() => M.setStatus(p, 'out', t)),
     );
+    const others = match.players.filter((x) => x.status === 'field' && x.id !== id);
+    if (p.status === 'field' && match.settings.positions && others.length) {
+      action('Change position with…', () =>
+        pickPlayer(`Who swaps positions with ${p.name}?`, others, null, t).then((otherId) => {
+          if (otherId) change(() => M.swapPositions(match, id, otherId));
+        }),
+      );
+    }
     if (p.status === 'field') action('Make goalkeeper', () => change(() => M.makeGoalkeeper(match, id, t)));
   } else if (p.status === 'bench') {
     if (onField < match.settings.fieldSize) action('Put on the field', () => change(() => M.setStatus(p, 'field', t)));
@@ -439,12 +502,12 @@ function openSwap(mode, rows, injuredId = null) {
   $('swap-dialog').showModal();
 }
 
+// Playing time next to the name, only during a match (t is null in setup).
+const pickMins = (p, t) => (t == null ? [] : [el('span', { class: 'mins' }, fmt(M.fieldTime(p, t)))]);
+
 // A button that shows the chosen player and opens a list to pick another (instead of the phone's own dropdown).
 function playerPicker(players, value, onchange, t, title) {
-  const label = (p) => [
-    el('span', { class: 'pick-name' }, `${p.name}${p.status === 'gk' ? ' (GK)' : ''}`),
-    el('span', { class: 'mins' }, fmt(M.fieldTime(p, t))),
-  ];
+  const label = (p) => [el('span', { class: 'pick-name' }, [p.name, ...tags(p)]), ...pickMins(p, t)];
   const chosen = players.find((p) => p.id === value);
   return el(
     'button',
@@ -453,10 +516,7 @@ function playerPicker(players, value, onchange, t, title) {
       class: 'picker',
       onclick: () =>
         pickPlayer(title, players, value, t).then((id) => {
-          if (id && id !== value) {
-            onchange(id);
-            renderSwap();
-          }
+          if (id && id !== value) onchange(id);
         }),
     },
     chosen ? label(chosen) : el('span', { class: 'pick-name muted' }, 'Choose…'),
@@ -476,8 +536,8 @@ function pickPlayer(title, players, value, t) {
       ...players.map((p) =>
         el('li', { class: 'player' }, [
           el('button', { type: 'button', class: p.id === value ? 'chosen' : '', onclick: () => done(p.id) }, [
-            el('span', { class: 'name' }, `${p.name}${p.status === 'gk' ? ' (GK)' : ''}`),
-            el('span', { class: 'mins' }, fmt(M.fieldTime(p, t))),
+            el('span', { class: 'name' }, [p.name, ...tags(p)]),
+            ...pickMins(p, t),
           ]),
         ]),
       ),
@@ -501,19 +561,19 @@ function renderSwap() {
   // The goalkeeper is only offered for swaps you start yourself.
   const offOptions = match.players
     .filter((p) => p.status === 'field' || (p.status === 'gk' && swap.mode === 'adhoc'))
-    .sort((a, b) => M.fieldTime(b, t) - M.fieldTime(a, t));
+    .sort((a, b) => a.since - b.since || M.fieldTime(b, t) - M.fieldTime(a, t)); // longest on first, like rankOff
   const onOptions = M.rankOn(match.players, t);
 
   const rows = swap.rows.map((row, i) => {
     const locked = row.offId === swap.injuredId;
-    const offPicker = playerPicker(offOptions, row.offId, (v) => (row.offId = v), t, 'Who comes off?');
+    const offPicker = playerPicker(offOptions, row.offId, (v) => { row.offId = v; renderSwap(); }, t, 'Who comes off?');
     offPicker.disabled = locked;
     return el('div', { class: 'swap-row' }, [
       el('div', { class: 'pick' }, [
         el('div', { class: 'pick-row' }, [el('span', { class: 'tag off' }, 'OFF'), offPicker]),
         el('div', { class: 'pick-row' }, [
           el('span', { class: 'tag on' }, 'ON'),
-          playerPicker(onOptions, row.onId, (v) => (row.onId = v), t, 'Who comes on?'),
+          playerPicker(onOptions, row.onId, (v) => { row.onId = v; renderSwap(); }, t, 'Who comes on?'),
         ]),
       ]),
       locked

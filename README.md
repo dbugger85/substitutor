@@ -19,10 +19,12 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
    - the starting players (after your first match, the players who played least last time are ticked for you)
    - minutes between substitutions
    - players per substitution
+   - **positions** (optional): tick "Give players positions", type a name for each spot (like Left back or Forward), and choose who starts where
 3. **Match:**
    - When it's time, the phone beeps and vibrates and shows who goes **off** and who comes **on**. You can change the suggestion, then press **Done** to restart the timer. **Skip** restarts it without changes.
    - **Swap** or tapping a player: swap anyone at any time, take off an injured player, change the goalkeeper, or remove a player.
    - **↻** (top-right of the clock) restarts the countdown to the next substitution from the full time, without swapping anyone.
+   - With positions on, each player on the field shows their position. Whoever comes on takes the position of who went off. Tap a player and choose **Change position with…** to swap two players. Bench players show where they last played in a grey tag, and the swap lists show positions too, so you can bring on a player for a particular position.
    - **Pause** for half-time. **Add player** is for a late arrival, who comes on at the next substitution.
    - **Move to another phone** sends a link with the team and the match. Open it on the other phone and the match carries on there, clock and all.
    - **End match** shows the minutes each player played.
@@ -31,7 +33,7 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
 
 Each player shows their total minutes. Players on the field who have been off before also show, in small grey, how long they've been on since they last came on.
 
-Players with the most minutes come off first, and players with the fewest come on first, so playing time evens out over the match. The goalkeeper is never substituted unless you choose to.
+Substitutions rotate: the player who has been on the field longest since they last came on goes off, and the player who has waited longest on the bench comes on. A player who was in goal for a long time isn't taken off again and again once they're back on the field. The goalkeeper is never substituted unless you choose to.
 
 The screen stays on during the match, and the timer stays correct if the phone locks or the page reloads.
 

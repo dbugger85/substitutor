@@ -73,6 +73,13 @@
         <div id="starter-list" class="choices"></div>
       </fieldset>
       <p id="starter-note" class="note small" hidden></p>
+      <fieldset>
+        <legend>Positions</legend>
+        <div class="choices">
+          <label><input id="use-positions" type="checkbox"> Give players positions</label>
+        </div>
+        <div id="position-list" class="positions"></div>
+      </fieldset>
       <label class="field">Minutes between substitutions
         <input id="interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
       </label>
@@ -110,7 +117,7 @@
         <h3>Out of the match</h3>
         <ul id="out-list" class="list"></ul>
       </div>
-      <p class="muted small">Minutes show total time played, and in small grey, time since they last came on. Tap a player for more options.</p>
+      <p class="muted small">Minutes show total time played, and in small grey, time since they last came on.<span id="last-pos-hint" hidden> Grey tags on the bench show where they last played.</span> Tap a player for more options.</p>
       <button id="end-match" type="button" class="danger">End match</button>
       <button id="share-match" type="button" class="big">Move to another phone</button>
     </section>
