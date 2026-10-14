@@ -209,7 +209,7 @@ body:has(#screen-match:not([hidden])) .theme-label { display: none; }
   font-weight: 600;
 }
 
-main { max-width: 560px; margin: 0 auto; padding: 16px 16px calc(48px + env(safe-area-inset-bottom)); }
+main { max-width: 560px; margin: 0 auto; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); } /* the page ends just below the content */
 h2 { margin: 4px 0 16px; }
 h3 {
   margin: 24px 0 8px;
@@ -726,5 +726,5 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
 body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
 
 /* A small link to the code on GitHub, at the bottom of the team screen */
-.source-link { margin: 32px 0 0; text-align: center; font-size: 13px; }
+.source-link { margin: 24px 0 0; text-align: center; font-size: 13px; }
 .source-link a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }

@@ -102,7 +102,7 @@ The first phone keeps its match until someone ends it there, so end it once the 
 
 ```sh
 npm start        # run locally at http://localhost:8000
-npm test         # tests for the substitution rules and share links
+npm test         # tests for the substitution rules, share links, sports and translations
 npm install      # once, for the browser test
 npm run e2e      # browser test of a whole match
 ```
