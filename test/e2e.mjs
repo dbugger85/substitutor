@@ -242,7 +242,7 @@ try {
   assert.equal(await page.$eval('#match-pages', (e) => e.scrollLeft), 390);
   await page.screenshot({ path: `${shots}/11-field.png` });
   // The screen ends after the bench, not as far down as the (longer) list
-  await page.waitForTimeout(100);
+  await page.waitForTimeout(300); // the box is cut to the field once the swipe has settled
   const room = await page.evaluate(() => document.documentElement.scrollHeight - document.querySelector('#field-page').getBoundingClientRect().bottom - scrollY);
   assert.ok(room < 60, `${room}px of empty space below the field view`);
   // Press and hold "Left", then drag it to the top-left; it's remembered
@@ -283,6 +283,32 @@ try {
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.team')).settings.layout.spots);
   assert.ok(Math.abs(saved[0].x - 0.2) < 0.03 && Math.abs(saved[0].y - 0.3) < 0.03, `saved ${JSON.stringify(saved[0])}`);
   assert.ok(Math.abs(saved[1].x - 0.8) < 0.03 && Math.abs(saved[1].y - 0.3) < 0.03, `saved ${JSON.stringify(saved[1])}`);
+  // Swap by tapping, like Fantasy Premier League: "Swap with…" lights up the others, and a tap swaps
+  const nameAt = (n) => page.textContent(`#pitch-markers .marker:nth-child(${n}) .marker-name`);
+  const [leftName, frontName] = [await nameAt(2), await nameAt(5)];
+  await page.click('#pitch-markers .marker:nth-child(2)');
+  await page.click('#action-list button:has-text("Swap with")');
+  assert.ok(await page.$eval('#pitch-markers .marker:nth-child(2)', (e) => e.classList.contains('selected')));
+  assert.equal(await page.$$eval('#pitch-markers .marker.target', (m) => m.length), 4, 'the goalkeeper and the three other positions');
+  assert.ok((await page.$$eval('#field-bench button.target', (b) => b.length)) > 0, 'the bench lights up too');
+  assert.equal(await page.textContent('#field-done'), 'Cancel');
+  await page.screenshot({ path: `${shots}/11-field-swap.png` });
+  await page.click('#pitch-markers .marker:nth-child(5)');
+  assert.equal(await nameAt(2), frontName);
+  assert.equal(await nameAt(5), leftName);
+  assert.ok(await page.isHidden('#field-done'));
+  // ...and from the field to the bench: a substitution, the new player takes the spot
+  const benchName = await page.textContent('#field-bench li:first-child .bench-name');
+  await page.click('#pitch-markers .marker:nth-child(2)');
+  await page.click('#action-list button:has-text("Swap with")');
+  await page.click('#field-bench li:first-child button');
+  assert.equal(await nameAt(2), benchName);
+  assert.ok((await page.$$eval('#field-bench .bench-name', (b) => b.map((x) => x.textContent))).includes(frontName));
+  // A tap on the empty field cancels
+  await page.click('#pitch-markers .marker:nth-child(3)');
+  await page.click('#action-list button:has-text("Swap with")');
+  await page.mouse.click(pb.x + pb.width * 0.5, pb.y + pb.height * 0.05);
+  assert.equal(await page.$$eval('#pitch-markers .marker.selected, #pitch-markers .marker.target', (m) => m.length), 0);
   await page.$eval('#match-pages', (e) => e.scrollTo({ left: 0 }));
   await page.screenshot({ path: `${shots}/10-positions-match.png`, fullPage: true });
   // The cog: change settings during the match
@@ -461,6 +487,10 @@ try {
       await tablet.mouse.up();
       const spot = await tablet.evaluate(() => JSON.parse(localStorage.getItem('substitutor.team')).settings.layout.spots[0]);
       assert.ok(Math.abs(spot.x - 0.3) < 0.03 && Math.abs(spot.y - 0.6) < 0.03, `dragged to ${JSON.stringify(spot)}`);
+      // Done is on the screen
+      await tablet.screenshot({ path: `${shots}/14-ipad-${label}-arranging.png` });
+      assert.ok(await tablet.$eval('#field-done', (e) => e.getBoundingClientRect().bottom <= innerHeight), 'Done is on the screen');
+      await tablet.click('#field-done');
     }
     await tablet.close();
   }

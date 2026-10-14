@@ -620,6 +620,7 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
 .field-wrap { display: flex; flex-direction: column; gap: 10px; }
 /* Tinted glass, like the other panels: real blur, a sheen from the top and a rim light. */
 .pitch {
+  --swap-ring: var(--chip-text);
   position: relative;
   aspect-ratio: 10 / 13; /* matches the drawing's viewBox */
   border-radius: 18px;
@@ -669,25 +670,36 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
 @media (prefers-reduced-motion: reduce) { .pitch.arranging .marker { animation: none; } }
 .pitch .marker.lifted { animation: none; scale: 1.12; cursor: grabbing; z-index: 1; outline: 2px dashed var(--chip-edge); outline-offset: 3px; box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 10px 24px rgb(0 0 0 / 0.35); }
 .field-tip { margin: 10px 0 0; text-align: center; }
-.pitch .field-done {
+/* "Swap with…": the picked player is lifted, and who they can swap with is ringed and pulses; the rest fade. */
+@keyframes swap-pulse { from { outline-offset: 2px; } to { outline-offset: 5px; } }
+.pitch .marker.selected { scale: 1.1; z-index: 1; outline: 3px solid var(--chip-text); outline-offset: 2px; }
+.pitch .marker.target, #field-bench button.target { outline: 2px solid var(--swap-ring); outline-offset: 2px; animation: swap-pulse 0.7s ease-in-out infinite alternate; }
+#field-bench button.target { --swap-ring: var(--green); animation-name: swap-pulse-small; }
+@keyframes swap-pulse-small { from { outline-offset: 1px; } to { outline-offset: 3px; } }
+.pitch.picking .marker:not(.selected, .target), .field-wrap:has(.pitch.picking) #field-bench button:not(.selected, .target) { opacity: 0.4; }
+#field-bench button.selected { outline: 3px solid var(--green); outline-offset: 2px; }
+/* Done / Cancel: a solid pill in the toast's colours (dark on a light page, light on a dark
+   one), so it can't be mistaken for a player. Bottom right, between the football goal box
+   and the side line, below where the backs stand. */
+.pitch button.field-done {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  right: 20px;
+  bottom: 20px;
   z-index: 2;
   min-height: 36px;
   padding: 0 16px;
-  border: 1px solid var(--chip-edge);
+  border: 0;
   border-radius: 999px;
-  background-color: var(--chip);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.35), transparent);
-  color: var(--chip-text);
+  background: var(--toast-bg); /* beats the glass buttons' look */
+  color: var(--toast-text);
+  font-size: 15px;
   font-weight: 700;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), 0 4px 14px rgb(0 0 0 / 0.22);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.3);
 }
 .pitch .marker:active { transform: translate(-50%, -50%); }
 .field-bench { padding: 8px 10px 10px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-line); }
 .field-bench-title { margin-bottom: 6px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-#field-bench { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+#field-bench { list-style: none; margin: 0; padding: 4px; display: flex; flex-wrap: wrap; gap: 12px; } /* room for the swap rings */
 #field-bench li { flex: 0 1 auto; min-width: 0; }
 #field-bench button {
   min-height: 44px;

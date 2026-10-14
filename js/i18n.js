@@ -113,6 +113,8 @@ export const NO = {
   'Injured – take off': 'Skadet – ta ut',
   'Change position with…': 'Bytt posisjon med…',
   'Who swaps positions with {name}?': 'Hvem bytter posisjon med {name}?',
+  'Swap with…': 'Bytt med…',
+  'Tap who {name} swaps with.': 'Trykk på den {name} skal bytte med.',
   'Make goalkeeper': 'Gjør til målvakt',
   'Put on the field': 'Sett inn på banen',
   'Bring on now': 'Sett inn nå',

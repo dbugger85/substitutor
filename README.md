@@ -69,6 +69,7 @@ Your setup is remembered for the next match.
 - Bench players show where they last played in a grey tag. The swap lists show positions too, so you can bring on someone for a particular position.
 
 **Field view** (if switched on): **swipe left** on the match screen to see a field with every position and who plays there, the bench below it, and a smaller clock. It's handy for showing the kids. Swipe right, or tap the dots at the top, to go back.
+- **Tap a player and choose Swap with…** to swap by tapping, like in Fantasy Premier League: everyone they can swap with gets a ring. Tap another position to swap places, or a bench player to substitute them straight away. Tap the empty field to cancel.
 - **Press and hold** a position to arrange them. They wiggle like app icons on an iPhone, and you can drag any of them where you want.
 - The positions start where their names suggest: "Spiss", "Striker" or "ST" at the front, "Høyre back" or "RB" at the back on the right, "Venstre kant" or "LW" out on the left, and so on. English and Norwegian names and the usual short forms work, for every sport: in handball "fløy" and "strek" go up front and a "back" in the middle; in ice hockey C, LW and RW are forwards and LD and RD defenders. Names it doesn't recognise start in the middle.
 - Tap **Done**, or an empty part of the field, when you've finished. The layout is remembered for the next match. If you rename a position, it moves back to where its new name suggests.

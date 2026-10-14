@@ -68,6 +68,7 @@ function show(name) {
   $('match-pages').scrollLeft = 0; // the match screen opens on the list
   $('match-pages').style.height = '';
   setArranging(false);
+  setPicking(null);
 }
 
 function toast(message) {
@@ -436,10 +437,17 @@ function sideBySide() {
 // below it. Swipe left from the list to see it. Press and hold a position to
 // arrange them (they wiggle, like app icons on an iPhone) and drag them where you
 // want; the places are saved in team.settings.layout.
+// "Swap with…" in the player options lights up who the player can swap with,
+// and a tap on one of them swaps the two (like Fantasy Premier League).
 
 const HOLD_MS = 450;
 let arranging = false; // positions wiggle and can be dragged (like moving app icons on an iPhone)
 let dragging = false; // a marker is being dragged: the tap that follows mustn't open the options
+let picking = null; // id of the player chosen with "Swap with…": tapping a lit-up player swaps the two
+
+// Who the picked player can swap with: anyone else on the field (they change
+// positions), or from the field to the bench and back (a substitution).
+const canSwap = (a, b) => !!b && a.id !== b.id && (M.onPitch(a.status) ? M.onPitch(b.status) || b.status === 'bench' : M.onPitch(b.status));
 
 function renderField() {
   const names = match.settings.positions;
@@ -448,12 +456,17 @@ function renderField() {
   $('pitch-lines').innerHTML = SPORTS[sport].lines;
   $('field-page').dataset.pitchColor = colorOf(team.settings);
   const gk = match.players.find((p) => p.status === 'gk');
+  const picked = picking && match.players.find((p) => p.id === picking && p.status !== 'out');
+  if (!picked) picking = null; // e.g. substituted meanwhile
+  $('pitch').classList.toggle('picking', !!picked);
+  const pickClass = (p) => (!picked || !p ? '' : p.id === picked.id ? ' selected' : canSwap(picked, p) ? ' target' : '');
+  const tap = (p) => (picked ? swapWith(p) : p && openActions(p.id));
   const marker = (key, label, p, place) =>
     el('button', {
       type: 'button',
-      class: `marker${key === 'gk' ? ' gk' : ''}${p ? '' : ' empty'}`,
+      class: `marker${key === 'gk' ? ' gk' : ''}${p ? '' : ' empty'}${pickClass(p)}`,
       style: `left: ${place.x * 100}%; top: ${place.y * 100}%`,
-      onclick: () => !arranging && !dragging && p && openActions(p.id),
+      onclick: () => !arranging && !dragging && tap(p),
       onpointerdown: (e) => markerDown(e, key),
       oncontextmenu: (e) => e.preventDefault(), // Android's long-press menu
     }, [el('span', { class: 'marker-pos' }, label), el('span', { class: 'marker-name' }, p ? p.name : '–')]);
@@ -466,23 +479,60 @@ function renderField() {
     ...M.rankOn(match.players, now()).map((p) => {
       const last = M.lastPositionName(match, p);
       return el('li', {}, [
-        el('button', { type: 'button', onclick: () => openActions(p.id) }, [
+        el('button', { type: 'button', class: pickClass(p).trim(), onclick: () => tap(p) }, [
           el('span', { class: 'bench-name' }, p.name),
           ...(last ? [el('span', { class: 'bench-last' }, posLabel(last))] : []),
         ]),
       ]);
     }),
   );
+  fieldTip();
+}
+
+// The tip under the field, and the button in the field's corner (Done, or Cancel while picking).
+function fieldTip() {
+  const picked = picking && match && player(picking);
+  $('field-done').hidden = !arranging && !picked;
+  $('field-done').textContent = picked ? tr('Cancel') : tr('Done');
+  $('field-tip').textContent = picked
+    ? tr('Tap who {name} swaps with.', { name: picked.name })
+    : arranging
+      ? tr('Drag the positions where you want them, then tap Done.')
+      : tr('Tip: press and hold a position to move it.');
 }
 
 function setArranging(on) {
   arranging = on;
   $('pitch').classList.toggle('arranging', on);
   $('match-pages').classList.toggle('locked', on); // no swiping to the list meanwhile
-  $('field-done').hidden = !on;
-  $('field-tip').textContent = on
-    ? tr('Drag the positions where you want them, then tap Done.')
-    : tr('Tip: press and hold a position to move it.');
+  fieldTip();
+}
+
+// "Swap with…": light up who the player can swap with (null stops it).
+function setPicking(id) {
+  if (picking === id) return;
+  picking = id;
+  if (match && !$('field-page').hidden) renderField();
+}
+
+// A tap while picking: swap positions on the field, or substitute with the bench.
+// Tapping anyone else (or the picked player again) just stops picking.
+function swapWith(target) {
+  const a = player(picking);
+  picking = null;
+  if (!canSwap(a, target)) return renderField();
+  const t = now();
+  change(() => {
+    if (M.onPitch(a.status) && M.onPitch(target.status)) M.swapPositions(match, a.id, target.id, t);
+    else if (a.status === 'bench') M.applySwaps(match, [{ offId: target.id, onId: a.id }], t);
+    else M.applySwaps(match, [{ offId: a.id, onId: target.id }], t);
+  });
+}
+
+// The field view is in front: swiped to, or beside the list on a tablet sideways
+// (its left edge is on the screen, not off to the right).
+function fieldShowing() {
+  return !$('field-page').hidden && $('field-page').getBoundingClientRect().left < innerWidth * 0.8;
 }
 
 // Press and hold a position to start arranging; while arranging, any position
@@ -491,6 +541,7 @@ function setArranging(on) {
 function markerDown(e, key) {
   const m = e.currentTarget;
   if (arranging) return startDrag(e, m, key);
+  if (picking) return; // a tap picks who to swap with
   const x0 = e.clientX;
   const y0 = e.clientY;
   const cancel = () => {
@@ -534,26 +585,48 @@ function startDrag(e, m, key) {
 // While dragging, the finger moves the position instead of scrolling the page.
 $('pitch').addEventListener('touchmove', (e) => dragging && e.preventDefault(), { passive: false });
 // Done, or a tap on an empty part of the field, stops arranging.
-$('field-done').addEventListener('click', () => setArranging(false));
-$('pitch').addEventListener('click', (e) => arranging && !e.target.closest('.marker, #field-done') && setArranging(false));
+// While picking, the same button is Cancel, and a tap on the empty field cancels too.
+$('field-done').addEventListener('click', () => {
+  setArranging(false);
+  setPicking(null);
+});
+$('pitch').addEventListener('click', (e) => {
+  if (e.target.closest('.marker, #field-done')) return;
+  setArranging(false);
+  setPicking(null);
+});
 
 // The dots above the pages show which one is open, and can be tapped too.
 // The pages sit side by side, so their box is as tall as the longer one (the
 // list); on the field view it's cut to the field page, so the screen ends
 // after the bench instead of scrolling on into empty space.
+// Changing the box's height or scroll position mid-swipe stops the swipe half-way
+// on iPhones, so that waits until the swipe has settled.
+let fitTimer;
 function fitPages() {
   const pages = $('match-pages');
   const i = Math.round(pages.scrollLeft / pages.clientWidth);
-  $('page-dots').querySelectorAll('button').forEach((b, j) => b.classList.toggle('active', i === j));
-  pages.style.height = i === 1 ? `${$('field-page').offsetHeight}px` : '';
-  pages.scrollTop = 0; // never slid up or down inside (that left an empty gap under the field)
+  const height = i === 1 ? `${$('field-page').offsetHeight}px` : '';
+  if (pages.style.height !== height) pages.style.height = height;
+  if (pages.scrollTop) pages.scrollTop = 0; // never slid up or down inside (that left an empty gap under the field)
+  if (!fieldShowing()) setPicking(null); // swiped back to the list
 }
-$('match-pages').addEventListener('scroll', fitPages);
-new ResizeObserver(fitPages).observe($('field-page'));
+$('match-pages').addEventListener('scroll', () => {
+  const pages = $('match-pages');
+  const i = Math.round(pages.scrollLeft / pages.clientWidth);
+  $('page-dots').querySelectorAll('button').forEach((b, j) => b.classList.toggle('active', i === j));
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => {
+    fitTimer = null;
+    fitPages();
+  }, 150);
+});
+new ResizeObserver(() => !fitTimer && fitPages()).observe($('field-page')); // at once, unless mid-swipe
 $('page-dots').addEventListener('click', (e) => {
   const page = e.target.closest('button')?.dataset.page;
   if (page == null) return;
   setArranging(false);
+  setPicking(null);
   const pages = $('match-pages');
   pages.scrollTo({ left: page * pages.clientWidth, behavior: 'smooth' });
 });
@@ -768,7 +841,9 @@ function openActions(id) {
     );
     // Anyone on the field, the goalkeeper included: swapping with the goalkeeper puts the other player in goal.
     const others = match.players.filter((x) => M.onPitch(x.status) && x.id !== id);
-    if ((p.status === 'gk' || match.settings.positions) && others.length) {
+    if (fieldShowing()) {
+      if (others.length || bench.length) action(tr('Swap with…'), () => setPicking(id));
+    } else if ((p.status === 'gk' || match.settings.positions) && others.length) {
       action(tr('Change position with…'), () =>
         pickPlayer(tr('Who swaps positions with {name}?', { name: p.name }), others, null, t).then((otherId) => {
           if (otherId) change(() => M.swapPositions(match, id, otherId, t));
@@ -779,6 +854,7 @@ function openActions(id) {
   } else if (p.status === 'bench') {
     if (onField < match.settings.fieldSize) action(tr('Put on the field'), () => change(() => M.setStatus(p, 'field', t)));
     if (off.length) action(tr('Bring on now'), () => openSwap('adhoc', [{ offId: off[0].id, onId: id }]));
+    if (fieldShowing() && onField) action(tr('Swap with…'), () => setPicking(id));
     action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, t)));
     action(tr('Remove from match'), () => change(() => M.setStatus(p, 'out', t)));
   } else {
