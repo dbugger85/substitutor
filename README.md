@@ -4,8 +4,6 @@ A phone-friendly web app for fair substitutions in kids' sports matches. It work
 
 **Open it:** https://substitutor.no
 
-The app used to live at dbugger85.github.io/substitutor, which now sends you to substitutor.no. The new address starts with an empty team, so add your players again.
-
 **Install it as an app** (opens full screen from your home screen, and works with no signal). The easiest way is the **Install** button at the bottom of the Team screen. Or do it by hand:
 - **iPhone:** open the link in Safari, tap the Share button, then **Add to Home Screen**.
 - **Android:** open the link in Chrome, tap the ⋮ menu, then **Install app** (or **Add to Home screen**).
