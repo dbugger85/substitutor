@@ -369,6 +369,8 @@ try {
   assert.ok((await norsk.title()).includes('rettferdige bytter'));
   assert.ok((await norsk.getAttribute('meta[name="description"]', 'content')).startsWith('Gratis app'));
   assert.ok(await norsk.isVisible('#team-empty .intro'));
+  assert.equal(await norsk.getAttribute('.source-link a', 'href'), 'https://github.com/dbugger85/substitutor');
+  assert.equal(await norsk.textContent('.source-link a'), 'Åpen kildekode – bidra på GitHub');
   assert.ok((await norsk.getAttribute('#lang-toggle', 'aria-label')).startsWith('Språk: Norsk'));
   await norsk.screenshot({ path: `${shots}/13-norsk-team.png` });
   for (const name of ['Ola', 'Kari', 'Per']) {

@@ -724,3 +724,7 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
   box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.75), inset 0 0 0 1px rgb(255 255 255 / 0.35);
 }
 body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
+
+/* A small link to the code on GitHub, at the bottom of the team screen */
+.source-link { margin: 32px 0 0; text-align: center; font-size: 13px; }
+.source-link a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }

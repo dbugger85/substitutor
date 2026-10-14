@@ -17,6 +17,7 @@ export const NO = {
   'Substitutor keeps track of playing time in kids’ matches and tells you who goes off and who comes on, so every player gets fair time on the field. For football, bandy, handball, ice hockey, floorball and futsal. Free, no sign-up, and it works without signal.':
     'Substitutor holder styr på spilletiden i barnekamper og sier fra hvem som skal ut og inn, så alle får like mye tid på banen. For fotball, bandy, håndball, ishockey, innebandy og futsal. Gratis, uten innlogging, og virker uten dekning.',
   Language: 'Språk',
+  'Open source – help make it better on GitHub': 'Åpen kildekode – bidra på GitHub',
   'Language: {lang}. Tap for {other}.': 'Språk: {lang}. Trykk for {other}.',
   English: 'English',
   Norsk: 'Norsk',

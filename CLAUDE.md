@@ -107,6 +107,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - Stored data stays language-neutral: default position names are saved as "Position 2" and shown through `posLabel()` ("Posisjon 2"); GK shows as "MV" in Norwegian. Coach-typed names are never translated.
 - For Google: a title and description (English in the HTML, swapped to Norwegian by `translatePage()`), canonical, hreflang (en → `/`, nb → `/?lang=no`, x-default → `/`), Open Graph/Twitter tags with `icons/preview.png` (1200×630, made from the README screenshots with a Playwright page), `robots.txt` and `sitemap.xml`. The team screen shows a short intro (`.intro`) until players are added, so there's readable text. The owner adds the site to Google Search Console (a DNS TXT record at Domeneshop) and submits the sitemap.
 - The service worker matches cached pages with `ignoreSearch`, so `?lang=` works offline.
+- At the bottom of the team screen, a small grey link to the GitHub repo (`.source-link`, owner's wish 2026-10-14) so people know where to contribute. No visitor statistics: the owner chose to skip them (Search Console only covers Google searches).
 
 ### Time
 - Everything is **match time** in ms, meaning time the clock has run excluding pauses: `elapsed = clockMs + (now − runningSince)`. `runningSince` is null while paused.
