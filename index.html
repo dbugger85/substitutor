@@ -243,9 +243,9 @@
   <dialog id="settings-dialog">
     <div class="dialog-body"><!-- scrolls; the buttons below stay in view -->
     <h2 tabindex="-1" autofocus data-t>Match settings</h2><!-- focus here, so the keyboard doesn't pop up -->
-    <label class="field inline"><span data-t>Minutes between subs</span>
+    <label class="field inline"><span><span data-t>Minutes between subs</span>
+      <span class="sub" data-t>From the next substitution.</span><span class="sub" data-t data-restart-icon>↻ starts it now.</span></span>
       <input id="set-interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
-      <span class="sub" data-t data-restart-icon>From the next substitution. ↻ on the clock starts it now.</span>
     </label>
     <label class="field inline"><span data-t>Players per substitution</span>
       <input id="set-per-sub" type="number" min="1" inputmode="numeric">

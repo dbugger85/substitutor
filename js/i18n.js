@@ -105,7 +105,8 @@ export const NO = {
   '{name} is on the bench and will come on at the next substitution.': '{name} sitter på benken og kommer inn ved neste bytte.',
   'End the match?': 'Avslutte kampen?',
   'The minutes are saved for next match’s starters.': 'Minuttene lagres, så neste kamps startspillere kan foreslås.',
-  'From the next substitution. ↻ on the clock starts it now.': 'Gjelder fra neste bytte. ↻ på klokken starter den nå.',
+  'From the next substitution.': 'Gjelder fra neste bytte.',
+  '↻ starts it now.': '↻ starter den nå.',
 
   // Player options
   'Substitute now': 'Bytt ut nå',

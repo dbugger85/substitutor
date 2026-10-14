@@ -321,7 +321,7 @@ label.field input { margin-top: 6px; }
 label.field.inline { display: grid; grid-template-columns: 1fr 72px; align-items: center; gap: 12px; margin: 12px 0; }
 label.field.inline input { margin: 0; text-align: center; }
 .inline-icon { width: 1.1em; height: 1.1em; vertical-align: -0.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-label.field .sub { grid-column: 1 / -1; margin-top: -6px; color: var(--muted); font-size: 14px; font-weight: 400; } /* a note under the whole line */
+label.field .sub { display: block; margin-top: 2px; color: var(--muted); font-size: 14px; font-weight: 400; } /* a short note under the words */
 fieldset {
   min-width: 0;
   margin: 16px 0;
