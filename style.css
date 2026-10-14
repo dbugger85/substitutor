@@ -33,6 +33,8 @@
   --chip-text: #ffffff;
   --chip-pos: #e3ffe9;
   --chip-gk: #ffe3a6;
+  --line-red: rgb(206 36 48 / 0.8); /* bandy and ice hockey lines, on ice */
+  --line-blue: rgb(28 84 196 / 0.75);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -69,6 +71,8 @@
     --chip-text: #ffffff;
     --chip-pos: #a8f0bf;
     --chip-gk: #f6d38a;
+    --line-red: rgb(225 240 255 / 0.38); /* dark mode: the lines stay white */
+    --line-blue: rgb(225 240 255 / 0.38);
   }
 }
 
@@ -105,7 +109,32 @@
   --chip-text: #ffffff;
   --chip-pos: #a8f0bf;
   --chip-gk: #f6d38a;
+  --line-red: rgb(225 240 255 / 0.38); /* dark mode: the lines stay white */
+  --line-blue: rgb(225 240 255 / 0.38);
 }
+
+/* Field view colours (js/pitch.js). Green is the default above. Set on #field-page, so the
+   field, its markers and the bench chips all follow; also on the colour swatches in the settings. */
+[data-pitch-color="blue"] { --pitch: rgb(30 98 170 / 0.88); --chip: rgb(10 38 84 / 0.62); --chip-pos: #e1efff; }
+[data-pitch-color="ice"] { --pitch: rgb(222 236 246 / 0.9); --pitch-line: rgb(40 96 150 / 0.5); --chip: rgb(14 44 80 / 0.72); --chip-pos: #d9ecff; }
+[data-pitch-color="wood"] { --pitch: rgb(178 116 56 / 0.88); --chip: rgb(72 38 10 / 0.62); --chip-pos: #ffecd6; }
+[data-pitch-color="red"] { --pitch: rgb(178 56 56 / 0.88); --chip: rgb(78 14 18 / 0.62); --chip-pos: #ffe1e1; }
+[data-pitch-color="purple"] { --pitch: rgb(112 68 172 / 0.88); --chip: rgb(42 18 80 / 0.62); --chip-pos: #eee0ff; }
+[data-pitch-color="grey"] { --pitch: rgb(88 100 116 / 0.88); --chip: rgb(24 30 40 / 0.62); --chip-pos: #e8eef5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-pitch-color="blue"] { --pitch: rgb(40 100 175 / 0.42); --chip: rgb(8 24 54 / 0.74); --chip-pos: #a9cdfb; }
+  :root:not([data-theme="light"]) [data-pitch-color="ice"] { --pitch: rgb(150 182 210 / 0.26); --pitch-line: rgb(225 240 255 / 0.38); --chip: rgb(10 24 42 / 0.76); --chip-pos: #bcdcf6; }
+  :root:not([data-theme="light"]) [data-pitch-color="wood"] { --pitch: rgb(170 110 58 / 0.42); --chip: rgb(46 26 8 / 0.74); --chip-pos: #f3c99a; }
+  :root:not([data-theme="light"]) [data-pitch-color="red"] { --pitch: rgb(170 58 58 / 0.42); --chip: rgb(52 10 14 / 0.74); --chip-pos: #f7b0b0; }
+  :root:not([data-theme="light"]) [data-pitch-color="purple"] { --pitch: rgb(114 76 172 / 0.42); --chip: rgb(30 12 56 / 0.74); --chip-pos: #cfb3f7; }
+  :root:not([data-theme="light"]) [data-pitch-color="grey"] { --pitch: rgb(120 132 150 / 0.32); --chip: rgb(14 18 26 / 0.74); --chip-pos: #c9d3df; }
+}
+:root[data-theme="dark"] [data-pitch-color="blue"] { --pitch: rgb(40 100 175 / 0.42); --chip: rgb(8 24 54 / 0.74); --chip-pos: #a9cdfb; }
+:root[data-theme="dark"] [data-pitch-color="ice"] { --pitch: rgb(150 182 210 / 0.26); --pitch-line: rgb(225 240 255 / 0.38); --chip: rgb(10 24 42 / 0.76); --chip-pos: #bcdcf6; }
+:root[data-theme="dark"] [data-pitch-color="wood"] { --pitch: rgb(170 110 58 / 0.42); --chip: rgb(46 26 8 / 0.74); --chip-pos: #f3c99a; }
+:root[data-theme="dark"] [data-pitch-color="red"] { --pitch: rgb(170 58 58 / 0.42); --chip: rgb(52 10 14 / 0.74); --chip-pos: #f7b0b0; }
+:root[data-theme="dark"] [data-pitch-color="purple"] { --pitch: rgb(114 76 172 / 0.42); --chip: rgb(30 12 56 / 0.74); --chip-pos: #cfb3f7; }
+:root[data-theme="dark"] [data-pitch-color="grey"] { --pitch: rgb(120 132 150 / 0.32); --chip: rgb(14 18 26 / 0.74); --chip-pos: #c9d3df; }
 
 /* Fonts are stored with the app, so they work offline at the pitch. */
 @font-face { font-family: Inter; src: url("./fonts/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
@@ -155,6 +184,18 @@ body::before {
 .tagline { max-width: 560px; margin: 6px auto 0; padding: 0 16px; color: var(--muted); }
 /* The match screen needs the room for the clock. */
 body:has(#screen-match:not([hidden])) .tagline { display: none; }
+.top-actions { display: flex; align-items: center; gap: 4px; }
+/* The cog for match settings, only on the match screen: plain and grey, like ↻ on the clock */
+.topbar button.cog { display: grid; place-items: center; min-width: 40px; min-height: 44px; box-shadow: none; }
+.topbar button.cog svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* On the match screen the theme button shows only its icon, round like the cog, to leave room for the title. */
+body:has(#screen-match:not([hidden])) .topbar button.theme { justify-content: center; width: 44px; padding: 0; }
+body:has(#screen-match:not([hidden])) .theme-label { display: none; }
+.topbar button.theme { white-space: nowrap; }
+/* The theme button is plain and grey, like the cog: no background. */
+.topbar button.theme.theme { background: transparent; border-color: transparent; box-shadow: none; color: var(--muted); padding: 0 6px; }
+#settings-dialog .set-note { margin: -6px 0 14px; }
+#set-position-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 .topbar button.theme {
   display: flex;
   align-items: center;
@@ -567,6 +608,11 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
   overflow: hidden;
 }
 .pitch-lines { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: var(--pitch-line); stroke-width: 2; }
+.pitch-lines .thick { stroke-width: 4; }
+.pitch-lines .dash { stroke-dasharray: 6 5; }
+/* Bandy and ice hockey have red (and blue) lines, but only on ice in light mode; in dark mode the variables are white. */
+[data-pitch-color="ice"] .pitch-lines .red { stroke: var(--line-red); }
+[data-pitch-color="ice"] .pitch-lines .blue { stroke: var(--line-blue); }
 .pitch .marker {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -633,3 +679,26 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
 }
 #field-bench .bench-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #field-bench .bench-last { font-size: 11px; font-weight: 500; color: var(--muted); }
+#settings-dialog h2:focus { outline: none; }
+
+/* Field view sport and colour (setup and the cog popup) */
+.field-style { padding: 4px 0 8px; }
+.field-style .style-label { margin: 12px 0 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
+/* All seven on one row: they share the width, up to 40px each. */
+.swatches { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; padding: 5px 2px; }
+.swatches button.swatch {
+  justify-self: center;
+  width: 100%;
+  max-width: 40px;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--glass-line);
+  background-color: var(--pitch);
+  /* The field colours are see-through (very much so in dark mode); layered, the swatch shows the colour clearly. */
+  background-image: linear-gradient(160deg, rgb(255 255 255 / 0.3), transparent 60%), linear-gradient(var(--pitch), var(--pitch)), linear-gradient(var(--pitch), var(--pitch));
+  box-shadow: inset 0 1px 0 var(--chip-edge), var(--shadow);
+}
+.swatches button.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text); }

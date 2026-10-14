@@ -285,9 +285,42 @@ try {
   assert.ok(Math.abs(saved[1].x - 0.8) < 0.03 && Math.abs(saved[1].y - 0.3) < 0.03, `saved ${JSON.stringify(saved[1])}`);
   await page.$eval('#match-pages', (e) => e.scrollTo({ left: 0 }));
   await page.screenshot({ path: `${shots}/10-positions-match.png`, fullPage: true });
+  // The cog: change settings during the match
+  assert.ok(await page.isVisible('#settings-btn'));
+  await page.click('#settings-btn');
+  await page.waitForSelector('#settings-dialog[open]');
+  await popup('12-match-settings');
+  await page.fill('#set-position-list input >> nth=0', 'Venstre back');
+  assert.ok((await page.$$eval('#field-list .badge.pos', (b) => b.map((x) => x.textContent))).includes('Venstre back'));
+  await page.fill('#set-interval', '3');
+  await page.click('label:has(#set-use-positions)');
+  assert.equal(await page.$$eval('#field-list .badge.pos', (b) => b.length), 0);
+  assert.ok(await page.isHidden('#set-field-view-option'));
+  await page.click('label:has(#set-use-positions)');
+  assert.equal(await page.$$eval('#field-list .badge.pos', (b) => b.length), 4);
+  // Sport and colour for the field view: a sport brings its own colour, which can be changed
+  assert.ok(await page.isVisible('#set-field-style'));
+  await page.click('#set-field-style button.picker');
+  await page.click('#pick-list button:has-text("Ice hockey")');
+  assert.equal(await page.$eval('#field-page', (e) => e.dataset.pitchColor), 'ice');
+  assert.ok(await page.$eval('#pitch-lines', (e) => e.querySelectorAll('.thick').length === 3));
+  await page.click('#set-field-style .swatch[aria-label="Red"]');
+  assert.equal(await page.$eval('#field-page', (e) => e.dataset.pitchColor), 'red');
+  await popup('12-match-settings-field');
+  await page.click('#set-field-style button.picker');
+  await page.click('#pick-list button:has-text("Football")');
+  assert.equal(await page.$eval('#field-page', (e) => e.dataset.pitchColor), 'green');
+  await page.click('#settings-done');
+  assert.ok(!(await page.isVisible('#settings-dialog')));
+  const stored = await page.evaluate(() => ({ team: JSON.parse(localStorage.getItem('substitutor.team')).settings, match: JSON.parse(localStorage.getItem('substitutor.match')).settings }));
+  assert.equal(stored.match.intervalMs, 180000);
+  assert.equal(stored.match.positions[0], 'Venstre back');
+  assert.equal(stored.team.intervalMin, 3);
+  assert.equal(stored.team.positions[0], 'Venstre back');
   await page.click('#end-match');
   await page.click('#ask-ok');
   await page.click('#summary-close');
+  await page.waitForSelector('#settings-btn', { state: 'hidden' }); // the cog is only on the match screen
 
   // Installable, and opens without internet
   const manifest = await (await page.request.get(new URL('manifest.webmanifest', base).href)).json();

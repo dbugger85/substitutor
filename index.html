@@ -28,7 +28,10 @@
       <img class="logo" src="./icons/icon.svg" alt="">
       <h1>Substitutor<span class="tld">.no</span></h1>
     </div>
-    <button id="theme-toggle" type="button" class="theme" aria-label="Theme"></button>
+    <div class="top-actions">
+      <button id="settings-btn" type="button" class="icon cog" aria-label="Match settings" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button id="theme-toggle" type="button" class="theme" aria-label="Theme"></button>
+    </div>
   </header>
   <p class="tagline">Fair playing time for every player.</p>
 
@@ -82,6 +85,7 @@
         <div id="field-view-option" class="choices" hidden>
           <label><input id="use-field-view" type="checkbox"> <span>Field view<span class="sub">Swipe left during the match to see it</span></span></label>
         </div>
+        <div id="field-style" class="field-style" hidden></div>
       </fieldset>
       <label class="field">Minutes between substitutions
         <input id="interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
@@ -146,13 +150,7 @@
         </div>
         <div class="field-wrap">
           <div id="pitch" class="pitch">
-            <svg class="pitch-lines" viewBox="0 0 200 260" aria-hidden="true">
-              <rect x="6" y="6" width="188" height="248" rx="6"/>
-              <line x1="6" y1="130" x2="194" y2="130"/>
-              <circle cx="100" cy="130" r="24"/>
-              <rect x="56" y="6" width="88" height="36"/>
-              <rect x="56" y="218" width="88" height="36"/>
-            </svg>
+            <svg id="pitch-lines" class="pitch-lines" viewBox="0 0 200 260" aria-hidden="true"></svg><!-- drawn from js/pitch.js -->
             <div id="pitch-markers"></div>
             <button id="field-done" type="button" class="field-done" hidden>Done</button>
           </div>
@@ -194,6 +192,30 @@
     <ul id="summary-list" class="list"></ul>
     <p class="muted small">Next match, the players who played least will be suggested to start.</p>
     <button id="summary-close" type="button" class="primary big">Close</button>
+  </dialog>
+
+  <!-- Match settings: the cog on the match screen. Changes apply at once. -->
+  <dialog id="settings-dialog">
+    <h2 tabindex="-1" autofocus>Match settings</h2><!-- focus here, so the keyboard doesn't pop up -->
+    <label class="field">Minutes between substitutions
+      <input id="set-interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
+    </label>
+    <p class="muted small set-note">From the next substitution. ↻ on the clock starts it now.</p>
+    <label class="field">Players per substitution
+      <input id="set-per-sub" type="number" min="1" inputmode="numeric">
+    </label>
+    <fieldset>
+      <legend>Positions</legend>
+      <div class="choices">
+        <label><input id="set-use-positions" type="checkbox"> Give players positions</label>
+      </div>
+      <div id="set-position-list" class="positions"></div>
+      <div id="set-field-view-option" class="choices" hidden>
+        <label><input id="set-field-view" type="checkbox"> <span>Field view<span class="sub">Swipe left to see it</span></span></label>
+      </div>
+      <div id="set-field-style" class="field-style" hidden></div>
+    </fieldset>
+    <button id="settings-done" type="button" class="primary big">Done</button>
   </dialog>
 
   <!-- Pick a player for a swap -->

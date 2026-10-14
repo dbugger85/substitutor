@@ -254,3 +254,49 @@ test('field view: a guessed layout has the front on top, sides apart, and no two
   // Nothing it can read: the plain rows
   assert.deepEqual(M.guessLayout(['Position 1', 'Position 2']), M.defaultLayout(2));
 });
+
+test('settings during a match: positions on, renamed, off and on again', () => {
+  const players = ['A', 'B', 'C', 'D', 'E'].map((name) => ({ id: name, name }));
+  const match = M.createMatch(players, { fieldSize: 4, intervalMin: 5, perSub: 1, gkId: 'A', starterIds: ['B', 'C', 'D'] });
+  assert.equal(match.settings.positions, undefined);
+  M.setPositions(match, true, ['Spiss', '', 'Back']);
+  assert.deepEqual(match.settings.positions, ['Spiss', 'Position 2', 'Back']);
+  assert.deepEqual(['B', 'C', 'D'].map((id) => match.players.find((p) => p.id === id).pos), [0, 1, 2]);
+  M.renamePosition(match, 1, 'Midt ');
+  assert.equal(M.positionName(match, match.players[2]), 'Midt');
+  M.renamePosition(match, 1, '');
+  assert.equal(match.settings.positions[1], 'Position 2');
+  // Off: no tags. A swap meanwhile, then on again: the new player gets the free spot
+  M.setPositions(match, false);
+  assert.equal(M.positionName(match, match.players[1]), null);
+  M.applySwaps(match, [{ offId: 'C', onId: 'E' }], 1000);
+  M.setPositions(match, true, ['X', 'Y', 'Z']);
+  assert.deepEqual(match.settings.positions, ['X', 'Y', 'Z']);
+  assert.deepEqual(['B', 'E', 'D'].map((id) => match.players.find((p) => p.id === id).pos), [0, 1, 2]);
+  assert.equal(match.players.find((p) => p.id === 'C').pos, null);
+});
+
+test('settings during a match: a new interval waits for the next substitution', () => {
+  const players = ['A', 'B', 'C'].map((name) => ({ id: name, name }));
+  const match = M.createMatch(players, { fieldSize: 2, intervalMin: 5, perSub: 1, gkId: 'A', starterIds: ['B'] }, 0);
+  M.setIntervalMin(match, 2.5);
+  assert.equal(match.settings.intervalMs, 150000);
+  assert.equal(match.nextSubAt, 300000);
+  M.scheduleNext(match, 60000);
+  assert.equal(match.nextSubAt, 60000 + 150000);
+});
+
+test('field view: position names follow the sport', () => {
+  assert.deepEqual(M.guessPlace('Venstre back', 'handball'), { depth: 'mid', side: 'left' });
+  assert.deepEqual(M.guessPlace('Høyre fløy', 'handball'), { depth: 'front', side: 'right' });
+  assert.deepEqual(M.guessPlace('Strek', 'handball'), { depth: 'front', side: null });
+  assert.deepEqual(M.guessPlace('C', 'icehockey'), { depth: 'front', side: null });
+  assert.deepEqual(M.guessPlace('LD', 'icehockey'), { depth: 'back', side: 'left' });
+  assert.deepEqual(M.guessPlace('Center', 'floorball'), { depth: 'mid', side: null });
+  assert.deepEqual(M.guessPlace('Fixo', 'futsal'), { depth: 'back', side: null });
+  assert.deepEqual(M.guessPlace('Halvback', 'bandy'), { depth: 'dm', side: null });
+  // Football is the default, where a back defends
+  assert.deepEqual(M.guessPlace('Venstre back'), { depth: 'back', side: 'left' });
+  const names = ['Venstre back', 'Strek'];
+  assert.ok(M.layoutFor({}, names, 'handball').spots[0].y < M.layoutFor({}, names).spots[0].y);
+});

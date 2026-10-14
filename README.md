@@ -26,7 +26,7 @@ Add your players. The list is saved on the phone.
 - **Minutes between substitutions**
 - **Players per substitution**
 - **Positions** (optional): tick "Give players positions", type a name for each spot (like Left back or Forward), and choose who starts where. Picking a player who already has a spot swaps the two.
-- **Field view** (optional, needs positions): adds a picture of the field to the match screen.
+- **Field view** (optional, needs positions): adds a picture of the field to the match screen. Choose the **sport** (Football, Bandy, Handball, Ice hockey, Floorball or Futsal) for its lines (red lines for bandy, red and blue for ice hockey), and a **colour**. Each sport comes with its own colour (green grass, ice, a blue or wooden floor), and you can pick another.
 
 Your setup is remembered for the next match.
 
@@ -41,6 +41,7 @@ Your setup is remembered for the next match.
 - **Done** makes the swaps and restarts the countdown. **Skip** restarts it without changes.
 
 **Other buttons and options:**
+- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, positions on or off and their names, and the field view with its sport and colour. Changes apply at once and are remembered for the next match. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
 - **Swap** swaps players at any time, without changing the countdown.
 - **Tap a player** to substitute them now, take them off injured, make them goalkeeper, change position, rename them, or remove them from the match.
 - **Add player** is for a late arrival, who comes on at the next substitution.
@@ -59,7 +60,7 @@ Your setup is remembered for the next match.
 
 **Field view** (if switched on): **swipe left** on the match screen to see a field with every position and who plays there, the bench below it, and a smaller clock. It's handy for showing the kids. Swipe right, or tap the dots at the top, to go back.
 - **Press and hold** a position to arrange them. They wiggle like app icons on an iPhone, and you can drag any of them where you want.
-- The positions start where their names suggest: "Spiss", "Striker" or "ST" at the front, "Høyre back" or "RB" at the back on the right, "Venstre kant" or "LW" out on the left, and so on. English and Norwegian names and the usual short forms work. Names it doesn't recognise start in the middle.
+- The positions start where their names suggest: "Spiss", "Striker" or "ST" at the front, "Høyre back" or "RB" at the back on the right, "Venstre kant" or "LW" out on the left, and so on. English and Norwegian names and the usual short forms work, for every sport: in handball "fløy" and "strek" go up front and a "back" in the middle; in ice hockey C, LW and RW are forwards and LD and RD defenders. Names it doesn't recognise start in the middle.
 - Tap **Done**, or an empty part of the field, when you've finished. The layout is remembered for the next match. If you rename a position, it moves back to where its new name suggests.
 
 ## How substitutions are chosen
@@ -86,7 +87,7 @@ The first phone keeps its match until someone ends it there, so end it once the 
 - The screen stays on during the match, and the timer stays correct if the phone locks or the page reloads.
 - On iPhone, turn off silent mode to hear the beep. iPhones can't vibrate from a web page.
 - Try a practice match with a 1-minute interval before match day.
-- The button in the top-right corner switches between **Auto** (follows your phone's dark mode setting), **Light** and **Dark**. Light is easiest to read in bright sunlight.
+- The button in the top-right corner (just its icon during a match) switches between **Auto** (follows your phone's dark mode setting), **Light** and **Dark**. Light is easiest to read in bright sunlight.
 - If the app looks out of date after an update, close it fully and open it again.
 
 ## Development

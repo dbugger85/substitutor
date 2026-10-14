@@ -3,6 +3,7 @@
 import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTheme, loadInstallHidden, saveInstallHidden } from './storage.js';
 import * as M from './match.js';
 import { makeLink, readLink, hasShare } from './share.js';
+import { SPORTS, COLORS, sportOf, colorOf } from './pitch.js';
 import { unlockAudio, startAlarm, stopAlarm, keepScreenOn, releaseScreen } from './alerts.js';
 
 const $ = (id) => document.getElementById(id);
@@ -61,6 +62,7 @@ function fmt(ms, round = Math.floor) {
 function show(name) {
   for (const s of document.querySelectorAll('.screen')) s.hidden = s.id !== `screen-${name}`;
   window.scrollTo(0, 0);
+  $('settings-btn').hidden = name !== 'match';
   $('match-pages').scrollLeft = 0; // the match screen opens on the list
   $('match-pages').style.height = '';
   setArranging(false);
@@ -244,6 +246,7 @@ function renderPositions() {
   $('use-positions').checked = s.usePositions;
   $('use-field-view').checked = s.fieldView;
   $('field-view-option').hidden = !s.usePositions;
+  renderFieldStyle();
   if (!s.usePositions) return $('position-list').replaceChildren();
   const starters = team.players.filter((p) => s.starterIds.includes(p.id));
   $('position-list').replaceChildren(
@@ -276,7 +279,35 @@ function renderPositions() {
 $('use-field-view').addEventListener('change', (e) => {
   team.settings.fieldView = e.target.checked;
   saveTeam(team);
+  renderFieldStyle();
 });
+
+// The field view's sport (its lines, and what position names mean) and colour,
+// in setup and in the cog popup: a dropdown and colour swatches. Picking a sport also picks its own colour
+// (pitchColor null); picking a colour keeps it until the sport changes.
+function renderFieldStyle() {
+  const s = team.settings;
+  const sport = sportOf(s);
+  const color = colorOf(s);
+  for (const [id, show] of [['field-style', s.usePositions && s.fieldView], ['set-field-style', match?.settings.positions && s.fieldView]]) {
+    $(id).hidden = !show;
+    $(id).replaceChildren(
+      el('div', { class: 'style-label' }, 'Sport'),
+      // The app's own dropdown (the player picker works for any list of names)
+      playerPicker(Object.entries(SPORTS).map(([key, { name }]) => ({ id: key, name })), sport, (key) => setFieldStyle({ sport: key, pitchColor: null }), null, 'Sport'),
+      el('div', { class: 'style-label' }, 'Colour'),
+      el('div', { class: 'swatches' }, Object.entries(COLORS).map(([key, name]) =>
+        el('button', { type: 'button', class: 'swatch', 'data-pitch-color': key, 'aria-label': name, title: name, 'aria-pressed': String(key === color), onclick: () => setFieldStyle({ pitchColor: key }) }))),
+    );
+  }
+}
+
+function setFieldStyle(change) {
+  Object.assign(team.settings, change);
+  saveTeam(team);
+  renderFieldStyle();
+  if (match) renderMatch();
+}
 
 $('use-positions').addEventListener('change', (e) => {
   team.settings.usePositions = e.target.checked;
@@ -373,6 +404,11 @@ function renderMatch() {
   $('field-page').hidden = !fieldView;
   $('page-dots').hidden = !fieldView;
   if (fieldView) renderField();
+  else if ($('match-pages').scrollLeft) {
+    // The field view was switched off while showing: back to the list
+    $('match-pages').scrollLeft = 0;
+    $('match-pages').style.height = '';
+  }
   updateClock();
 }
 
@@ -388,7 +424,10 @@ let dragging = false; // a marker is being dragged: the tap that follows mustn't
 
 function renderField() {
   const names = match.settings.positions;
-  const layout = M.layoutFor(team.settings.layout, names);
+  const sport = sportOf(team.settings);
+  const layout = M.layoutFor(team.settings.layout, names, sport);
+  $('pitch-lines').innerHTML = SPORTS[sport].lines;
+  $('field-page').dataset.pitchColor = colorOf(team.settings);
   const gk = match.players.find((p) => p.status === 'gk');
   const marker = (key, label, p, place) =>
     el('button', {
@@ -499,6 +538,76 @@ $('page-dots').addEventListener('click', (e) => {
   pages.scrollTo({ left: page * pages.clientWidth, behavior: 'smooth' });
 });
 
+// ---------- match settings (the cog) ----------
+// The setup settings that can safely change during a match. Changes apply at
+// once and are also kept in team.settings for the next match. The number of
+// players on the field isn't here (that means taking someone off or putting
+// someone on), nor the goalkeeper (tap a player and choose "Make goalkeeper").
+
+function openSettings() {
+  const s = match.settings;
+  $('set-interval').value = s.intervalMs / 60000;
+  $('set-per-sub').value = s.perSub;
+  $('set-per-sub').max = Math.max(1, s.fieldSize - 1);
+  renderSettingsPositions();
+  $('settings-dialog').showModal();
+}
+
+function renderSettingsPositions() {
+  const names = match.settings.positions;
+  $('set-use-positions').checked = !!names;
+  $('set-field-view').checked = !!team.settings.fieldView;
+  $('set-field-view-option').hidden = !names;
+  renderFieldStyle();
+  $('set-position-list').replaceChildren(
+    ...(names ?? []).map((name, i) =>
+      el('input', {
+        // A name left empty shows as "Position 2"; show the box empty then, like in setup.
+        value: name === `Position ${i + 1}` ? '' : name,
+        placeholder: `Position ${i + 1}`,
+        'aria-label': `Name of position ${i + 1}`,
+        autocomplete: 'off',
+        enterkeyhint: 'done',
+        oninput: (e) => {
+          team.settings.positions[i] = e.target.value;
+          saveTeam(team);
+          change(() => M.renamePosition(match, i, e.target.value));
+        },
+      }),
+    ),
+  );
+}
+
+$('settings-btn').addEventListener('click', () => match && openSettings());
+$('settings-done').addEventListener('click', () => $('settings-dialog').close());
+$('set-interval').addEventListener('input', (e) => {
+  const min = parseFloat(e.target.value);
+  if (!(min >= 0.5 && min <= 60)) return; // half-typed: wait for a real number
+  team.settings.intervalMin = min;
+  saveTeam(team);
+  change(() => M.setIntervalMin(match, min));
+});
+$('set-per-sub').addEventListener('input', (e) => {
+  const n = parseInt(e.target.value, 10);
+  if (!(n >= 1 && n <= match.settings.fieldSize - 1)) return;
+  team.settings.perSub = n;
+  saveTeam(team);
+  change(() => (match.settings.perSub = n));
+});
+$('set-use-positions').addEventListener('change', (e) => {
+  team.settings.usePositions = e.target.checked;
+  team.settings.positions ??= [];
+  saveTeam(team);
+  change(() => M.setPositions(match, e.target.checked, team.settings.positions));
+  renderSettingsPositions();
+});
+$('set-field-view').addEventListener('change', (e) => {
+  team.settings.fieldView = e.target.checked;
+  saveTeam(team);
+  renderFieldStyle();
+  renderMatch();
+});
+
 // Runs twice a second: updates the clocks and opens the popup when it's time.
 function updateClock() {
   if (!match) return;
@@ -533,7 +642,7 @@ function updateClock() {
     span.textContent = p && M.onPitch(p.status) && p.fieldMs > 0 ? fmt(t - p.since) : '';
   }
 
-  if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open) substitutionDue();
+  if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open && !$('settings-dialog').open) substitutionDue();
 }
 
 function substitutionDue() {
@@ -854,7 +963,7 @@ async function loadShared(text) {
 
 // ---------- theme ----------
 
-const THEMES = { auto: '🌓 Auto', light: '☀ Light', dark: '☾ Dark' };
+const THEMES = { auto: ['🌓', 'Auto'], light: ['☀', 'Light'], dark: ['☾', 'Dark'] };
 const NEXT_THEME = { auto: 'light', light: 'dark', dark: 'auto' };
 const darkQuery = matchMedia('(prefers-color-scheme: dark)');
 let theme = loadTheme();
@@ -862,7 +971,8 @@ let theme = loadTheme();
 function applyTheme() {
   if (theme === 'auto') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
-  $('theme-toggle').textContent = THEMES[theme];
+  const [icon, label] = THEMES[theme];
+  $('theme-toggle').replaceChildren(el('span', {}, icon), el('span', { class: 'theme-label' }, label));
   $('theme-toggle').setAttribute('aria-label', `Theme: ${theme}. Tap to change.`);
   const dark = theme === 'dark' || (theme === 'auto' && darkQuery.matches);
   document.querySelector('meta[name="theme-color"]').content = dark ? '#0a0f1c' : '#f1eee8';

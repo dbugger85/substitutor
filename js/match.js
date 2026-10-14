@@ -201,7 +201,8 @@ export function defaultLayout(count) {
   return { gk: { x: 0.5, y: 0.88 }, spots };
 }
 
-// Guesses where each position goes from its name, in English or Norwegian:
+// Guesses where each position goes from its name, in English or Norwegian,
+// for the sport chosen for the field view:
 // how far forward ("back", "midtbane", "spiss"...) and which side ("left",
 // "høyre"...). Abbreviations like LB, CM, ST, VB, HK work too. A name that
 // says nothing goes in the middle; if no name says anything, it's the plain
@@ -226,26 +227,45 @@ const CODES = {
   w: 'wing', k: 'wing', v: 'wing', f: 'front', fw: 'front', cf: 'front', st: 'front', s: 'front', sp: 'front', ss: 'front', a: 'front',
 };
 const SIDE_LETTERS = { l: 'left', v: 'left', r: 'right', h: 'right', c: 'centre' };
+// Words and codes that mean something else in another sport, checked before
+// the ones above. In handball a "back" plays in the middle and the wings and
+// the pivot ("strek") up front; in ice hockey the centre and wings are forwards.
+const SPORT_WORDS = {
+  futsal: [['back', ['fixo', 'fixe']], ['wing', ['ala']], ['front', ['pivot', 'pivo']]],
+  handball: [['front', ['strek', 'linje', 'pivot', 'line', 'circle', 'sirkel', 'floy', 'wing', 'ving', 'kant']], ['mid', ['back', 'playmaker', 'midt', 'centre', 'center', 'senter']]],
+  bandy: [['dm', ['halv', 'half']]],
+  icehockey: [['front', ['center', 'centre', 'senter', 'forward', 'wing', 'ving', 'kant', 'angrep']], ['back', ['back', 'defen', 'forsvar']]],
+  floorball: [['front', ['forward', 'wing', 'ving', 'kant', 'angrep']], ['mid', ['center', 'centre', 'senter']]],
+};
+const SPORT_CODES = {
+  handball: { b: 'mid', cb: 'mid', pm: 'mid', w: 'front', p: 'front', pv: 'front' },
+  icehockey: { c: 'front', w: 'front', f: 'front', d: 'back', b: 'back' },
+  floorball: { c: 'mid', w: 'front', f: 'front', d: 'back', b: 'back' },
+};
 
-export function guessPlace(name) {
+export function guessPlace(name, sport = 'football') {
   const text = String(name ?? '').toLowerCase()
     .replace(/[øö]/g, 'o').replace(/[åä]/g, 'a').replace(/æ/g, 'ae').normalize('NFD').replace(/[̀-ͯ]/g, '');
   const joined = text.replace(/[^a-z]/g, '');
-  let depth = DEPTH_WORDS.find(([, words]) => words.some((w) => joined.includes(w)))?.[0] ?? null;
+  const depthWords = [...(SPORT_WORDS[sport] ?? []), ...DEPTH_WORDS];
+  const own = SPORT_CODES[sport] ?? {};
+  const codes = { ...CODES, ...own };
+  let depth = depthWords.find(([, words]) => words.some((w) => joined.includes(w)))?.[0] ?? null;
   let side = SIDE_WORDS.find(([, words]) => words.some((w) => joined.includes(w)))?.[0] ?? null;
   for (const t of text.split(/[^a-z]+/).filter((t) => t && t.length <= 3)) {
-    if (t.length === 1 && SIDE_LETTERS[t]) side ??= SIDE_LETTERS[t]; // "V back", "H. kant"
-    else if (CODES[t]) depth ??= CODES[t];
-    else if (SIDE_LETTERS[t[0]] && CODES[t.slice(1)]) {
+    if (own[t]) depth ??= own[t]; // "C" is a centre forward in ice hockey
+    else if (t.length === 1 && SIDE_LETTERS[t]) side ??= SIDE_LETTERS[t]; // "V back", "H. kant"
+    else if (codes[t]) depth ??= codes[t];
+    else if (SIDE_LETTERS[t[0]] && codes[t.slice(1)]) {
       side ??= SIDE_LETTERS[t[0]];
-      depth ??= CODES[t.slice(1)];
+      depth ??= codes[t.slice(1)];
     }
   }
   return { depth, side };
 }
 
-export function guessLayout(names) {
-  const guesses = names.map(guessPlace);
+export function guessLayout(names, sport) {
+  const guesses = names.map((n) => guessPlace(n, sport));
   if (!guesses.some((g) => g.depth || g.side)) return defaultLayout(names.length);
   const spots = guesses.map((g) => ({ x: SIDE[g.side ?? 'centre'], y: ROW[g.depth ?? 'mid'] }));
   for (const y of new Set(spots.map((s) => s.y))) {
@@ -258,8 +278,8 @@ export function guessLayout(names) {
 // The coach's saved layout, with a guess for anything not placed yet. A saved
 // spot only counts while the position still has the name it had when it was
 // dragged, so renaming a position gets it a fresh guess.
-export function layoutFor(saved, names) {
-  const guess = guessLayout(names);
+export function layoutFor(saved, names, sport) {
+  const guess = guessLayout(names, sport);
   return {
     gk: saved?.gk ?? guess.gk,
     spots: guess.spots.map((g, i) => {
@@ -275,6 +295,28 @@ export function placeSpot(saved, names, key, place) {
   if (key === 'gk') layout.gk = place;
   else layout.spots[key] = { ...place, name: names[key] };
   return layout;
+}
+
+// ---------- changing settings during a match ----------
+
+// Takes effect from the next substitution; the running countdown is left alone.
+export function setIntervalMin(match, minutes) {
+  match.settings.intervalMs = Math.round(minutes * 60000);
+}
+
+// Switching positions on gives everyone on the field a spot straight away.
+// Switching them off only hides them: players keep their pos, so switching
+// back on puts them where they were (fillSpots tidies up anyone who moved).
+export function setPositions(match, on, names = []) {
+  if (!on) return void delete match.settings.positions;
+  if (match.settings.positions) return;
+  const spots = match.settings.fieldSize - 1;
+  match.settings.positions = Array.from({ length: spots }, (_, i) => names[i]?.trim() || `Position ${i + 1}`);
+  fillSpots(match);
+}
+
+export function renamePosition(match, i, name) {
+  match.settings.positions[i] = name.trim() || `Position ${i + 1}`;
 }
 
 export const positionName = (match, p) => (p.pos != null ? match.settings.positions?.[p.pos] : null) ?? null;
