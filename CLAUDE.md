@@ -2,7 +2,7 @@
 
 A phone-first web app that helps a coach make fair substitutions in kids' sports matches. It's used live at the sideline, so reliability during a match matters more than features.
 
-- **Live:** https://dbugger85.github.io/substitutor/
+- **Live:** https://substitutor.no/ (the old https://dbugger85.github.io/substitutor/ redirects there, keeping any `#share=` part)
 - **Repo:** https://github.com/dbugger85/substitutor (public, branch `main`)
 - **Owner:** a beginner "vibe coder". Explain changes in plain language and avoid jargon in user-facing text.
 
@@ -13,24 +13,24 @@ npm start        # serve at http://localhost:8000 (python3 http.server; ES modul
 npm test         # unit tests for js/match.js and js/share.js (node --test), no install needed
 npm install      # only needed for the browser test
 npm run e2e      # browser test of a full match in headless Chromium (/usr/bin/chromium)
-BASE_URL=https://dbugger85.github.io/substitutor/ npm run e2e   # same test against the live site
+BASE_URL=https://substitutor.no/ npm run e2e   # same test against the live site
 ```
 
 Run `npm test` and `npm run e2e` after any change. The e2e test saves phone-sized screenshots to `test/screenshots/` (gitignored). Look at them after UI changes.
 
 ## Deploying
 
-GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploys the site in about a minute. Check it with `curl -sI https://dbugger85.github.io/substitutor/` or the live e2e run above. Right after a push the live run can fail once while GitHub is half-way through updating; run it again. Commit and push only when the user asks. Never put the claude.ai session link in commits.
+GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploys the site in about a minute. Check it with `curl -sI https://substitutor.no/` or the live e2e run above. Right after a push the live run can fail once while GitHub is half-way through updating; run it again. Commit and push only when the user asks. Never put the claude.ai session link in commits.
 
-### Custom domain substitutor.no (in progress)
-- Bought 2026-10-13 at Domeneshop. DNS there: four A records for the bare domain (185.199.108–111.153) and `www` CNAME `dbugger85.github.io`. No AAAA records (the owner chose to skip them).
-- Still to do once the domain resolves on the internet (Norid publishes new .no domains with a delay): set the custom domain in the repo's Pages settings (adds a `CNAME` file), turn on Enforce HTTPS once the certificate is issued, then change the URLs in this file, README and the live e2e command. Don't set the custom domain before DNS works, or the old address redirects to a dead one.
-- Moving changes the site's origin, so phones start with an empty team there. The owner said that's fine (they'll retype the names). Old `#share=` links keep working, because the redirect keeps the part after `#`. All paths are relative, so nothing in the code needs to change.
+### Custom domain substitutor.no
+- Bought 2026-10-13 at Domeneshop, live since 2026-10-14. DNS there: four A records for the bare domain (185.199.108–111.153) and `www` CNAME `dbugger85.github.io`. No AAAA records (the owner chose to skip them).
+- GitHub Pages has the custom domain set (that's the `CNAME` file in the repo; don't delete it) and Enforce HTTPS on. The certificate covers both names and renews itself. `www` and the old github.io address redirect to https://substitutor.no/.
+- Moving changed the site's origin, so phones started with an empty team there. The owner said that's fine (they'll retype the names). Old `#share=` links keep working, because the redirect keeps the part after `#`. All paths are relative, so nothing in the code had to change.
 
 ## Stack and rules
 
 - Plain HTML, CSS and JavaScript ES modules. **No framework, no bundler, no runtime dependencies.** `playwright-core` is a dev dependency used only for the e2e test.
-- Only relative paths (`./style.css`, `./js/app.js`), because the site lives under `/substitutor/`.
+- Only relative paths (`./style.css`, `./js/app.js`), so the app works both at the domain root and under the old `/substitutor/` path.
 - Light and dark themes. The field view has its own colours (`--pitch`, `--pitch-line`, `--chip*`), so markers stay readable in both. Light is the default and stays high-contrast for sunlight. All colours are CSS variables: the light set is in `:root`, and the dark set is repeated in `@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`, so change both when you change one. Never hard-code colours in rules. Tap targets are at least 48px, and the layout is designed for a phone around 390px wide.
 - The look is "glass", styled after the owner's PrimeTime app: a warm off-white page (navy in dark mode), a logo tile plus an uppercase Barlow Condensed title and a tagline (hidden on the match screen), and see-through, blurred panels (`backdrop-filter`) with a rim light over a still colour glow (`body::before`, still to save battery during a match), in the Glass section near the end of `style.css`. Real blur only on the big panels and popups; buttons and inputs fake it. The app works for any sport, so no football-specific pictures or words. (The field view's drawing is deliberately generic: outline, halfway line, centre circle and a box at each end, chosen by the owner.)
 - Never use the browser's own `alert`/`confirm`/`prompt` or `<select>` dropdowns: use `ask()` and `playerPicker()`. The e2e test fails if a browser popup appears. Checkboxes and radio buttons are custom-drawn (`.choices input`).
@@ -49,7 +49,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
 | `fonts/` | Inter and Barlow Condensed (bold), stored with the app so they work offline (both under the SIL Open Font License) |
 | `sw.js` | Service worker for offline use: network first, falls back to the cache after 3 s or when offline |
-| `manifest.webmanifest`, `icons/` | Makes the app installable. An install card on the team screen (`setupInstall()` in `app.js`) uses Chrome's `beforeinstallprompt`, or on iPhone/iPad opens `#ios-install-dialog` with the Share → Add to Home Screen steps; it's hidden in the installed app and after "Not now" (`substitutor.installHidden`). `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert` |
+| `manifest.webmanifest`, `icons/` | Makes the app installable. An install card on the team screen (`setupInstall()` in `app.js`) uses Chrome's `beforeinstallprompt`, or on iPhone/iPad opens `#ios-install-dialog` with the Share → Add to Home Screen steps; it's hidden in the installed app and after "Not now" (`substitutor.installHidden`). `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert`. The manifest's `background_color`/`theme_color` are the dark navy on purpose (owner's choice, 2026-10-14): Android colours the bottom navigation strip of the installed app from the manifest, which can't follow light/dark mode, and a light strip made the handle grey. |
 | `test/match.test.js` | Unit tests for the rules |
 | `test/share.test.js` | Unit tests for share links |
 | `test/e2e.mjs` | Playwright browser test |

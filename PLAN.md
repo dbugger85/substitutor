@@ -1,6 +1,6 @@
 # Substitutor – Implementation Plan
 
-> **Status (2026-10-13):** built and live at https://dbugger85.github.io/substitutor/ (moving to substitutor.no). This file records the original plan, the user's first decisions (section 8) and every decision since (section 10). Where they differ, section 10 wins: for example, substitutions now rotate instead of evening out total minutes (section 3). For how the code actually works, see [CLAUDE.md](CLAUDE.md). The final file layout differs slightly: `js/match.js` holds both the timer and the substitution logic, and `js/app.js` holds the UI.
+> **Status (2026-10-14):** built and live at https://substitutor.no/ (the old github.io address redirects there). This file records the original plan, the user's first decisions (section 8) and every decision since (section 10). Where they differ, section 10 wins: for example, substitutions now rotate instead of evening out total minutes (section 3). For how the code actually works, see [CLAUDE.md](CLAUDE.md). The final file layout differs slightly: `js/match.js` holds both the timer and the substitution logic, and `js/app.js` holds the UI.
 
 ## 1. Tech stack
 Plain HTML + CSS + JavaScript (ES modules). No framework, no build step. It deploys to GitHub Pages as-is and is simple for a beginner. `node --test` is used only to test the substitution algorithm.
@@ -68,4 +68,4 @@ All confirmed by the user. For how each one works in the code, see [CLAUDE.md](C
 - **Positions** (optional, in setup): the coach types the position names; the player coming on takes the spot of who went off; "Change position with…" swaps two; positions are shown as tags in the list (not a pitch drawing). Bench players show where they last played, and the swap lists show positions so you can substitute by position. Positions don't change who comes off or on.
 - **Rename players** by tapping their name (team list) or from the player options (during a match), without adding clutter.
 - **Field view** (optional, needs positions): swipe left on the match screen for a field with every position and who plays there, the bench below and a small clock. Simple field lines (outline, halfway line, centre circle, a box at each end). Arrange the positions by pressing and holding one, iPhone-style with wiggling. The layout is remembered.
-- **Domain:** substitutor.no, bought at Domeneshop, with ".no" after the name in the header like PrimeTime's ".re". Phones don't need their saved team moved to the new address.
+- **Domain:** substitutor.no, bought at Domeneshop, with ".no" after the name in the header like PrimeTime's ".re". Phones don't need their saved team moved to the new address. Live since 2026-10-14, with HTTPS.

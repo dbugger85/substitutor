@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as M from '../js/match.js';
 import { makeLink, readLink, hasShare } from '../js/share.js';
 
-const BASE = 'https://dbugger85.github.io/substitutor/';
+const BASE = 'https://substitutor.no/';
 const players = Array.from({ length: 15 }, () => ({ id: M.newId(), name: 'Player name' }));
 const team = {
   v: 1,

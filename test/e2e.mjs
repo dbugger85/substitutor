@@ -1,7 +1,7 @@
 // Browser test of a whole match, on a phone-sized screen.
 //
 //   npm install && npm run e2e                                  # tests local files
-//   BASE_URL=https://dbugger85.github.io/substitutor/ npm run e2e   # tests the live site
+//   BASE_URL=https://substitutor.no/ npm run e2e   # tests the live site
 //
 // Needs Chromium (CHROMIUM=/path/to/chromium if not /usr/bin/chromium).
 // Screenshots go to test/screenshots/ (ignored by git).
