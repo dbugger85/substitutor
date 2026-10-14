@@ -106,7 +106,7 @@ export const NO = {
   'End the match?': 'Avslutte kampen?',
   'The minutes are saved for next match’s starters.': 'Minuttene lagres, så neste kamps startspillere kan foreslås.',
   'From the next substitution.': 'Gjelder fra neste bytte.',
-  '↻ starts it now.': '↻ starter den nå.',
+  'Press ↻ to start it now.': 'Trykk ↻ for å starte den nå.',
 
   // Player options
   'Substitute now': 'Bytt ut nå',
