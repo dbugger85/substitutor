@@ -33,7 +33,7 @@ Add your players. The list is saved on the phone.
 - **Starting players.** After your first match, the players who played least last time are ticked for you. "Suggest starters from last match" ticks them again if you've changed them.
 - **Minutes between substitutions**
 - **Players per substitution**
-- **Positions** (optional): tick "Give players positions", type a name for each spot (like Left back or Forward), and choose who starts where. Picking a player who already has a spot swaps the two.
+- **Positions** (optional): tick the box next to "Positions", type a name for each spot (like Left back or Forward), and choose who starts where. Picking a player who already has a spot swaps the two.
 - **Field view** (optional, needs positions): adds a picture of the field to the match screen. Choose the **sport** (Football, Bandy, Handball, Ice hockey, Floorball or Futsal) for its lines (red lines for bandy, red and blue for ice hockey), and a **colour**. Each sport comes with its own colour (green grass, ice, a blue or wooden floor), and you can pick another.
 
 Your setup is remembered for the next match.
@@ -49,7 +49,7 @@ Your setup is remembered for the next match.
 - **Done** makes the swaps and restarts the countdown. **Skip** restarts it without changes.
 
 **Other buttons and options:**
-- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, positions on or off and their names, and the field view with its sport and colour. Changes apply at once and are remembered for the next match. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
+- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, positions on or off and their names, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
 - **Swap** swaps players at any time, without changing the countdown.
 - **Tap a player** to substitute them now, take them off injured, make them goalkeeper, change position, rename them, or remove them from the match.
 - **Add player** is for a late arrival, who comes on at the next substitution.
