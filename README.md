@@ -1,6 +1,6 @@
 # Substitutor
 
-A phone-friendly web app for fair substitutions in kids' sports matches. It works for any sport with a goalkeeper and rolling substitutions.
+A phone-friendly web app for fair substitutions in kids' sports matches. It works for any sport with a goalkeeper and rolling substitutions: football, bandy, handball, ice hockey, floorball, futsal…
 
 **Open it:** https://substitutor.no
 
@@ -11,6 +11,14 @@ The app used to live at dbugger85.github.io/substitutor, which now sends you to 
 - **Android:** open the link in Chrome, tap the ⋮ menu, then **Install app** (or **Add to Home screen**).
 
 On iPhone, the installed app keeps its own saved team, separate from Safari, so add your players in the installed app.
+
+<p>
+  <img src="screenshots/1-match.png" width="180" alt="The match screen: countdown to the next substitution, and who's on the field with their positions and minutes">
+  <img src="screenshots/2-substitution.png" width="180" alt="Substitution time: who goes off and who comes on">
+  <img src="screenshots/3-field.png" width="180" alt="The field view: every position and who plays there, with the bench below">
+  <img src="screenshots/4-field-hockey-dark.png" width="180" alt="The field view for ice hockey, in dark mode">
+  <img src="screenshots/5-settings-dark.png" width="180" alt="Match settings during a match, with sport and colour for the field view">
+</p>
 
 ## 1. Team
 

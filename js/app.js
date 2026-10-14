@@ -292,9 +292,11 @@ function renderFieldStyle() {
   for (const [id, show] of [['field-style', s.usePositions && s.fieldView], ['set-field-style', match?.settings.positions && s.fieldView]]) {
     $(id).hidden = !show;
     $(id).replaceChildren(
-      el('div', { class: 'style-label' }, 'Sport'),
-      // The app's own dropdown (the player picker works for any list of names)
-      playerPicker(Object.entries(SPORTS).map(([key, { name }]) => ({ id: key, name })), sport, (key) => setFieldStyle({ sport: key, pitchColor: null }), null, 'Sport'),
+      // The label, then the app's own dropdown filling the rest of the line (the player picker works for any list of names)
+      el('div', { class: 'style-row' }, [
+        el('span', { class: 'style-label' }, 'Sport'),
+        playerPicker(Object.entries(SPORTS).map(([key, { name }]) => ({ id: key, name })), sport, (key) => setFieldStyle({ sport: key, pitchColor: null }), null, 'Sport'),
+      ]),
       el('div', { class: 'style-label' }, 'Colour'),
       el('div', { class: 'swatches' }, Object.entries(COLORS).map(([key, name]) =>
         el('button', { type: 'button', class: 'swatch', 'data-pitch-color': key, 'aria-label': name, title: name, 'aria-pressed': String(key === color), onclick: () => setFieldStyle({ pitchColor: key }) }))),

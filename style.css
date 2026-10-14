@@ -684,6 +684,9 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
 /* Field view sport and colour (setup and the cog popup) */
 .field-style { padding: 4px 0 8px; }
 .field-style .style-label { margin: 12px 0 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.field-style .style-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.field-style .style-row .style-label { margin: 0; }
+.field-style .style-row .picker { flex: 1; min-width: 0; }
 /* All seven on one row: they share the width, up to 40px each. */
 .swatches { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; padding: 5px 2px; }
 .swatches button.swatch {
