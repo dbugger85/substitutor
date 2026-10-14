@@ -59,7 +59,8 @@ Your setup is remembered for the next match.
 
 **Field view** (if switched on): **swipe left** on the match screen to see a field with every position and who plays there, the bench below it, and a smaller clock. It's handy for showing the kids. Swipe right, or tap the dots at the top, to go back.
 - **Press and hold** a position to arrange them. They wiggle like app icons on an iPhone, and you can drag any of them where you want.
-- Tap **Done**, or an empty part of the field, when you've finished. The layout is remembered for the next match.
+- The positions start where their names suggest: "Spiss", "Striker" or "ST" at the front, "Høyre back" or "RB" at the back on the right, "Venstre kant" or "LW" out on the left, and so on. English and Norwegian names and the usual short forms work. Names it doesn't recognise start in the middle.
+- Tap **Done**, or an empty part of the field, when you've finished. The layout is remembered for the next match. If you rename a position, it moves back to where its new name suggests.
 
 ## How substitutions are chosen
 

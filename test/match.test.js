@@ -207,10 +207,50 @@ test('field view: default layout puts every spot on the field, in rows of up to 
   assert.deepEqual(M.defaultLayout(4).spots.map((s) => s.y), [0.68, 0.68, 0.18, 0.18]);
 });
 
-test('field view: saved places are kept, new spots get the default', () => {
-  const saved = { spots: [{ x: 0.1, y: 0.2 }] };
-  const layout = M.layoutFor(saved, 3);
+test('field view: saved places are kept, new or renamed spots get a guess', () => {
+  const names = ['One', 'Two', 'Three'];
+  let saved = M.placeSpot(undefined, names, 0, { x: 0.1, y: 0.2 });
+  saved = M.placeSpot(saved, names, 'gk', { x: 0.4, y: 0.9 });
+  const layout = M.layoutFor(saved, names);
   assert.deepEqual(layout.spots[0], { x: 0.1, y: 0.2 });
   assert.deepEqual(layout.spots[1], M.defaultLayout(3).spots[1]);
-  assert.deepEqual(layout.gk, M.defaultLayout(3).gk);
+  assert.deepEqual(layout.gk, { x: 0.4, y: 0.9 });
+  assert.deepEqual(M.layoutFor(saved, ['Spiss', 'Two', 'Three']).spots[0], M.guessLayout(['Spiss', 'Two', 'Three']).spots[0]);
+  assert.deepEqual(M.layoutFor(JSON.parse(JSON.stringify(saved)), names).spots[0], { x: 0.1, y: 0.2 });
+});
+
+test('field view: guesses where positions go from their names', () => {
+  const place = (n) => M.guessPlace(n);
+  assert.deepEqual(place('Spiss'), { depth: 'front', side: null });
+  assert.deepEqual(place('Høyre back'), { depth: 'back', side: 'right' });
+  assert.deepEqual(place('venstreback'), { depth: 'back', side: 'left' });
+  assert.deepEqual(place('V. kant'), { depth: 'wing', side: 'left' });
+  assert.deepEqual(place('HK'), { depth: 'wing', side: 'right' });
+  assert.deepEqual(place('Midtstopper'), { depth: 'back', side: null });
+  assert.deepEqual(place('Sentral midtbane'), { depth: 'mid', side: null });
+  assert.deepEqual(place('LB'), { depth: 'back', side: 'left' });
+  assert.deepEqual(place('Right wing'), { depth: 'wing', side: 'right' });
+  assert.deepEqual(place('CDM'), { depth: 'dm', side: null });
+  assert.deepEqual(place('Centre forward'), { depth: 'front', side: null });
+  assert.deepEqual(place('Wingback'), { depth: 'back', side: null });
+  assert.deepEqual(place('Anna'), { depth: null, side: null });
+});
+
+test('field view: a guessed layout has the front on top, sides apart, and no two spots on top of each other', () => {
+  const { spots } = M.guessLayout(['Venstre back', 'Høyre back', 'Midtbane', 'Venstre kant', 'Høyre kant', 'Spiss']);
+  const [vb, hb, mb, vk, hk, sp] = spots;
+  assert.ok(vb.x < hb.x && vb.y === hb.y);
+  assert.ok(sp.y < vk.y && vk.y < mb.y && mb.y < vb.y);
+  assert.ok(vk.x < mb.x && mb.x < hk.x);
+  // Two centre backs side by side, and names it can't read go in the middle
+  const two = M.guessLayout(['Back', 'Back', 'Spiss', 'Anna']).spots;
+  assert.ok(two[0].x < two[1].x && two[0].y === two[1].y);
+  assert.equal(two[3].y, M.guessLayout(['Midt']).spots[0].y);
+  for (let n = 3; n <= 7; n++) {
+    const names = ['Back', 'Back', 'Midt', 'Midt', 'Midt', 'Spiss', 'Spiss'].slice(0, n);
+    const all = M.guessLayout(names).spots;
+    assert.equal(new Set(all.map((s) => `${s.x},${s.y}`)).size, n, `overlap with ${n}`);
+  }
+  // Nothing it can read: the plain rows
+  assert.deepEqual(M.guessLayout(['Position 1', 'Position 2']), M.defaultLayout(2));
 });

@@ -62,6 +62,7 @@ function show(name) {
   for (const s of document.querySelectorAll('.screen')) s.hidden = s.id !== `screen-${name}`;
   window.scrollTo(0, 0);
   $('match-pages').scrollLeft = 0; // the match screen opens on the list
+  $('match-pages').style.height = '';
   setArranging(false);
 }
 
@@ -387,7 +388,7 @@ let dragging = false; // a marker is being dragged: the tap that follows mustn't
 
 function renderField() {
   const names = match.settings.positions;
-  const layout = M.layoutFor(team.settings.layout, names.length);
+  const layout = M.layoutFor(team.settings.layout, names);
   const gk = match.players.find((p) => p.status === 'gk');
   const marker = (key, label, p, place) =>
     el('button', {
@@ -467,10 +468,7 @@ function startDrag(e, m, key) {
     m.classList.remove('lifted');
     setTimeout(() => (dragging = false)); // after the click that follows the release
     if (!place) return;
-    const layout = M.layoutFor(team.settings.layout, match.settings.positions.length);
-    if (key === 'gk') layout.gk = place;
-    else layout.spots[key] = place;
-    team.settings.layout = layout;
+    team.settings.layout = M.placeSpot(team.settings.layout, match.settings.positions, key, place);
     saveTeam(team);
   };
 }
@@ -482,11 +480,17 @@ $('field-done').addEventListener('click', () => setArranging(false));
 $('pitch').addEventListener('click', (e) => arranging && !e.target.closest('.marker, #field-done') && setArranging(false));
 
 // The dots above the pages show which one is open, and can be tapped too.
-$('match-pages').addEventListener('scroll', () => {
+// The pages sit side by side, so their box is as tall as the longer one (the
+// list); on the field view it's cut to the field page, so the screen ends
+// after the bench instead of scrolling on into empty space.
+function fitPages() {
   const pages = $('match-pages');
   const i = Math.round(pages.scrollLeft / pages.clientWidth);
   $('page-dots').querySelectorAll('button').forEach((b, j) => b.classList.toggle('active', i === j));
-});
+  pages.style.height = i === 1 ? `${$('field-page').offsetHeight}px` : '';
+}
+$('match-pages').addEventListener('scroll', fitPages);
+new ResizeObserver(fitPages).observe($('field-page'));
 $('page-dots').addEventListener('click', (e) => {
   const page = e.target.closest('button')?.dataset.page;
   if (page == null) return;

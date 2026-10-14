@@ -201,10 +201,80 @@ export function defaultLayout(count) {
   return { gk: { x: 0.5, y: 0.88 }, spots };
 }
 
-// The coach's saved layout, with the default for anything not placed yet.
-export function layoutFor(saved, count) {
-  const def = defaultLayout(count);
-  return { gk: saved?.gk ?? def.gk, spots: def.spots.map((d, i) => saved?.spots?.[i] ?? d) };
+// Guesses where each position goes from its name, in English or Norwegian:
+// how far forward ("back", "midtbane", "spiss"...) and which side ("left",
+// "høyre"...). Abbreviations like LB, CM, ST, VB, HK work too. A name that
+// says nothing goes in the middle; if no name says anything, it's the plain
+// rows from defaultLayout. Players in the same row that would land on the same
+// spot are spread out across it.
+const ROW = { back: 0.68, dm: 0.56, mid: 0.43, am: 0.32, wing: 0.32, front: 0.18 };
+const SIDE = { left: 0.25, centre: 0.5, right: 0.75 };
+// Checked in order, so "midtstopper" is a defender and "wingback" a back.
+const DEPTH_WORDS = [
+  ['dm', ['defensivmid', 'defensivemid', 'holding', 'anker']],
+  ['am', ['attackingmid', 'offensivmid', 'offensivemid', 'playmaker']],
+  ['back', ['back', 'defen', 'forsvar', 'stopper', 'sweeper', 'libero', 'bak']],
+  ['front', ['spiss', 'striker', 'forward', 'angrep', 'angrip', 'attack', 'topp', 'front', 'fremme', 'framme']],
+  ['wing', ['wing', 'ving', 'kant']],
+  ['mid', ['mid', 'indre', 'inner', 'sentral', 'central']],
+];
+const SIDE_WORDS = [['left', ['left', 'venstre', 'vanster']], ['right', ['right', 'hoyre', 'hogre', 'hoger']]];
+// Short codes, on their own or after a side letter (L/V left, R/H right, C centre): LB, VK, HS, RWB...
+const CODES = {
+  b: 'back', d: 'back', cb: 'back', fb: 'back', wb: 'back', df: 'back', ms: 'back', sw: 'back',
+  m: 'mid', cm: 'mid', mf: 'mid', mb: 'mid', sm: 'mid', im: 'mid', dm: 'dm', cdm: 'dm', am: 'am', cam: 'am', om: 'am',
+  w: 'wing', k: 'wing', v: 'wing', f: 'front', fw: 'front', cf: 'front', st: 'front', s: 'front', sp: 'front', ss: 'front', a: 'front',
+};
+const SIDE_LETTERS = { l: 'left', v: 'left', r: 'right', h: 'right', c: 'centre' };
+
+export function guessPlace(name) {
+  const text = String(name ?? '').toLowerCase()
+    .replace(/[øö]/g, 'o').replace(/[åä]/g, 'a').replace(/æ/g, 'ae').normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const joined = text.replace(/[^a-z]/g, '');
+  let depth = DEPTH_WORDS.find(([, words]) => words.some((w) => joined.includes(w)))?.[0] ?? null;
+  let side = SIDE_WORDS.find(([, words]) => words.some((w) => joined.includes(w)))?.[0] ?? null;
+  for (const t of text.split(/[^a-z]+/).filter((t) => t && t.length <= 3)) {
+    if (t.length === 1 && SIDE_LETTERS[t]) side ??= SIDE_LETTERS[t]; // "V back", "H. kant"
+    else if (CODES[t]) depth ??= CODES[t];
+    else if (SIDE_LETTERS[t[0]] && CODES[t.slice(1)]) {
+      side ??= SIDE_LETTERS[t[0]];
+      depth ??= CODES[t.slice(1)];
+    }
+  }
+  return { depth, side };
+}
+
+export function guessLayout(names) {
+  const guesses = names.map(guessPlace);
+  if (!guesses.some((g) => g.depth || g.side)) return defaultLayout(names.length);
+  const spots = guesses.map((g) => ({ x: SIDE[g.side ?? 'centre'], y: ROW[g.depth ?? 'mid'] }));
+  for (const y of new Set(spots.map((s) => s.y))) {
+    const row = spots.filter((s) => s.y === y).sort((a, b) => a.x - b.x);
+    if (new Set(row.map((s) => s.x)).size < row.length) row.forEach((s, j) => (s.x = Math.round(((j + 1) / (row.length + 1)) * 1000) / 1000));
+  }
+  return { gk: { x: 0.5, y: 0.88 }, spots };
+}
+
+// The coach's saved layout, with a guess for anything not placed yet. A saved
+// spot only counts while the position still has the name it had when it was
+// dragged, so renaming a position gets it a fresh guess.
+export function layoutFor(saved, names) {
+  const guess = guessLayout(names);
+  return {
+    gk: saved?.gk ?? guess.gk,
+    spots: guess.spots.map((g, i) => {
+      const s = saved?.spots?.[i];
+      return s && s.name === names[i] ? { x: s.x, y: s.y } : g;
+    }),
+  };
+}
+
+// Remembers where the coach dragged one position (key is 'gk' or its number).
+export function placeSpot(saved, names, key, place) {
+  const layout = { gk: saved?.gk, spots: [...(saved?.spots ?? [])] };
+  if (key === 'gk') layout.gk = place;
+  else layout.spots[key] = { ...place, name: names[key] };
+  return layout;
 }
 
 export const positionName = (match, p) => (p.pos != null ? match.settings.positions?.[p.pos] : null) ?? null;

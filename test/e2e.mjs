@@ -234,9 +234,17 @@ try {
   assert.equal(onField.length, 5);
   assert.ok(onField.includes('GK Mia'));
   assert.ok(onField.includes(`Front Anna`) || onField.some((m) => m.startsWith('Front ')));
+  // Positions start where their names suggest: Front near the top, Left left of Right
+  const top = (n) => page.$eval(`#pitch-markers .marker:nth-child(${n})`, (m) => parseFloat(m.style.top));
+  const leftOf = (n) => page.$eval(`#pitch-markers .marker:nth-child(${n})`, (m) => parseFloat(m.style.left));
+  assert.ok((await top(5)) < (await top(4)) && (await leftOf(2)) < (await leftOf(3)));
   assert.ok((await page.$$eval('#field-bench .bench-name', (b) => b.map((x) => x.textContent))).includes(frontPlayer));
   assert.equal(await page.$eval('#match-pages', (e) => e.scrollLeft), 390);
   await page.screenshot({ path: `${shots}/11-field.png` });
+  // The screen ends after the bench, not as far down as the (longer) list
+  await page.waitForTimeout(100);
+  const room = await page.evaluate(() => document.documentElement.scrollHeight - document.querySelector('#field-page').getBoundingClientRect().bottom - scrollY);
+  assert.ok(room < 60, `${room}px of empty space below the field view`);
   // Press and hold "Left", then drag it to the top-left; it's remembered
   const left = await page.$('#pitch-markers .marker:nth-child(2)');
   const lb = await left.boundingBox();
