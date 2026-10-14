@@ -179,9 +179,13 @@ export function fillSpots(match) {
   }
 }
 
-export function swapPositions(match, aId, bId) {
+// Two players on the field swap places. If one of them is the goalkeeper,
+// the other goes in goal and the goalkeeper takes their spot.
+export function swapPositions(match, aId, bId, t) {
   const a = match.players.find((p) => p.id === aId);
   const b = match.players.find((p) => p.id === bId);
+  if (a.status === 'gk') return makeGoalkeeper(match, bId, t);
+  if (b.status === 'gk') return makeGoalkeeper(match, aId, t);
   [a.pos, b.pos] = [b.pos, a.pos];
 }
 

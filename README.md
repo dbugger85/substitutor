@@ -2,6 +2,8 @@
 
 A phone-friendly web app for fair substitutions in kids' sports matches. It works for any sport with a goalkeeper and rolling substitutions: football, bandy, handball, ice hockey, floorball, futsal…
 
+**No cookies, no tracking, no ads. 100% free and open source.** Your team is saved only on your own phone.
+
 **Open it:** https://substitutor.no
 
 **Install it as an app** (opens full screen from your home screen, and works with no signal). The easiest way is the **Install** button at the bottom of the Players screen. Or do it by hand:
@@ -63,7 +65,7 @@ Your setup is remembered for the next match.
 **Positions** (if switched on):
 - Each player on the field has a green position tag.
 - The player who comes on takes the position of the player who went off.
-- To swap two players' positions, tap a player and choose **Change position with…**.
+- To swap two players' positions, tap a player and choose **Change position with…**. The goalkeeper is in the list too: swap with them and the other player goes in goal.
 - Bench players show where they last played in a grey tag. The swap lists show positions too, so you can bring on someone for a particular position.
 
 **Field view** (if switched on): **swipe left** on the match screen to see a field with every position and who plays there, the bench below it, and a smaller clock. It's handy for showing the kids. Swipe right, or tap the dots at the top, to go back.

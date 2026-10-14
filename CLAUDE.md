@@ -79,7 +79,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 ### Positions (optional, decided 2026-10-13)
 - "Give players positions" in match setup. The coach types a name for each outfield spot (empty → "Position N") and picks which starter plays there (picking someone who already has a spot swaps the two; `assignSpots`). The setup pickers use `playerPicker()` with no match time, so they show names only.
 - On the match screen, field players show a green position tag and are listed in position order.
-- The player coming on **takes the spot of who went off**. "Change position with…" (tap a field player) swaps two spots (`swapPositions`). The old goalkeeper takes the new goalkeeper's spot (`makeGoalkeeper`).
+- The player coming on **takes the spot of who went off**. "Change position with…" (tap a field player or the goalkeeper) swaps two spots (`swapPositions`); the list includes the goalkeeper, and swapping with them puts the other player in goal while the goalkeeper takes their spot (`makeGoalkeeper`, owner's wish 2026-10-14). The goalkeeper gets this option even without positions. The old goalkeeper takes the new goalkeeper's spot (`makeGoalkeeper`).
 - `fillSpots()` (called by `applySwaps`, `makeGoalkeeper` and `change()`) moves the spot of anyone no longer on the field to `lastPos` (or `'gk'` for the goalkeeper) and gives a free spot to field players without one.
 - Bench players show their last position as a grey outlined tag (`lastPositionName`). `tags(p)` in `app.js` makes the GK / position / last-position tags for the match list and both pickers, so the swap popup's lists show positions too (for substituting by position).
 - Positions don't affect who comes off or on.

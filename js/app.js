@@ -764,11 +764,12 @@ function openActions(id) {
         ? openSwap('adhoc', [{ offId: id, onId: bench[0].id }], id)
         : change(() => M.setStatus(p, 'out', t)),
     );
-    const others = match.players.filter((x) => x.status === 'field' && x.id !== id);
-    if (p.status === 'field' && match.settings.positions && others.length) {
+    // Anyone on the field, the goalkeeper included: swapping with the goalkeeper puts the other player in goal.
+    const others = match.players.filter((x) => M.onPitch(x.status) && x.id !== id);
+    if ((p.status === 'gk' || match.settings.positions) && others.length) {
       action(tr('Change position with…'), () =>
         pickPlayer(tr('Who swaps positions with {name}?', { name: p.name }), others, null, t).then((otherId) => {
-          if (otherId) change(() => M.swapPositions(match, id, otherId));
+          if (otherId) change(() => M.swapPositions(match, id, otherId, t));
         }),
       );
     }

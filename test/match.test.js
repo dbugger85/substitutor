@@ -170,6 +170,17 @@ test('positions: two players can swap', () => {
   assert.deepEqual(spots(m), { LB: 'A', RB: 'C', 'Position 3': 'B', FW: 'D' });
 });
 
+test('positions: swapping with the goalkeeper puts the other player in goal', () => {
+  const m = positionMatch();
+  const gk = m.players.find((p) => p.status === 'gk').id;
+  M.swapPositions(m, gk, 'B', MIN);
+  assert.equal(m.players.find((p) => p.id === 'B').status, 'gk');
+  assert.equal(spots(m)['Position 3'], 'GK');
+  M.swapPositions(m, 'A', 'B', 2 * MIN); // either way round
+  assert.equal(m.players.find((p) => p.id === 'A').status, 'gk');
+  assert.equal(m.players.find((p) => p.id === 'B').status, 'field');
+});
+
 test('positions: the old goalkeeper takes the new goalkeeper\'s spot', () => {
   const m = positionMatch();
   M.makeGoalkeeper(m, 'B', MIN);
