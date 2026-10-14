@@ -46,6 +46,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `js/match.js` | Pure match logic: time accounting, ranking (rotation), swaps, positions (`assignSpots`, `fillSpots`, `swapPositions`) and the field view's layout (guessed from position names, or plain rows) |
 | `js/storage.js` | localStorage load and save |
 | `js/share.js` | Packs the team and match into a link and reads it back (no DOM code) |
+| `js/i18n.js` | English and Norwegian: `tr()` (English text is the key), `posLabel()`, the language choice (`?lang=`, saved choice, phone language), `setLang()` and `translatePage()` (no DOM code at import) |
 | `js/pitch.js` | The field view's sports (name, default colour, SVG lines) and colour names; `sportOf()` / `colorOf()` (no DOM code) |
 | `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
 | `fonts/` | Inter and Barlow Condensed (bold), stored with the app so they work offline (both under the SIL Open Font License) |
@@ -54,6 +55,8 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `test/match.test.js` | Unit tests for the rules |
 | `test/share.test.js` | Unit tests for share links |
 | `test/pitch.test.js` | Unit tests for sports and colours |
+| `test/i18n.test.js` | Checks that every text in `app.js` and `index.html` has a Norwegian version |
+| `robots.txt`, `sitemap.xml`, `icons/preview.png` | For Google and for link previews (see Languages and Google) |
 | `test/e2e.mjs` | Playwright browser test |
 | `screenshots/` | The README's pictures (390 px wide, made with a Playwright script like the e2e test: a 7-a-side match at 7:12, light and dark). Retake them when the look changes |
 | `PLAN.md` | The original plan, plus a dated log of every decision since |
@@ -98,6 +101,13 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - The substitution popup waits while the settings are open. The dialog's heading takes focus, so the keyboard doesn't pop up.
 - To make room, the theme button is plain (no background) and shows only its icon on the match screen.
 
+### Languages and Google (decided 2026-10-14)
+- The app is in English and Norwegian (bokmål), owner's wish. **Every new text must go through `tr('English text')` in `app.js`, or carry `data-t` / `data-t-html` / `data-t-label` / `data-t-placeholder` in `index.html`, and get a Norwegian entry in `NO` in `js/i18n.js`.** `test/i18n.test.js` fails otherwise. `t` is already used for time in `app.js`, hence the name `tr`.
+- The language: `?lang=no` / `?lang=en` in the address wins (and is saved), then the saved choice (`substitutor.lang`), then the phone's language (nb/nn/no → Norwegian). Changing it reloads on that language's address. The switch is one small round flag in the top bar (`#lang-toggle`, drawn SVG in `FLAGS`, not emoji, so it looks the same everywhere, with a glass sheen and rim from `.flag::after`; flag, cog and theme icon are all about 22px) showing the current language; tapping it switches to the other. It's hidden on the match screen to leave room for the cog (owner's choice: round, top right, only the current language). Nothing else is translated after load.
+- Stored data stays language-neutral: default position names are saved as "Position 2" and shown through `posLabel()` ("Posisjon 2"); GK shows as "MV" in Norwegian. Coach-typed names are never translated.
+- For Google: a title and description (English in the HTML, swapped to Norwegian by `translatePage()`), canonical, hreflang (en → `/`, nb → `/?lang=no`, x-default → `/`), Open Graph/Twitter tags with `icons/preview.png` (1200×630, made from the README screenshots with a Playwright page), `robots.txt` and `sitemap.xml`. The team screen shows a short intro (`.intro`) until players are added, so there's readable text. The owner adds the site to Google Search Console (a DNS TXT record at Domeneshop) and submits the sitemap.
+- The service worker matches cached pages with `ignoreSearch`, so `?lang=` works offline.
+
 ### Time
 - Everything is **match time** in ms, meaning time the clock has run excluding pauses: `elapsed = clockMs + (now − runningSince)`. `runningSince` is null while paused.
 - Timing uses timestamps, never tick counting, so it stays correct when the screen is locked, the tab is in the background, or the page reloads.
@@ -112,6 +122,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - `substitutor.match`: `{ v: 1, settings: {fieldSize, intervalMs, perSub, positions?: [name]}, players: [{id, name, status: 'gk'|'field'|'bench'|'out', fieldMs, benchMs, since, pos?, lastPos?}], clockMs, runningSince, nextSubAt }`. Saved after every change. If present on load, the app goes straight back to the match screen.
   `positions`, `pos` (index into `positions`, null when not in a spot) and `lastPos` (last spot, or `'gk'`) only exist when positions are switched on.
 - `substitutor.theme`: `'light'` or `'dark'`, a plain string. If it's missing, the app follows the phone (Auto). The theme button in the top bar cycles Auto → Light → Dark (`applyTheme` in `app.js`).
+- `substitutor.lang`: `'en'` or `'no'`, once chosen (or opened with `?lang=`).
 - `substitutor.installHidden`: `'1'` after the coach taps ✕ ("Not now") on the install card, so it stays hidden on that phone.
 - Data with a different `v` is ignored. If you change the saved shape, bump `v` or migrate it in `storage.js`.
 

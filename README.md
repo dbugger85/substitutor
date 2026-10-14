@@ -20,6 +20,8 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
   <img src="screenshots/5-settings-dark.png" width="180" alt="Match settings during a match, with sport and colour for the field view">
 </p>
 
+**Language:** English or Norwegian. It follows your phone's language. The round flag in the top-right corner shows the current language; tap it to switch (it's hidden during a match). Each has its own address: substitutor.no/?lang=no for Norwegian, substitutor.no/?lang=en for English.
+
 ## 1. Team
 
 Add your players. The list is saved on the phone.

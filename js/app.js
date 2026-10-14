@@ -4,6 +4,7 @@ import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTh
 import * as M from './match.js';
 import { makeLink, readLink, hasShare } from './share.js';
 import { SPORTS, COLORS, sportOf, colorOf } from './pitch.js';
+import { lang, LANGS, FLAGS, tr, posLabel, setLang, translatePage } from './i18n.js';
 import { unlockAudio, startAlarm, stopAlarm, keepScreenOn, releaseScreen } from './alerts.js';
 
 const $ = (id) => document.getElementById(id);
@@ -28,7 +29,7 @@ function el(tag, props = {}, children = []) {
 
 // Our own popup instead of the browser's confirm() and prompt(). Resolves to true (or the typed text) for OK, or null.
 // `value` fills the text box in advance.
-function ask({ title, text = '', input = '', value = '', ok = 'OK', danger = false }) {
+function ask({ title, text = '', input = '', value = '', ok = tr('OK'), danger = false }) {
   const dlg = $('ask-dialog');
   const field = $('ask-input');
   $('ask-title').textContent = title;
@@ -85,11 +86,11 @@ function renderTeam() {
   $('team-list').replaceChildren(
     ...team.players.map((p) =>
       el('li', {}, [
-        el('button', { type: 'button', class: 'rename', 'aria-label': `Rename ${p.name}`, onclick: () => renamePlayer(p.id) }, p.name),
+        el('button', { type: 'button', class: 'rename', 'aria-label': tr('Rename {name}', { name: p.name }), onclick: () => renamePlayer(p.id) }, p.name),
         el('button', {
           type: 'button',
           class: 'icon',
-          'aria-label': `Remove ${p.name}`,
+          'aria-label': tr('Remove {name}', { name: p.name }),
           onclick: () => {
             team.players = team.players.filter((x) => x.id !== p.id);
             saveTeam(team);
@@ -107,7 +108,7 @@ function renderTeam() {
 // Fix a misspelt name: in the team list and, during a match, in the player options.
 async function renamePlayer(id) {
   const p = team.players.find((x) => x.id === id) ?? player(id);
-  const name = (await ask({ title: 'Rename player', input: 'Player name', value: p.name, ok: 'Save' }))?.trim();
+  const name = (await ask({ title: tr('Rename player'), input: tr('Player name'), value: p.name, ok: tr('Save') }))?.trim();
   if (!name || name === p.name) return;
   for (const x of [...team.players, ...(match?.players ?? [])]) if (x.id === id) x.name = name;
   saveTeam(team);
@@ -142,14 +143,14 @@ function setupError() {
   const s = team.settings;
   const n = team.players.length;
   const fs = s.fieldSize;
-  if (!Number.isInteger(fs) || fs < 2) return 'Enter how many players are on the field.';
-  if (fs > n) return `You only have ${n} players in the team.`;
-  if (!s.gkId) return 'Choose a goalkeeper.';
-  if (s.starterIds.length !== fs - 1) return `Pick ${fs - 1} starting players besides the goalkeeper.`;
-  if (!(s.intervalMin > 0)) return 'Enter the minutes between substitutions.';
+  if (!Number.isInteger(fs) || fs < 2) return tr('Enter how many players are on the field.');
+  if (fs > n) return tr('You only have {n} players in the team.', { n });
+  if (!s.gkId) return tr('Choose a goalkeeper.');
+  if (s.starterIds.length !== fs - 1) return tr('Pick {n} starting players besides the goalkeeper.', { n: fs - 1 });
+  if (!(s.intervalMin > 0)) return tr('Enter the minutes between substitutions.');
   const maxSub = Math.min(fs - 1, n - fs);
   if (maxSub > 0 && !(Number.isInteger(s.perSub) && s.perSub >= 1 && s.perSub <= maxSub)) {
-    return `Players per substitution must be between 1 and ${maxSub}.`;
+    return tr('Players per substitution must be between 1 and {n}.', { n: maxSub });
   }
   return '';
 }
@@ -212,7 +213,7 @@ function renderStarters() {
         ]);
       }),
   );
-  $('starter-count').textContent = `(${s.starterIds.length} of ${needed})`;
+  $('starter-count').textContent = tr('({n} of {total})', { n: s.starterIds.length, total: needed });
   renderStarterNote();
   renderPositions();
   updateSetupStatus();
@@ -223,7 +224,7 @@ function renderStarterNote() {
   const note = $('starter-note');
   note.hidden = !team.lastMinutes;
   if (team.settings.autoStarters) {
-    note.replaceChildren('✓ Suggested: the players who played least last match start.');
+    note.replaceChildren(tr('✓ Suggested: the players who played least last match start.'));
   } else {
     note.replaceChildren(
       el('button', {
@@ -233,7 +234,7 @@ function renderStarterNote() {
           team.settings.autoStarters = true;
           renderStarters();
         },
-      }, 'Suggest starters from last match'),
+      }, tr('Suggest starters from last match')),
     );
   }
 }
@@ -254,8 +255,8 @@ function renderPositions() {
       el('div', { class: 'pos-row' }, [
         el('input', {
           value: s.positions[i] ?? '',
-          placeholder: `Position ${i + 1}`,
-          'aria-label': `Name of position ${i + 1}`,
+          placeholder: tr('Position {n}', { n: i + 1 }),
+          'aria-label': tr('Name of position {n}', { n: i + 1 }),
           autocomplete: 'off',
           enterkeyhint: 'done',
           oninput: (e) => {
@@ -270,7 +271,7 @@ function renderPositions() {
           s.posIds[i] = v;
           renderPositions();
           saveTeam(team);
-        }, null, `Who plays ${s.positions[i]?.trim() || `position ${i + 1}`}?`),
+        }, null, tr('Who plays {pos}?', { pos: s.positions[i]?.trim() || tr('position {n}', { n: i + 1 }) })),
       ]),
     ),
   );
@@ -294,12 +295,12 @@ function renderFieldStyle() {
     $(id).replaceChildren(
       // The label, then the app's own dropdown filling the rest of the line (the player picker works for any list of names)
       el('div', { class: 'style-row' }, [
-        el('span', { class: 'style-label' }, 'Sport'),
-        playerPicker(Object.entries(SPORTS).map(([key, { name }]) => ({ id: key, name })), sport, (key) => setFieldStyle({ sport: key, pitchColor: null }), null, 'Sport'),
+        el('span', { class: 'style-label' }, tr('Sport')),
+        playerPicker(Object.entries(SPORTS).map(([key, { name }]) => ({ id: key, name: tr(name) })), sport, (key) => setFieldStyle({ sport: key, pitchColor: null }), null, tr('Sport')),
       ]),
-      el('div', { class: 'style-label' }, 'Colour'),
+      el('div', { class: 'style-label' }, tr('Colour')),
       el('div', { class: 'swatches' }, Object.entries(COLORS).map(([key, name]) =>
-        el('button', { type: 'button', class: 'swatch', 'data-pitch-color': key, 'aria-label': name, title: name, 'aria-pressed': String(key === color), onclick: () => setFieldStyle({ pitchColor: key }) }))),
+        el('button', { type: 'button', class: 'swatch', 'data-pitch-color': key, 'aria-label': tr(name), title: tr(name), 'aria-pressed': String(key === color), onclick: () => setFieldStyle({ pitchColor: key }) }))),
     );
   }
 }
@@ -362,11 +363,11 @@ $('start-match').addEventListener('click', () => {
 // bench the position they last played (grey outline).
 function tags(p) {
   if (!match) return [];
-  if (p.status === 'gk') return [el('span', { class: 'badge gk' }, 'GK')];
+  if (p.status === 'gk') return [el('span', { class: 'badge gk' }, tr('GK'))];
   const pos = M.positionName(match, p);
-  if (pos) return [el('span', { class: 'badge pos' }, pos)];
+  if (pos) return [el('span', { class: 'badge pos' }, posLabel(pos))];
   const last = p.status === 'bench' && M.lastPositionName(match, p);
-  return last ? [el('span', { class: 'badge last', title: 'Last played' }, last)] : [];
+  return last ? [el('span', { class: 'badge last', title: tr('Last played') }, posLabel(last))] : [];
 }
 
 function playerRow(p) {
@@ -395,9 +396,9 @@ function renderMatch() {
 
   const onField = gk.length + field.length;
   const warning = !gk.length
-    ? 'No goalkeeper. Tap a player and choose "Make goalkeeper".'
+    ? tr('No goalkeeper. Tap a player and choose "Make goalkeeper".')
     : onField < match.settings.fieldSize
-      ? `Only ${onField} of ${match.settings.fieldSize} players on the field.`
+      ? tr('Only {n} of {total} players on the field.', { n: onField, total: match.settings.fieldSize })
       : '';
   $('match-warning').textContent = warning;
   $('match-warning').hidden = !warning;
@@ -441,8 +442,8 @@ function renderField() {
       oncontextmenu: (e) => e.preventDefault(), // Android's long-press menu
     }, [el('span', { class: 'marker-pos' }, label), el('span', { class: 'marker-name' }, p ? p.name : '–')]);
   $('pitch-markers').replaceChildren(
-    marker('gk', 'GK', gk, layout.gk),
-    ...names.map((name, i) => marker(i, name, match.players.find((p) => p.status === 'field' && p.pos === i), layout.spots[i])),
+    marker('gk', tr('GK'), gk, layout.gk),
+    ...names.map((name, i) => marker(i, posLabel(name), match.players.find((p) => p.status === 'field' && p.pos === i), layout.spots[i])),
   );
 
   $('field-bench').replaceChildren(
@@ -451,7 +452,7 @@ function renderField() {
       return el('li', {}, [
         el('button', { type: 'button', onclick: () => openActions(p.id) }, [
           el('span', { class: 'bench-name' }, p.name),
-          ...(last ? [el('span', { class: 'bench-last' }, last)] : []),
+          ...(last ? [el('span', { class: 'bench-last' }, posLabel(last))] : []),
         ]),
       ]);
     }),
@@ -464,8 +465,8 @@ function setArranging(on) {
   $('match-pages').classList.toggle('locked', on); // no swiping to the list meanwhile
   $('field-done').hidden = !on;
   $('field-tip').textContent = on
-    ? 'Drag the positions where you want them, then tap Done.'
-    : 'Tip: press and hold a position to move it.';
+    ? tr('Drag the positions where you want them, then tap Done.')
+    : tr('Tip: press and hold a position to move it.');
 }
 
 // Press and hold a position to start arranging; while arranging, any position
@@ -566,8 +567,8 @@ function renderSettingsPositions() {
       el('input', {
         // A name left empty shows as "Position 2"; show the box empty then, like in setup.
         value: name === `Position ${i + 1}` ? '' : name,
-        placeholder: `Position ${i + 1}`,
-        'aria-label': `Name of position ${i + 1}`,
+        placeholder: tr('Position {n}', { n: i + 1 }),
+        'aria-label': tr('Name of position {n}', { n: i + 1 }),
         autocomplete: 'off',
         enterkeyhint: 'done',
         oninput: (e) => {
@@ -632,7 +633,7 @@ function updateClock() {
     $(time).textContent = fmt(t);
     $(badge).hidden = running;
   }
-  $('pause').textContent = running ? 'Pause' : 'Resume';
+  $('pause').textContent = running ? tr('Pause') : tr('Resume');
 
   for (const span of document.querySelectorAll('.mins[data-id]')) {
     const p = player(span.dataset.id);
@@ -652,7 +653,7 @@ function substitutionDue() {
   if (!pairs.length) {
     M.scheduleNext(match);
     saveMatch(match);
-    toast('Substitution time, but nobody is on the bench.');
+    toast(tr('Substitution time, but nobody is on the bench.'));
     return;
   }
   openSwap('scheduled', pairs);
@@ -671,27 +672,27 @@ $('pause').addEventListener('click', () => change(() => (M.isRunning(match) ? M.
 // Start the countdown again from the full interval, without a substitution.
 $('restart-countdown').addEventListener('click', () => {
   change(() => M.scheduleNext(match));
-  toast(`Countdown restarted: next substitution in ${fmt(match.settings.intervalMs)}.`);
+  toast(tr('Countdown restarted: next substitution in {time}.', { time: fmt(match.settings.intervalMs) }));
 });
 
 $('swap-now').addEventListener('click', () => {
   const pairs = M.pickSubstitution(match.players, 1, now());
-  if (!pairs.length) return toast('Nobody on the bench to swap with.');
+  if (!pairs.length) return toast(tr('Nobody on the bench to swap with.'));
   openSwap('adhoc', pairs);
 });
 
 $('add-late').addEventListener('click', async () => {
-  const name = (await ask({ title: 'Add player', input: 'Player name', ok: 'Add' }))?.trim();
+  const name = (await ask({ title: tr('Add player'), input: tr('Player name'), ok: tr('Add') }))?.trim();
   if (!name) return;
   const p = { id: M.newId(), name };
   team.players.push(p);
   saveTeam(team);
   change(() => M.addPlayer(match, p, now()));
-  toast(`${name} is on the bench and will come on at the next substitution.`);
+  toast(tr('{name} is on the bench and will come on at the next substitution.', { name }));
 });
 
 $('end-match').addEventListener('click', async () => {
-  const sure = await ask({ title: 'End the match?', text: 'The minutes are saved for next match’s starters.', ok: 'End match', danger: true });
+  const sure = await ask({ title: tr('End the match?'), text: tr('The minutes are saved for next match’s starters.'), ok: tr('End match'), danger: true });
   if (!sure) return;
   const t = now();
   $('summary-time').textContent = fmt(t);
@@ -729,31 +730,31 @@ function openActions(id) {
     items.push(el('button', { type: 'button', class: cls, onclick: () => { $('action-dialog').close(); fn(); } }, label));
 
   if (M.onPitch(p.status)) {
-    if (bench.length) action('Substitute now', () => openSwap('adhoc', [{ offId: id, onId: bench[0].id }]));
-    action('Injured – take off', () =>
+    if (bench.length) action(tr('Substitute now'), () => openSwap('adhoc', [{ offId: id, onId: bench[0].id }]));
+    action(tr('Injured – take off'), () =>
       bench.length
         ? openSwap('adhoc', [{ offId: id, onId: bench[0].id }], id)
         : change(() => M.setStatus(p, 'out', t)),
     );
     const others = match.players.filter((x) => x.status === 'field' && x.id !== id);
     if (p.status === 'field' && match.settings.positions && others.length) {
-      action('Change position with…', () =>
-        pickPlayer(`Who swaps positions with ${p.name}?`, others, null, t).then((otherId) => {
+      action(tr('Change position with…'), () =>
+        pickPlayer(tr('Who swaps positions with {name}?', { name: p.name }), others, null, t).then((otherId) => {
           if (otherId) change(() => M.swapPositions(match, id, otherId));
         }),
       );
     }
-    if (p.status === 'field') action('Make goalkeeper', () => change(() => M.makeGoalkeeper(match, id, t)));
+    if (p.status === 'field') action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, t)));
   } else if (p.status === 'bench') {
-    if (onField < match.settings.fieldSize) action('Put on the field', () => change(() => M.setStatus(p, 'field', t)));
-    if (off.length) action('Bring on now', () => openSwap('adhoc', [{ offId: off[0].id, onId: id }]));
-    action('Make goalkeeper', () => change(() => M.makeGoalkeeper(match, id, t)));
-    action('Remove from match', () => change(() => M.setStatus(p, 'out', t)));
+    if (onField < match.settings.fieldSize) action(tr('Put on the field'), () => change(() => M.setStatus(p, 'field', t)));
+    if (off.length) action(tr('Bring on now'), () => openSwap('adhoc', [{ offId: off[0].id, onId: id }]));
+    action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, t)));
+    action(tr('Remove from match'), () => change(() => M.setStatus(p, 'out', t)));
   } else {
-    action('Back to bench', () => change(() => M.setStatus(p, 'bench', t)));
+    action(tr('Back to bench'), () => change(() => M.setStatus(p, 'bench', t)));
   }
-  action('Rename', () => renamePlayer(id));
-  action('Cancel', () => {});
+  action(tr('Rename'), () => renamePlayer(id));
+  action(tr('Cancel'), () => {});
 
   $('action-title').textContent = p.name;
   $('action-list').replaceChildren(...items);
@@ -765,8 +766,8 @@ function openActions(id) {
 function openSwap(mode, rows, injuredId = null) {
   swap = { mode, rows: rows.map((r) => ({ ...r })), injuredId };
   $('swap-title').textContent =
-    mode === 'scheduled' ? 'Substitution time!' : injuredId ? 'Injury – swap player' : 'Swap players';
-  $('swap-confirm').textContent = mode === 'scheduled' ? 'Done – restart timer' : 'Swap';
+    mode === 'scheduled' ? tr('Substitution time!') : injuredId ? tr('Injury – swap player') : tr('Swap players');
+  $('swap-confirm').textContent = mode === 'scheduled' ? tr('Done – restart timer') : tr('Swap');
   $('swap-skip').hidden = mode !== 'scheduled';
   $('swap-cancel').hidden = mode === 'scheduled';
   renderSwap();
@@ -790,7 +791,7 @@ function playerPicker(players, value, onchange, t, title) {
           if (id && id !== value) onchange(id);
         }),
     },
-    chosen ? label(chosen) : el('span', { class: 'pick-name muted' }, 'Choose…'),
+    chosen ? label(chosen) : el('span', { class: 'pick-name muted' }, tr('Choose…')),
   );
 }
 
@@ -837,14 +838,14 @@ function renderSwap() {
 
   const rows = swap.rows.map((row, i) => {
     const locked = row.offId === swap.injuredId;
-    const offPicker = playerPicker(offOptions, row.offId, (v) => { row.offId = v; renderSwap(); }, t, 'Who comes off?');
+    const offPicker = playerPicker(offOptions, row.offId, (v) => { row.offId = v; renderSwap(); }, t, tr('Who comes off?'));
     offPicker.disabled = locked;
     return el('div', { class: 'swap-row' }, [
       el('div', { class: 'pick' }, [
-        el('div', { class: 'pick-row' }, [el('span', { class: 'tag off' }, 'OFF'), offPicker]),
+        el('div', { class: 'pick-row' }, [el('span', { class: 'tag off' }, tr('OFF')), offPicker]),
         el('div', { class: 'pick-row' }, [
-          el('span', { class: 'tag on' }, 'ON'),
-          playerPicker(onOptions, row.onId, (v) => { row.onId = v; renderSwap(); }, t, 'Who comes on?'),
+          el('span', { class: 'tag on' }, tr('ON')),
+          playerPicker(onOptions, row.onId, (v) => { row.onId = v; renderSwap(); }, t, tr('Who comes on?')),
         ]),
       ]),
       locked
@@ -852,7 +853,7 @@ function renderSwap() {
         : el('button', {
             type: 'button',
             class: 'icon',
-            'aria-label': 'Remove this swap',
+            'aria-label': tr('Remove this swap'),
             onclick: () => {
               swap.rows.splice(i, 1);
               renderSwap();
@@ -860,7 +861,7 @@ function renderSwap() {
           }, '✕'),
     ]);
   });
-  $('swap-rows').replaceChildren(...(rows.length ? rows : [el('p', { class: 'muted' }, 'No swaps.')]));
+  $('swap-rows').replaceChildren(...(rows.length ? rows : [el('p', { class: 'muted' }, tr('No swaps.'))]));
   $('swap-add').hidden = !nextFreePair(t);
   $('swap-error').textContent = '';
 }
@@ -883,7 +884,7 @@ $('swap-confirm').addEventListener('click', () => {
   const offs = swap.rows.map((r) => r.offId);
   const ons = swap.rows.map((r) => r.onId);
   if (new Set(offs).size !== offs.length || new Set(ons).size !== ons.length) {
-    $('swap-error').textContent = 'Each player can only be picked once.';
+    $('swap-error').textContent = tr('Each player can only be picked once.');
     return;
   }
   M.applySwaps(match, swap.rows, now(), swap.injuredId);
@@ -920,9 +921,9 @@ async function shareLink() {
   }
   try {
     await navigator.clipboard.writeText(link);
-    toast('Link copied. Send it to the other phone and open it there.');
+    toast(tr('Link copied. Send it to the other phone and open it there.'));
   } catch {
-    await ask({ title: 'Copy this link', text: 'Send it to the other phone and open it there.', input: 'Link', value: link, ok: 'Done' });
+    await ask({ title: tr('Copy this link'), text: tr('Send it to the other phone and open it there.'), input: tr('Link'), value: link, ok: tr('Done') });
   }
 }
 
@@ -930,21 +931,21 @@ $('share-team').addEventListener('click', shareLink);
 $('share-match').addEventListener('click', shareLink);
 
 $('paste-link').addEventListener('click', async () => {
-  const text = await ask({ title: 'Paste a shared link', text: 'Copy the link from the other phone and paste it here.', input: 'Paste the link here', ok: 'Load' });
+  const text = await ask({ title: tr('Paste a shared link'), text: tr('Copy the link from the other phone and paste it here.'), input: tr('Paste the link here'), ok: tr('Load') });
   if (text) await loadShared(text);
 });
 
 // Replace this phone's team and match with the ones in a shared link.
 async function loadShared(text) {
   const shared = await readLink(text);
-  if (!shared) return toast('That link doesn’t work. Ask for a new one.');
+  if (!shared) return toast(tr('That link doesn’t work. Ask for a new one.'));
   if (team.players.length || match) {
     const sure = await ask({
-      title: 'Load the shared team?',
+      title: tr('Load the shared team?'),
       text: shared.match
-        ? 'This phone’s team and match are replaced by the shared ones. The match carries on from where the other phone is.'
-        : 'This phone’s team and match are replaced by the shared team and setup.',
-      ok: 'Load',
+        ? tr('This phone’s team and match are replaced by the shared ones. The match carries on from where the other phone is.')
+        : tr('This phone’s team and match are replaced by the shared team and setup.'),
+      ok: tr('Load'),
     });
     if (!sure) return;
   }
@@ -960,7 +961,7 @@ async function loadShared(text) {
   if (match) saveMatch(match);
   else clearMatch();
   start();
-  toast(match ? 'Match loaded. Carry on from here.' : 'Team loaded.');
+  toast(match ? tr('Match loaded. Carry on from here.') : tr('Team loaded.'));
 }
 
 // ---------- theme ----------
@@ -974,8 +975,8 @@ function applyTheme() {
   if (theme === 'auto') delete document.documentElement.dataset.theme;
   else document.documentElement.dataset.theme = theme;
   const [icon, label] = THEMES[theme];
-  $('theme-toggle').replaceChildren(el('span', {}, icon), el('span', { class: 'theme-label' }, label));
-  $('theme-toggle').setAttribute('aria-label', `Theme: ${theme}. Tap to change.`);
+  $('theme-toggle').replaceChildren(el('span', { class: 'theme-icon' }, icon), el('span', { class: 'theme-label' }, tr(label)));
+  $('theme-toggle').setAttribute('aria-label', tr('Theme: {theme}. Tap to change.', { theme: tr(THEMES[theme][1]) }));
   const dark = theme === 'dark' || (theme === 'auto' && darkQuery.matches);
   document.querySelector('meta[name="theme-color"]').content = dark ? '#0a0f1c' : '#f1eee8';
 }
@@ -1039,6 +1040,16 @@ function setupInstall() {
   $('ios-install-close').addEventListener('click', () => $('ios-install-dialog').close());
 }
 setupInstall();
+
+// Language: the page's own text, and a round flag in the top bar showing the
+// current language. Tapping it switches to the other one.
+translatePage();
+{
+  const other = lang === 'no' ? 'en' : 'no';
+  $('lang-toggle').innerHTML = `<span class="flag">${FLAGS[lang]}</span>`;
+  $('lang-toggle').setAttribute('aria-label', tr('Language: {lang}. Tap for {other}.', { lang: LANGS[lang], other: LANGS[other] }));
+  $('lang-toggle').addEventListener('click', () => setLang(other));
+}
 
 function start() {
   if (match) {

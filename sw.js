@@ -13,6 +13,7 @@ const FILES = [
   './js/alerts.js',
   './js/share.js',
   './js/pitch.js',
+  './js/i18n.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',

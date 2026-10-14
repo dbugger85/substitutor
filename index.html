@@ -4,7 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f1eee8">
-  <title>Substitutor</title>
+  <title>Substitutor – fair substitutions in kids’ sports</title>
+  <meta name="description" content="Free app for coaches: a countdown to the next substitution, who goes off and who comes on, positions and a field view, so every kid gets fair playing time. Football, bandy, handball, ice hockey, floorball and futsal. Works offline on any phone.">
+  <link rel="canonical" href="https://substitutor.no/">
+  <!-- One address per language, so Google can list both -->
+  <link rel="alternate" hreflang="en" href="https://substitutor.no/">
+  <link rel="alternate" hreflang="nb" href="https://substitutor.no/?lang=no">
+  <link rel="alternate" hreflang="x-default" href="https://substitutor.no/">
+  <!-- The preview card when the link is shared -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Substitutor">
+  <meta property="og:url" content="https://substitutor.no/">
+  <meta property="og:title" content="Substitutor – fair substitutions in kids’ sports">
+  <meta property="og:description" content="Free app for coaches: a countdown to the next substitution, who goes off and who comes on, positions and a field view, so every kid gets fair playing time. Football, bandy, handball, ice hockey, floorball and futsal. Works offline on any phone.">
+  <meta property="og:image" content="https://substitutor.no/icons/preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:locale:alternate" content="nb_NO">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -29,110 +47,114 @@
       <h1>Substitutor<span class="tld">.no</span></h1>
     </div>
     <div class="top-actions">
-      <button id="settings-btn" type="button" class="icon cog" aria-label="Match settings" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button id="settings-btn" type="button" class="icon cog" aria-label="Match settings" data-t-label hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button id="lang-toggle" type="button" class="lang-toggle"></button><!-- the current language's flag; tap for the other -->
       <button id="theme-toggle" type="button" class="theme" aria-label="Theme"></button>
     </div>
   </header>
-  <p class="tagline">Fair playing time for every player.</p>
+  <p class="tagline" data-t>Fair playing time for every player.</p>
 
   <main>
     <!-- Screen 1: team -->
     <section id="screen-team" class="screen" hidden>
-      <h2>Team</h2>
+      <h2 data-t>Team</h2>
       <form id="add-player-form" class="row">
-        <input id="new-player-name" placeholder="Player name" autocomplete="off" enterkeyhint="done">
-        <button type="submit" class="primary">Add</button>
+        <input id="new-player-name" placeholder="Player name" data-t-placeholder autocomplete="off" enterkeyhint="done">
+        <button type="submit" class="primary" data-t>Add</button>
       </form>
       <ul id="team-list" class="list"></ul>
-      <p id="team-empty" class="muted">Add the players in your team.</p>
-      <button id="to-setup" class="primary big">Set up match</button>
+      <div id="team-empty">
+        <p class="muted" data-t>Add the players in your team.</p>
+        <p class="intro" data-t>Substitutor keeps track of playing time in kids’ matches and tells you who goes off and who comes on, so every player gets fair time on the field. For football, bandy, handball, ice hockey, floorball and futsal. Free, no sign-up, and it works without signal.</p>
+      </div>
+      <button id="to-setup" class="primary big" data-t>Set up match</button>
       <div class="share-links">
-        <button id="share-team" type="button" class="link">Share team</button>
-        <button id="paste-link" type="button" class="link">Paste a shared link</button>
+        <button id="share-team" type="button" class="link" data-t>Share team</button>
+        <button id="paste-link" type="button" class="link" data-t>Paste a shared link</button>
       </div>
       <div id="install-card" class="install-card" hidden>
         <img src="./icons/icon.svg" alt="">
         <div class="grow">
-          <strong>Install the app</strong>
-          <div class="muted small">Quick to open, works without signal.</div>
+          <strong data-t>Install the app</strong>
+          <div class="muted small" data-t>Quick to open, works without signal.</div>
         </div>
-        <button id="install-btn" type="button" class="primary">Install</button>
-        <button id="install-hide" type="button" class="icon" aria-label="Not now">✕</button>
+        <button id="install-btn" type="button" class="primary" data-t>Install</button>
+        <button id="install-hide" type="button" class="icon" aria-label="Not now" data-t-label>✕</button>
       </div>
     </section>
 
     <!-- Screen 2: match setup -->
     <section id="screen-setup" class="screen" hidden>
-      <h2>Match setup</h2>
-      <label class="field">Players on the field (including goalkeeper)
+      <h2 data-t>Match setup</h2>
+      <label class="field"><span data-t>Players on the field (including goalkeeper)</span>
         <input id="field-size" type="number" min="2" max="11" inputmode="numeric">
       </label>
       <fieldset>
-        <legend>Goalkeeper</legend>
+        <legend data-t>Goalkeeper</legend>
         <div id="gk-list" class="choices"></div>
       </fieldset>
       <fieldset>
-        <legend>Starting players <span id="starter-count" class="muted"></span></legend>
+        <legend><span data-t>Starting players</span> <span id="starter-count" class="muted"></span></legend>
         <div id="starter-list" class="choices"></div>
       </fieldset>
       <p id="starter-note" class="note small" hidden></p>
       <fieldset>
-        <legend>Positions</legend>
+        <legend data-t>Positions</legend>
         <div class="choices">
-          <label><input id="use-positions" type="checkbox"> Give players positions</label>
+          <label><input id="use-positions" type="checkbox"> <span data-t>Give players positions</span></label>
         </div>
         <div id="position-list" class="positions"></div>
         <div id="field-view-option" class="choices" hidden>
-          <label><input id="use-field-view" type="checkbox"> <span>Field view<span class="sub">Swipe left during the match to see it</span></span></label>
+          <label><input id="use-field-view" type="checkbox"> <span><span data-t>Field view</span><span class="sub" data-t>Swipe left during the match to see it</span></span></label>
         </div>
         <div id="field-style" class="field-style" hidden></div>
       </fieldset>
-      <label class="field">Minutes between substitutions
+      <label class="field"><span data-t>Minutes between substitutions</span>
         <input id="interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
       </label>
-      <label class="field">Players per substitution
+      <label class="field"><span data-t>Players per substitution</span>
         <input id="per-sub" type="number" min="1" inputmode="numeric">
       </label>
       <p id="setup-error" class="error"></p>
       <div class="row">
-        <button id="setup-back" type="button">Back</button>
-        <button id="start-match" type="button" class="primary grow">Start match</button>
+        <button id="setup-back" type="button" data-t>Back</button>
+        <button id="start-match" type="button" class="primary grow" data-t>Start match</button>
       </div>
     </section>
 
     <!-- Screen 3: match -->
     <section id="screen-match" class="screen" hidden>
       <div id="page-dots" class="page-dots" hidden>
-        <button type="button" data-page="0" class="active" aria-label="Show the list"></button>
-        <button type="button" data-page="1" aria-label="Show the field"></button>
+        <button type="button" data-page="0" class="active" aria-label="Show the list" data-t-label></button>
+        <button type="button" data-page="1" aria-label="Show the field" data-t-label></button>
       </div>
       <div id="match-pages" class="pages">
       <div class="page">
       <div id="clock" class="clock">
-        <button id="restart-countdown" type="button" class="icon restart" aria-label="Restart the countdown"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M18 2.8v4.4h-4.4"/></svg></button>
-        <div class="muted small">Next substitution</div>
+        <button id="restart-countdown" type="button" class="icon restart" aria-label="Restart the countdown" data-t-label><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M18 2.8v4.4h-4.4"/></svg></button>
+        <div class="muted small" data-t>Next substitution</div>
         <div id="countdown" class="countdown">0:00</div>
         <div class="progress" aria-hidden="true"><div id="sub-progress"></div></div>
-        <div class="muted small">Match time <span id="match-time">0:00</span>
-          <span id="paused-badge" class="badge paused" hidden>PAUSED</span></div>
+        <div class="muted small"><span data-t>Match time</span> <span id="match-time">0:00</span>
+          <span id="paused-badge" class="badge paused" hidden data-t>PAUSED</span></div>
       </div>
       <p id="match-warning" class="warning" hidden></p>
       <div class="controls">
-        <button id="pause" type="button">Pause</button>
-        <button id="swap-now" type="button">Swap</button>
-        <button id="add-late" type="button">Add player</button>
+        <button id="pause" type="button" data-t>Pause</button>
+        <button id="swap-now" type="button" data-t>Swap</button>
+        <button id="add-late" type="button" data-t>Add player</button>
       </div>
-      <h3>On the field</h3>
+      <h3 data-t>On the field</h3>
       <ul id="field-list" class="list"></ul>
-      <h3>Bench</h3>
+      <h3 data-t>Bench</h3>
       <ul id="bench-list" class="list"></ul>
       <div id="out-section" hidden>
-        <h3>Out of the match</h3>
+        <h3 data-t>Out of the match</h3>
         <ul id="out-list" class="list"></ul>
       </div>
-      <p class="muted small">Minutes show total time played, and in small grey, time since they last came on.<span id="last-pos-hint" hidden> Grey tags on the bench show where they last played.</span> Tap a player for more options.</p>
-      <button id="end-match" type="button" class="danger">End match</button>
-      <button id="share-match" type="button" class="big">Move to another phone</button>
+      <p class="muted small"><span data-t>Minutes show total time played, and in small grey, time since they last came on.</span> <span id="last-pos-hint" hidden data-t>Grey tags on the bench show where they last played.</span> <span data-t>Tap a player for more options.</span></p>
+      <button id="end-match" type="button" class="danger" data-t>End match</button>
+      <button id="share-match" type="button" class="big" data-t>Move to another phone</button>
       </div>
 
       <!-- Field view (bench below the field): swipe left from the list (only with positions and the field view switched on) -->
@@ -140,9 +162,9 @@
         <div id="field-clock" class="clock mini">
           <div class="mini-row">
             <div class="mini-labels">
-              <div class="muted small">Next substitution</div>
-              <div class="muted small">Match time <span id="field-match-time">0:00</span>
-                <span id="field-paused" class="badge paused" hidden>PAUSED</span></div>
+              <div class="muted small" data-t>Next substitution</div>
+              <div class="muted small"><span data-t>Match time</span> <span id="field-match-time">0:00</span>
+                <span id="field-paused" class="badge paused" hidden data-t>PAUSED</span></div>
             </div>
             <div id="field-countdown" class="countdown">0:00</div>
           </div>
@@ -152,10 +174,10 @@
           <div id="pitch" class="pitch">
             <svg id="pitch-lines" class="pitch-lines" viewBox="0 0 200 260" aria-hidden="true"></svg><!-- drawn from js/pitch.js -->
             <div id="pitch-markers"></div>
-            <button id="field-done" type="button" class="field-done" hidden>Done</button>
+            <button id="field-done" type="button" class="field-done" hidden data-t>Done</button>
           </div>
           <div class="field-bench">
-            <div class="field-bench-title">Bench</div>
+            <div class="field-bench-title" data-t>Bench</div>
             <ul id="field-bench"></ul>
           </div>
         </div>
@@ -167,15 +189,15 @@
 
   <!-- Substitution / swap popup -->
   <dialog id="swap-dialog">
-    <h2 id="swap-title">Substitution</h2>
-    <p class="muted small">Change a player by tapping their name.</p>
+    <h2 id="swap-title" data-t>Substitution</h2>
+    <p class="muted small" data-t>Change a player by tapping their name.</p>
     <div id="swap-rows"></div>
-    <button id="swap-add" type="button" class="link">+ Add another swap</button>
+    <button id="swap-add" type="button" class="link" data-t>+ Add another swap</button>
     <p id="swap-error" class="error"></p>
     <div class="row">
-      <button id="swap-skip" type="button">Skip</button>
-      <button id="swap-cancel" type="button">Cancel</button>
-      <button id="swap-confirm" type="button" class="primary grow">Done</button>
+      <button id="swap-skip" type="button" data-t>Skip</button>
+      <button id="swap-cancel" type="button" data-t>Cancel</button>
+      <button id="swap-confirm" type="button" class="primary grow" data-t>Done</button>
     </div>
   </dialog>
 
@@ -187,42 +209,42 @@
 
   <!-- End of match summary -->
   <dialog id="summary-dialog">
-    <h2>Match over</h2>
-    <p class="muted">Match time <span id="summary-time"></span>. Minutes played:</p>
+    <h2 data-t>Match over</h2>
+    <p class="muted"><span data-t>Match time</span> <span id="summary-time"></span>. <span data-t>Minutes played:</span></p>
     <ul id="summary-list" class="list"></ul>
-    <p class="muted small">Next match, the players who played least will be suggested to start.</p>
-    <button id="summary-close" type="button" class="primary big">Close</button>
+    <p class="muted small" data-t>Next match, the players who played least will be suggested to start.</p>
+    <button id="summary-close" type="button" class="primary big" data-t>Close</button>
   </dialog>
 
   <!-- Match settings: the cog on the match screen. Changes apply at once. -->
   <dialog id="settings-dialog">
-    <h2 tabindex="-1" autofocus>Match settings</h2><!-- focus here, so the keyboard doesn't pop up -->
-    <label class="field">Minutes between substitutions
+    <h2 tabindex="-1" autofocus data-t>Match settings</h2><!-- focus here, so the keyboard doesn't pop up -->
+    <label class="field"><span data-t>Minutes between substitutions</span>
       <input id="set-interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
     </label>
-    <p class="muted small set-note">From the next substitution. ↻ on the clock starts it now.</p>
-    <label class="field">Players per substitution
+    <p class="muted small set-note" data-t>From the next substitution. ↻ on the clock starts it now.</p>
+    <label class="field"><span data-t>Players per substitution</span>
       <input id="set-per-sub" type="number" min="1" inputmode="numeric">
     </label>
     <fieldset>
-      <legend>Positions</legend>
+      <legend data-t>Positions</legend>
       <div class="choices">
-        <label><input id="set-use-positions" type="checkbox"> Give players positions</label>
+        <label><input id="set-use-positions" type="checkbox"> <span data-t>Give players positions</span></label>
       </div>
       <div id="set-position-list" class="positions"></div>
       <div id="set-field-view-option" class="choices" hidden>
-        <label><input id="set-field-view" type="checkbox"> <span>Field view<span class="sub">Swipe left to see it</span></span></label>
+        <label><input id="set-field-view" type="checkbox"> <span><span data-t>Field view</span><span class="sub" data-t>Swipe left to see it</span></span></label>
       </div>
       <div id="set-field-style" class="field-style" hidden></div>
     </fieldset>
-    <button id="settings-done" type="button" class="primary big">Done</button>
+    <button id="settings-done" type="button" class="primary big" data-t>Done</button>
   </dialog>
 
   <!-- Pick a player for a swap -->
   <dialog id="pick-dialog">
     <h2 id="pick-title"></h2>
     <ul id="pick-list" class="list"></ul>
-    <button id="pick-cancel" type="button" class="big">Cancel</button>
+    <button id="pick-cancel" type="button" class="big" data-t>Cancel</button>
   </dialog>
 
   <!-- Questions: end the match, a new player's name -->
@@ -232,7 +254,7 @@
       <p id="ask-text" class="muted"></p>
       <input id="ask-input" autocomplete="off" enterkeyhint="done">
       <div class="row">
-        <button id="ask-cancel" type="button">Cancel</button>
+        <button id="ask-cancel" type="button" data-t>Cancel</button>
         <button id="ask-ok" type="submit" class="primary grow">OK</button>
       </div>
     </form>
@@ -240,13 +262,13 @@
 
   <!-- How to install on iPhone and iPad (Safari has no install button) -->
   <dialog id="ios-install-dialog">
-    <h2>Install on iPhone</h2>
+    <h2 data-t>Install on iPhone</h2>
     <ol class="steps">
-      <li>Tap the <strong>Share</strong> button <span class="share-icon" aria-hidden="true"></span> in Safari’s toolbar.</li>
-      <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
-      <li>Tap <strong>Add</strong>. Substitutor is now on your home screen.</li>
+      <li data-t-html>Tap the <strong>Share</strong> button <span class="share-icon" aria-hidden="true"></span> in Safari’s toolbar.</li>
+      <li data-t-html>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+      <li data-t-html>Tap <strong>Add</strong>. Substitutor is now on your home screen.</li>
     </ol>
-    <button id="ios-install-close" type="button" class="primary big">Got it</button>
+    <button id="ios-install-close" type="button" class="primary big" data-t>Got it</button>
   </dialog>
 
   <div id="toast" class="toast" role="status" hidden></div>

@@ -187,11 +187,13 @@ body:has(#screen-match:not([hidden])) .tagline { display: none; }
 .top-actions { display: flex; align-items: center; gap: 4px; }
 /* The cog for match settings, only on the match screen: plain and grey, like ↻ on the clock */
 .topbar button.cog { display: grid; place-items: center; min-width: 40px; min-height: 44px; box-shadow: none; }
-.topbar button.cog svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.topbar button.cog svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* On the match screen the theme button shows only its icon, round like the cog, to leave room for the title. */
 body:has(#screen-match:not([hidden])) .topbar button.theme { justify-content: center; width: 44px; padding: 0; }
 body:has(#screen-match:not([hidden])) .theme-label { display: none; }
 .topbar button.theme { white-space: nowrap; }
+/* The three top-bar icons (flag, cog, theme) are about the same size: 22–23px. */
+.topbar .theme-icon { font-size: 21px; line-height: 1; }
 /* The theme button is plain and grey, like the cog: no background. */
 .topbar button.theme.theme { background: transparent; border-color: transparent; box-shadow: none; color: var(--muted); padding: 0 6px; }
 #settings-dialog .set-note { margin: -6px 0 14px; }
@@ -705,3 +707,20 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
   box-shadow: inset 0 1px 0 var(--chip-edge), var(--shadow);
 }
 .swatches button.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text); }
+
+/* What the app does, shown before any players are added (and read by Google) */
+.intro { margin: 4px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+/* Language: a small round flag in the top bar, the current language. Not on the match screen, where the cog needs the room. */
+.topbar button.lang-toggle { display: grid; place-items: center; min-width: 40px; min-height: 44px; padding: 0; border: 0; background: transparent; box-shadow: none; }
+/* Glass, like the other buttons: a bright sheen across the top, a light rim and a soft shadow over the flag */
+.lang-toggle .flag { position: relative; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 1px var(--glass-line), 0 2px 6px rgb(0 0 0 / 0.25); }
+.lang-toggle .flag svg { display: block; width: 100%; height: 100%; }
+.lang-toggle .flag::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.6), rgb(255 255 255 / 0.12) 42%, transparent 55%, rgb(0 0 0 / 0.12));
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.75), inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }

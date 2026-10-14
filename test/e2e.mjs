@@ -287,6 +287,7 @@ try {
   await page.screenshot({ path: `${shots}/10-positions-match.png`, fullPage: true });
   // The cog: change settings during the match
   assert.ok(await page.isVisible('#settings-btn'));
+  assert.ok(await page.isHidden('#lang-toggle'), 'no language flag on the match screen');
   await page.click('#settings-btn');
   await page.waitForSelector('#settings-dialog[open]');
   await popup('12-match-settings');
@@ -358,6 +359,37 @@ try {
   await iphone.click('#install-hide');
   await iphone.reload();
   assert.ok(await iphone.$eval('#install-card', (e) => e.hidden));
+
+  // Norwegian: its own address, the page and the app's messages in Norwegian, and the flags switch back
+  const norsk = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'en-GB' });
+  norsk.on('pageerror', (e) => errors.push(e.message));
+  await norsk.goto(new URL('?lang=no', base).href);
+  assert.equal(await norsk.getAttribute('html', 'lang'), 'nb');
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Lag');
+  assert.ok((await norsk.title()).includes('rettferdige bytter'));
+  assert.ok((await norsk.getAttribute('meta[name="description"]', 'content')).startsWith('Gratis app'));
+  assert.ok(await norsk.isVisible('#team-empty .intro'));
+  assert.ok((await norsk.getAttribute('#lang-toggle', 'aria-label')).startsWith('Språk: Norsk'));
+  await norsk.screenshot({ path: `${shots}/13-norsk-team.png` });
+  for (const name of ['Ola', 'Kari', 'Per']) {
+    await norsk.fill('#new-player-name', name);
+    await norsk.press('#new-player-name', 'Enter');
+  }
+  await norsk.click('#to-setup');
+  assert.equal(await norsk.textContent('#screen-setup h2'), 'Kampoppsett');
+  assert.equal(await norsk.textContent('#setup-error'), 'Du har bare 3 spillere på laget.');
+  await norsk.screenshot({ path: `${shots}/13-norsk-setup.png`, fullPage: true });
+  await norsk.click('#setup-back');
+  // The choice is remembered without ?lang=, and the flag switches to English (and isn't on the match screen)
+  await norsk.goto(base);
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Lag');
+  await norsk.click('#lang-toggle');
+  await norsk.waitForURL(/lang=en/);
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Team');
+  // English is the default for a phone in English
+  await norsk.evaluate(() => localStorage.removeItem('substitutor.lang'));
+  await norsk.goto(base);
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Team');
 
   assert.deepEqual(errors, []);
   assert.deepEqual(nativeDialogs, [], 'the browser\'s own popups were used');
