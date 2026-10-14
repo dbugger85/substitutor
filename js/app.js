@@ -832,6 +832,11 @@ function openActions(id) {
   const action = (label, fn, cls = '') =>
     items.push(el('button', { type: 'button', class: cls, onclick: () => { $('action-dialog').close(); fn(); } }, label));
 
+  // On the field view, "Swap with…" comes first (owner's wish): tap who to swap with.
+  const others = match.players.filter((x) => M.onPitch(x.status) && x.id !== id);
+  if (fieldShowing() && (M.onPitch(p.status) ? others.length || bench.length : p.status === 'bench' && onField)) {
+    action(tr('Swap with…'), () => setPicking(id));
+  }
   if (M.onPitch(p.status)) {
     if (bench.length) action(tr('Substitute now'), () => openSwap('adhoc', [{ offId: id, onId: bench[0].id }]));
     action(tr('Injured – take off'), () =>
@@ -840,10 +845,7 @@ function openActions(id) {
         : change(() => M.setStatus(p, 'out', t)),
     );
     // Anyone on the field, the goalkeeper included: swapping with the goalkeeper puts the other player in goal.
-    const others = match.players.filter((x) => M.onPitch(x.status) && x.id !== id);
-    if (fieldShowing()) {
-      if (others.length || bench.length) action(tr('Swap with…'), () => setPicking(id));
-    } else if ((p.status === 'gk' || match.settings.positions) && others.length) {
+    if (!fieldShowing() && (p.status === 'gk' || match.settings.positions) && others.length) {
       action(tr('Change position with…'), () =>
         pickPlayer(tr('Who swaps positions with {name}?', { name: p.name }), others, null, t).then((otherId) => {
           if (otherId) change(() => M.swapPositions(match, id, otherId, t));
@@ -854,7 +856,6 @@ function openActions(id) {
   } else if (p.status === 'bench') {
     if (onField < match.settings.fieldSize) action(tr('Put on the field'), () => change(() => M.setStatus(p, 'field', t)));
     if (off.length) action(tr('Bring on now'), () => openSwap('adhoc', [{ offId: off[0].id, onId: id }]));
-    if (fieldShowing() && onField) action(tr('Swap with…'), () => setPicking(id));
     action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, t)));
     action(tr('Remove from match'), () => change(() => M.setStatus(p, 'out', t)));
   } else {
