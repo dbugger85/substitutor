@@ -116,6 +116,7 @@ npm start        # run locally at http://localhost:8000
 npm test         # tests for the substitution rules, share links, sports and translations
 npm install      # once, for the browser test
 npm run e2e      # browser test of a whole match
+npm run screenshots   # remake the screenshots above and the link preview picture
 ```
 
 `git push` to `main` updates the live site in about a minute (GitHub Pages).

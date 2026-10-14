@@ -14,6 +14,7 @@ npm test         # unit tests for js/match.js and js/share.js (node --test), no 
 npm install      # only needed for the browser test
 npm run e2e      # browser test of a full match in headless Chromium (/usr/bin/chromium)
 BASE_URL=https://substitutor.no/ npm run e2e   # same test against the live site
+npm run screenshots   # remake the README screenshots (screenshots/) and the link preview (icons/preview.png)
 ```
 
 Run `npm test` and `npm run e2e` after any change. The e2e test saves phone-sized screenshots to `test/screenshots/` (gitignored). Look at them after UI changes.
@@ -58,7 +59,8 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `test/i18n.test.js` | Checks that every text in `app.js` and `index.html` has a Norwegian version |
 | `robots.txt`, `sitemap.xml`, `icons/preview.png` | For Google and for link previews (see Languages and Google) |
 | `test/e2e.mjs` | Playwright browser test |
-| `screenshots/` | The README's pictures (phones 390 px wide, plus two iPad ones at 1180×820 and 820×1180 as a touch device): a 7-a-side match at 7:12 with English position names, light and dark. Made with a Playwright script like the e2e test (put a team in localStorage, start, move `runningSince` back 5 min, Done, move it 2:12 more, screenshot at 390×844 ×2, then halve). Retake them, and `icons/preview.png`, when the look changes |
+| `screenshots/` | The README's pictures (phones 390×844, iPad 1180×820 and 820×1180 as a touch device): a 7-a-side match at 7:12 with English position names, light and dark. Made by `test/screenshots.mjs` (`npm run screenshots`), which also makes `icons/preview.png`. Run it when the look changes |
+| `test/screenshots.mjs` | Plays a made-up match (team in localStorage, start, move `runningSince` back 5 min, Done, 2:12 more) and saves the README screenshots and the link preview |
 | `PLAN.md` | The original plan, plus a dated log of every decision since |
 
 ## How it works
