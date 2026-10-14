@@ -30,7 +30,7 @@ Add your players. The list is saved on the phone.
 
 ## 2. Match setup
 
-- **Players on the field**, including the goalkeeper
+- **Players on the field**, including the goalkeeper. If your team has fewer players than that, it's lowered to the number of players, so everyone plays.
 - **Goalkeeper**
 - **Starting players.** After your first match, the players who played least last time are ticked for you. "Suggest starters from last match" ticks them again if you've changed them.
 - **Minutes between substitutions**
