@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="theme-color" content="#f1eee8">
   <title>Substitutor – fair substitutions in kids’ sports</title>
   <meta name="description" content="Free app for coaches: a countdown to the next substitution, who goes off and who comes on, positions and a field view, so every kid gets fair playing time. Football, bandy, handball, ice hockey, floorball and futsal. Works offline on any phone.">
@@ -52,11 +52,13 @@
         const w = vv ? vv.width * vv.scale : innerWidth; // the window's real size, whatever the page's width
         const h = vv ? vv.height * vv.scale : innerHeight;
         const scale = Math.min(w, h) >= 700 ? Math.min(1.15, h / 844) : 1;
-        const content = scale > 1.01 ? `width=${Math.round(w / scale)}, viewport-fit=cover` : 'width=device-width, initial-scale=1, viewport-fit=cover';
+        // resizes-content: on Android the page shrinks above the keyboard, so popups stay in view
+        const content = (scale > 1.01 ? `width=${Math.round(w / scale)}, viewport-fit=cover` : 'width=device-width, initial-scale=1, viewport-fit=cover') + ', interactive-widget=resizes-content';
         if (meta.content !== content) meta.content = content;
       };
       fit();
-      addEventListener('resize', fit); // turning the tablet, or split screen
+      // turning the tablet, or split screen; not while typing, or the keyboard would change the size
+      addEventListener('resize', () => { if (!document.activeElement?.matches('input, textarea')) fit(); });
     })();
   </script>
   <script type="module" src="./js/app.js"></script>
@@ -108,7 +110,7 @@
     <!-- Screen 2: match setup -->
     <section id="screen-setup" class="screen" hidden>
       <h2 data-t>Match setup</h2>
-      <label class="field"><span data-t>Players on the field (including goalkeeper)</span>
+      <label class="field inline"><span data-t>Players on the field (including goalkeeper)</span>
         <input id="field-size" type="number" min="2" max="11" inputmode="numeric">
       </label>
       <fieldset>
@@ -121,20 +123,17 @@
       </fieldset>
       <p id="starter-note" class="note small" hidden></p>
       <fieldset>
-        <legend data-t>Positions</legend>
-        <div class="choices">
-          <label><input id="use-positions" type="checkbox"> <span data-t>Give players positions</span></label>
-        </div>
+        <legend class="choices toggle"><label><span data-t>Positions</span><input id="use-positions" type="checkbox" aria-label="Give players positions" data-t-label></label></legend>
         <div id="position-list" class="positions"></div>
         <div id="field-view-option" class="choices" hidden>
-          <label><input id="use-field-view" type="checkbox"> <span><span data-t>Field view</span><span class="sub" data-t>Swipe left during the match to see it</span></span></label>
+          <label><input id="use-field-view" type="checkbox"> <span><span data-t>Field view</span><span class="sub" data-t>Swipe left</span></span></label>
         </div>
         <div id="field-style" class="field-style" hidden></div>
       </fieldset>
-      <label class="field"><span data-t>Minutes between substitutions</span>
+      <label class="field inline"><span data-t>Minutes between substitutions</span>
         <input id="interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
       </label>
-      <label class="field"><span data-t>Players per substitution</span>
+      <label class="field inline"><span data-t>Players per substitution</span>
         <input id="per-sub" type="number" min="1" inputmode="numeric">
       </label>
       <p id="setup-error" class="error"></p>
@@ -242,26 +241,28 @@
 
   <!-- Match settings: the cog on the match screen. Changes apply at once. -->
   <dialog id="settings-dialog">
+    <div class="dialog-body"><!-- scrolls; the buttons below stay in view -->
     <h2 tabindex="-1" autofocus data-t>Match settings</h2><!-- focus here, so the keyboard doesn't pop up -->
-    <label class="field"><span data-t>Minutes between substitutions</span>
+    <label class="field inline"><span data-t>Minutes between subs</span>
       <input id="set-interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
+      <span class="sub" data-t data-restart-icon>From the next substitution. ↻ on the clock starts it now.</span>
     </label>
-    <p class="muted small set-note" data-t>From the next substitution. ↻ on the clock starts it now.</p>
-    <label class="field"><span data-t>Players per substitution</span>
+    <label class="field inline"><span data-t>Players per substitution</span>
       <input id="set-per-sub" type="number" min="1" inputmode="numeric">
     </label>
     <fieldset>
-      <legend data-t>Positions</legend>
-      <div class="choices">
-        <label><input id="set-use-positions" type="checkbox"> <span data-t>Give players positions</span></label>
-      </div>
+      <legend class="choices toggle"><label><span data-t>Positions</span><input id="set-use-positions" type="checkbox" aria-label="Give players positions" data-t-label></label></legend>
       <div id="set-position-list" class="positions"></div>
       <div id="set-field-view-option" class="choices" hidden>
         <label><input id="set-field-view" type="checkbox"> <span><span data-t>Field view</span><span class="sub" data-t>Swipe left to see it</span></span></label>
       </div>
       <div id="set-field-style" class="field-style" hidden></div>
     </fieldset>
-    <button id="settings-done" type="button" class="primary big" data-t>Done</button>
+    </div>
+    <div class="row dialog-buttons">
+      <button id="settings-cancel" type="button" data-t>Cancel</button>
+      <button id="settings-done" type="button" class="primary grow" data-t>Done</button>
+    </div>
   </dialog>
 
   <!-- Pick a player for a swap -->

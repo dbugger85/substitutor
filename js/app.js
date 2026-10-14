@@ -156,6 +156,9 @@ function setupError() {
   return '';
 }
 
+// Lists of names go two to a row only while every name is short, so long names stay on one line.
+const allShort = (names) => names.every((n) => (n ?? '').trim().length <= 12);
+
 function renderSetup() {
   const s = team.settings;
   const ids = new Set(team.players.map((p) => p.id));
@@ -166,6 +169,8 @@ function renderSetup() {
   $('interval').value = s.intervalMin ?? '';
   $('per-sub').value = s.perSub ?? '';
 
+  $('gk-list').classList.toggle('two-col', allShort(team.players.map((p) => p.name)));
+  $('starter-list').classList.toggle('two-col', allShort(team.players.map((p) => p.name)));
   $('gk-list').replaceChildren(
     ...team.players.map((p) =>
       el('label', {}, [
@@ -539,6 +544,7 @@ function fitPages() {
   const i = Math.round(pages.scrollLeft / pages.clientWidth);
   $('page-dots').querySelectorAll('button').forEach((b, j) => b.classList.toggle('active', i === j));
   pages.style.height = i === 1 ? `${$('field-page').offsetHeight}px` : '';
+  pages.scrollTop = 0; // never slid up or down inside (that left an empty gap under the field)
 }
 $('match-pages').addEventListener('scroll', fitPages);
 new ResizeObserver(fitPages).observe($('field-page'));
@@ -556,7 +562,10 @@ $('page-dots').addEventListener('click', (e) => {
 // players on the field isn't here (that means taking someone off or putting
 // someone on), nor the goalkeeper (tap a player and choose "Make goalkeeper").
 
+let settingsBefore = null; // copies from when the popup opened, for Cancel
+
 function openSettings() {
+  settingsBefore = { team: structuredClone(team), match: structuredClone(match) };
   const s = match.settings;
   $('set-interval').value = s.intervalMs / 60000;
   $('set-per-sub').value = s.perSub;
@@ -571,6 +580,7 @@ function renderSettingsPositions() {
   $('set-field-view').checked = !!team.settings.fieldView;
   $('set-field-view-option').hidden = !names;
   renderFieldStyle();
+  $('set-position-list').classList.toggle('two-col', allShort(names ?? []));
   $('set-position-list').replaceChildren(
     ...(names ?? []).map((name, i) =>
       el('input', {
@@ -592,6 +602,15 @@ function renderSettingsPositions() {
 
 $('settings-btn').addEventListener('click', () => match && openSettings());
 $('settings-done').addEventListener('click', () => $('settings-dialog').close());
+// Cancel puts everything back as it was when the popup opened. (The back button keeps the changes, as before.)
+$('settings-cancel').addEventListener('click', () => {
+  ({ team, match } = settingsBefore);
+  saveTeam(team);
+  saveMatch(match);
+  renderFieldStyle();
+  renderMatch();
+  $('settings-dialog').close();
+});
 $('set-interval').addEventListener('input', (e) => {
   const min = parseFloat(e.target.value);
   if (!(min >= 0.5 && min <= 60)) return; // half-typed: wait for a real number
@@ -1053,6 +1072,13 @@ setupInstall();
 // Language: the page's own text, and a round flag in the top bar showing the
 // current language. Tapping it switches to the other one.
 translatePage();
+// The ↻ in a note: the same icon as the clock's button, not the font's arrow
+for (const note of document.querySelectorAll('[data-restart-icon]')) {
+  const [before, after] = note.textContent.split('↻');
+  const icon = $('restart-countdown').querySelector('svg').cloneNode(true);
+  icon.classList.add('inline-icon');
+  note.replaceChildren(before, icon, after);
+}
 {
   const other = lang === 'no' ? 'en' : 'no';
   $('lang-toggle').innerHTML = `<span class="flag">${FLAGS[lang]}</span>`;

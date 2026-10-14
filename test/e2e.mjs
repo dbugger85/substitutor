@@ -318,6 +318,20 @@ try {
   assert.equal(stored.match.positions[0], 'Venstre back');
   assert.equal(stored.team.intervalMin, 3);
   assert.equal(stored.team.positions[0], 'Venstre back');
+  // Cancel undoes the changes made since the popup opened, and Done stays in view without scrolling
+  await page.click('#settings-btn');
+  await page.waitForSelector('#settings-dialog[open]');
+  assert.ok(await page.$eval('#settings-done', (b) => b.getBoundingClientRect().bottom <= innerHeight));
+  await page.fill('#set-interval', '7');
+  await page.fill('#set-position-list input >> nth=0', 'Midtstopper');
+  await page.click('label:has(#set-use-positions)');
+  await page.click('#settings-cancel');
+  assert.ok(!(await page.isVisible('#settings-dialog')));
+  assert.equal(await page.$$eval('#field-list .badge.pos', (b) => b.length), 4);
+  const kept = await page.evaluate(() => ({ team: JSON.parse(localStorage.getItem('substitutor.team')).settings, match: JSON.parse(localStorage.getItem('substitutor.match')).settings }));
+  assert.equal(kept.match.intervalMs, 180000);
+  assert.equal(kept.match.positions[0], 'Venstre back');
+  assert.equal(kept.team.intervalMin, 3);
   await page.click('#end-match');
   await page.click('#ask-ok');
   await page.click('#summary-close');
