@@ -164,6 +164,8 @@ function renderSetup() {
   const ids = new Set(team.players.map((p) => p.id));
   if (!ids.has(s.gkId)) s.gkId = null;
   s.starterIds = s.starterIds.filter((id) => ids.has(id) && id !== s.gkId);
+  // A small squad: fewer players on the field than the default five, so everyone plays.
+  if (team.players.length >= 2 && s.fieldSize > team.players.length) s.fieldSize = team.players.length;
 
   $('field-size').value = s.fieldSize ?? '';
   $('interval').value = s.intervalMin ?? '';
@@ -796,7 +798,7 @@ function openSwap(mode, rows, injuredId = null) {
   swap = { mode, rows: rows.map((r) => ({ ...r })), injuredId };
   $('swap-title').textContent =
     mode === 'scheduled' ? tr('Substitution time!') : injuredId ? tr('Injury – swap player') : tr('Swap players');
-  $('swap-confirm').textContent = mode === 'scheduled' ? tr('Done – restart timer') : tr('Swap');
+  $('swap-confirm').textContent = mode === 'scheduled' ? tr('Done') : tr('Swap');
   $('swap-skip').hidden = mode !== 'scheduled';
   $('swap-cancel').hidden = mode === 'scheduled';
   renderSwap();

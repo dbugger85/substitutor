@@ -127,7 +127,6 @@ export const NO = {
   'Substitution time!': 'Tid for bytte!',
   'Injury – swap player': 'Skade – bytt spiller',
   'Swap players': 'Bytt spillere',
-  'Done – restart timer': 'Ferdig – start klokka',
   'Change a player by tapping their name.': 'Trykk på et navn for å velge en annen spiller.',
   '+ Add another swap': '+ Legg til et bytte til',
   Skip: 'Hopp over',

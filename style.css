@@ -450,7 +450,7 @@ dialog h2 { margin-top: 0; }
 /* Match settings: the content scrolls, Cancel and Done stay at the bottom */
 #settings-dialog { padding: 0; }
 #settings-dialog[open] { display: flex; flex-direction: column; }
-#settings-dialog .dialog-body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 20px 4px; }
+#settings-dialog .dialog-body { flex: 0 1 auto; min-height: 0; overflow-y: auto; padding: 20px 20px 4px; } /* as tall as its content, shrinking only on a short screen (flex: 1 squashed it to nothing in Safari) */
 #settings-dialog .dialog-buttons { margin: 0; padding: 12px 20px 20px; border-top: 1px solid var(--line); }
 
 .swap-row {

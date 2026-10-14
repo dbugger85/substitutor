@@ -393,7 +393,9 @@ try {
   }
   await norsk.click('#to-setup');
   assert.equal(await norsk.textContent('#screen-setup h2'), 'Kampoppsett');
-  assert.equal(await norsk.textContent('#setup-error'), 'Du har bare 3 spillere på laget.');
+  // Only 3 players: the default 5 on the field drops to 3, so the setup works without typing
+  assert.equal(await norsk.inputValue('#field-size'), '3');
+  assert.equal(await norsk.textContent('#setup-error'), 'Velg en målvakt.');
   await norsk.screenshot({ path: `${shots}/13-norsk-setup.png`, fullPage: true });
   await norsk.click('#setup-back');
   // The choice is remembered without ?lang=, and the flag switches to English (and isn't on the match screen)
