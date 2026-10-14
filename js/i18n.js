@@ -13,7 +13,7 @@ export const NO = {
   'Substitutor – fair substitutions in kids’ sports': 'Substitutor – rettferdige bytter i barneidrett',
   'Free app for coaches: a countdown to the next substitution, who goes off and who comes on, positions and a field view, so every kid gets fair playing time. Football, bandy, handball, ice hockey, floorball and futsal. Works offline on any phone.':
     'Gratis app for trenere: nedtelling til neste bytte, hvem som skal ut og inn, posisjoner og banevisning, så alle barna får rettferdig spilletid. Fotball, bandy, håndball, ishockey, innebandy og futsal. Virker uten nett på alle mobiler.',
-  'Fair playing time for every player.': 'Rettferdig spilletid for alle spillerne.',
+  'Fair playing time for every player': 'Rettferdig spilletid for alle spillerne',
   'Substitutor keeps track of playing time in kids’ matches and tells you who goes off and who comes on, so every player gets fair time on the field. For football, bandy, handball, ice hockey, floorball and futsal. Free, no sign-up, and it works without signal.':
     'Substitutor holder styr på spilletiden i barnekamper og sier fra hvem som skal ut og inn, så alle får like mye tid på banen. For fotball, bandy, håndball, ishockey, innebandy og futsal. Gratis, uten innlogging, og virker uten dekning.',
   Language: 'Språk',
@@ -23,7 +23,7 @@ export const NO = {
   Norsk: 'Norsk',
 
   // Team
-  Team: 'Lag',
+  Players: 'Spillere',
   'Player name': 'Spillernavn',
   Add: 'Legg til',
   'Add the players in your team.': 'Legg til spillerne på laget.',

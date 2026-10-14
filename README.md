@@ -4,7 +4,7 @@ A phone-friendly web app for fair substitutions in kids' sports matches. It work
 
 **Open it:** https://substitutor.no
 
-**Install it as an app** (opens full screen from your home screen, and works with no signal). The easiest way is the **Install** button at the bottom of the Team screen. Or do it by hand:
+**Install it as an app** (opens full screen from your home screen, and works with no signal). The easiest way is the **Install** button at the bottom of the Players screen. Or do it by hand:
 - **iPhone:** open the link in Safari, tap the Share button, then **Add to Home Screen**.
 - **Android:** open the link in Chrome, tap the ⋮ menu, then **Install app** (or **Add to Home screen**).
 
@@ -20,7 +20,7 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
 
 **Language:** English or Norwegian. It follows your phone's language. The round flag in the top-right corner shows the current language; tap it to switch (it's hidden during a match). Each has its own address: substitutor.no/?lang=no for Norwegian, substitutor.no/?lang=en for English.
 
-## 1. Team
+## 1. Players
 
 Add your players. The list is saved on the phone.
 - **Tap a name** to fix its spelling.
@@ -71,6 +71,17 @@ Your setup is remembered for the next match.
 - The positions start where their names suggest: "Spiss", "Striker" or "ST" at the front, "Høyre back" or "RB" at the back on the right, "Venstre kant" or "LW" out on the left, and so on. English and Norwegian names and the usual short forms work, for every sport: in handball "fløy" and "strek" go up front and a "back" in the middle; in ice hockey C, LW and RW are forwards and LD and RD defenders. Names it doesn't recognise start in the middle.
 - Tap **Done**, or an empty part of the field, when you've finished. The layout is remembered for the next match. If you rename a position, it moves back to where its new name suggests.
 
+## On an iPad or tablet
+
+<p>
+  <img src="screenshots/6-ipad-landscape.png" width="480" alt="iPad sideways: the match list on the left and the field on the right">
+  <img src="screenshots/7-ipad-portrait-dark.png" width="230" alt="iPad upright in dark mode: one wide column, a little bigger than on a phone">
+</p>
+
+- **Sideways:** the match list and the field are side by side, so there's no swiping. The field gets a little more room and stays in view while you scroll the list. Its bench is left out, since the list next to it shows the bench. Press and hold a position to arrange them, as on a phone.
+- **Upright:** one column using the full width. Everything is a little bigger than on a phone, but never so big that you see fewer players than on a phone. The field view is one swipe away, as on a phone.
+- The same applies to Android tablets, and to a wide computer window (side by side, normal size).
+
 ## How substitutions are chosen
 
 Substitutions rotate:
@@ -82,11 +93,11 @@ This means a player who was in goal for a long time isn't taken off again and ag
 ## Switching phones
 
 To hand over to another coach or another phone in the middle of a match:
-1. Tap **Move to another phone** at the bottom of the match screen. Before a match, use **Share team** on the Team screen instead.
+1. Tap **Move to another phone** at the bottom of the match screen. Before a match, use **Share team** on the Players screen instead.
 2. Send the link (Messages, WhatsApp, AirDrop…).
 3. Open the link on the other phone. The team, the setup and the match carry on there, clock and all.
 
-If the other phone uses the installed app on iPhone, copy the link, open the app, and tap **Paste a shared link** on the Team screen instead. The installed app can't read links opened in Safari.
+If the other phone uses the installed app on iPhone, copy the link, open the app, and tap **Paste a shared link** on the Players screen instead. The installed app can't read links opened in Safari.
 
 The first phone keeps its match until someone ends it there, so end it once the other phone has taken over.
 

@@ -58,7 +58,7 @@ All confirmed by the user. For how each one works in the code, see [CLAUDE.md](C
 - The starters for the next match are suggested from the minutes played in the last one: the players who played least start.
 - A glass look styled after the owner's PrimeTime app, with Auto/Light/Dark themes. The app is worded for any sport, not just football.
 - The app's own popups replace the browser's (no `alert`/`confirm`/`prompt` or dropdowns).
-- An Install button on the Team screen, with step-by-step help on iPhone.
+- An Install button on the Players screen, with step-by-step help on iPhone.
 
 **2026-10-13**
 - **Move to another phone:** a link carries the team, the setup and the match in progress, and the clock keeps running. "Paste a shared link" exists for the installed iPhone app. The first phone keeps its match until someone ends it. A QR code was left out (it would need outside code).
@@ -73,5 +73,6 @@ All confirmed by the user. For how each one works in the code, see [CLAUDE.md](C
 - **Norwegian and Google** (2026-10-14): the whole app in English and Norwegian (bokmål), following the phone, with one small round flag in the top-right corner showing the current language (tap to switch; hidden during a match); each language has its own address (`?lang=no`). A description, link previews, `robots.txt`, a sitemap and a short intro on the first screen, so Google can list it. Norwegian goalkeeper badge: MV.
 - **Android bottom strip** (2026-10-14): the installed app's colours in the manifest are the dark navy, so Android's bottom navigation strip is dark with a light handle in both modes (Android can't follow light/dark there). Same in PrimeTime.
 - **GitHub page** (2026-10-14): a description, topics, the substitutor.no link and five screenshots in the README (English position names). A small link to the GitHub page at the bottom of the app's front page, so people know where to contribute.
+- **Tablets** (2026-10-14): upright, one wide column a little bigger than on a phone (at most 15%, never fewer rows than a phone); sideways, the match list and the field side by side, the field a bit wider and without its bench. Same for Android tablets and wide computer windows.
 - **No visitor statistics** (2026-10-14): the owner chose to skip them. Google Search Console (set up by the owner, with a DNS TXT record at Domeneshop) only covers Google searches.
 - **Domain:** substitutor.no, bought at Domeneshop, with ".no" after the name in the header like PrimeTime's ".re". Phones don't need their saved team moved to the new address. Live since 2026-10-14, with HTTPS.

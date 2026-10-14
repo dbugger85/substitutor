@@ -728,3 +728,32 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
 /* A small link to the code on GitHub, at the bottom of the team screen */
 .source-link { margin: 24px 0 0; text-align: center; font-size: 13px; }
 .source-link a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
+
+/* ---------- Tablets and wide screens ----------
+   On a tablet upright the page is scaled up to 15% (the viewport script in index.html), never so
+   much that fewer rows fit than on a phone.
+   Upright, the column fills the width. Sideways (or a wide computer window), the
+   match screen shows the list and the field view side by side, with no swiping. */
+@media (min-width: 600px) {
+  .topbar, .tagline, main { max-width: 680px; }
+}
+@media (min-width: 860px) and (min-height: 560px) and (orientation: landscape) {
+  body:has(#screen-match:not([hidden]) #field-page:not([hidden])) :is(.topbar, main) { max-width: 1180px; }
+  #screen-match .pages:has(#field-page:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); /* the field gets a bit more room than the list */
+    gap: 28px;
+    align-items: start;
+    margin: 0;
+    overflow: visible;
+    height: auto !important;
+  }
+  #screen-match .pages:has(#field-page:not([hidden])) > .page { padding: 0; }
+  /* The field stays in view while the list scrolls; its small clock isn't needed next to the big one. */
+  #screen-match #field-page { position: sticky; top: 12px; }
+  /* …and fits the screen's height. No bench under it here: the list next to it shows the bench. */
+  #screen-match .pitch { width: min(100%, calc((100dvh - 90px) * 10 / 13)); margin: 0 auto; }
+  #screen-match .field-bench { display: none; }
+  #screen-match #field-clock,
+  #screen-match #page-dots { display: none !important; }
+}

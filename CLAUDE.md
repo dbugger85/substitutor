@@ -58,7 +58,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `test/i18n.test.js` | Checks that every text in `app.js` and `index.html` has a Norwegian version |
 | `robots.txt`, `sitemap.xml`, `icons/preview.png` | For Google and for link previews (see Languages and Google) |
 | `test/e2e.mjs` | Playwright browser test |
-| `screenshots/` | The README's pictures (390 px wide): a 7-a-side match at 7:12 with English position names, light and dark. Made with a Playwright script like the e2e test (put a team in localStorage, start, move `runningSince` back 5 min, Done, move it 2:12 more, screenshot at 390×844 ×2, then halve). Retake them, and `icons/preview.png`, when the look changes |
+| `screenshots/` | The README's pictures (phones 390 px wide, plus two iPad ones at 1180×820 and 820×1180 as a touch device): a 7-a-side match at 7:12 with English position names, light and dark. Made with a Playwright script like the e2e test (put a team in localStorage, start, move `runningSince` back 5 min, Done, move it 2:12 more, screenshot at 390×844 ×2, then halve). Retake them, and `icons/preview.png`, when the look changes |
 | `PLAN.md` | The original plan, plus a dated log of every decision since |
 
 ## How it works
@@ -108,6 +108,11 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - For Google: a title and description (English in the HTML, swapped to Norwegian by `translatePage()`), canonical, hreflang (en → `/`, nb → `/?lang=no`, x-default → `/`), Open Graph/Twitter tags with `icons/preview.png` (1200×630, made from the README screenshots with a Playwright page), `robots.txt` and `sitemap.xml`. The team screen shows a short intro (`.intro`) until players are added, so there's readable text. The owner adds the site to Google Search Console (a DNS TXT record at Domeneshop) and submits the sitemap.
 - The service worker matches cached pages with `ignoreSearch`, so `?lang=` works offline.
 - At the bottom of the team screen, a small grey link to the GitHub repo (`.source-link`, owner's wish 2026-10-14) so people know where to contribute. No visitor statistics: the owner chose to skip them (Search Console only covers Google searches).
+
+### Tablets (decided 2026-10-14)
+- **Size:** an inline script in `index.html`'s head sets the viewport `width` narrower than the window on tablets (shortest side ≥ 700px), so the browser scales the whole page up. Coordinates for taps and dragging stay consistent, unlike CSS `zoom`. Scale = `min(1.15, height / 844)`: never so big that fewer rows fit than on a phone (owner's wish). So an iPad upright is about 15% bigger (layout ~713×1026), and sideways normal size (820 tall is already shorter than a phone). It reads the real window size from `visualViewport` (width × scale), so split screen works, and it re-fits on `resize`. Phones keep `width=device-width`; desktop browsers ignore the viewport tag.
+- **Layout:** `@media (min-width: 600px)` widens the column to 680px. `@media (min-width: 860px) and (min-height: 560px) and (orientation: landscape)` turns the match screen's two `.pages` into a grid, list 5fr and field 6fr (owner: the field a bit wider), when the field view is on. The field page is sticky, its mini clock, the page dots and its bench are hidden (the list shows them), and the pitch's width is capped by the screen height so the whole field fits. Phones sideways are too short for it (min-height), so they keep swiping.
+- The e2e test runs iPad sizes upright and sideways as a touch device, and checks the scale, the side-by-side field, a drag, and that a phone keeps the normal size.
 
 ### Time
 - Everything is **match time** in ms, meaning time the clock has run excluding pauses: `elapsed = clockMs + (now − runningSince)`. `runningSince` is null while paused.

@@ -365,7 +365,7 @@ try {
   norsk.on('pageerror', (e) => errors.push(e.message));
   await norsk.goto(new URL('?lang=no', base).href);
   assert.equal(await norsk.getAttribute('html', 'lang'), 'nb');
-  assert.equal(await norsk.textContent('#screen-team h2'), 'Lag');
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Spillere');
   assert.ok((await norsk.title()).includes('rettferdige bytter'));
   assert.ok((await norsk.getAttribute('meta[name="description"]', 'content')).startsWith('Gratis app'));
   assert.ok(await norsk.isVisible('#team-empty .intro'));
@@ -384,14 +384,64 @@ try {
   await norsk.click('#setup-back');
   // The choice is remembered without ?lang=, and the flag switches to English (and isn't on the match screen)
   await norsk.goto(base);
-  assert.equal(await norsk.textContent('#screen-team h2'), 'Lag');
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Spillere');
   await norsk.click('#lang-toggle');
   await norsk.waitForURL(/lang=en/);
-  assert.equal(await norsk.textContent('#screen-team h2'), 'Team');
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Players');
   // English is the default for a phone in English
   await norsk.evaluate(() => localStorage.removeItem('substitutor.lang'));
   await norsk.goto(base);
-  assert.equal(await norsk.textContent('#screen-team h2'), 'Team');
+  assert.equal(await norsk.textContent('#screen-team h2'), 'Players');
+
+  // Tablets: upright a bit bigger (at least as many rows as a phone) in one wide column; sideways the normal size with the list and field side by side
+  const tabletTeam = () => {
+    const names = ['Nora', 'Emil', 'Jakob', 'Ella', 'Noah', 'Sofie', 'Lukas', 'Ingrid', 'Oskar'];
+    const starters = names.slice(1, 7);
+    localStorage.clear();
+    localStorage.setItem('substitutor.lang', 'en');
+    localStorage.setItem('substitutor.installHidden', '1');
+    localStorage.setItem('substitutor.team', JSON.stringify({ v: 1, players: names.map((n) => ({ id: n, name: n })), settings: { fieldSize: 7, intervalMin: 5, perSub: 2, gkId: 'Nora', starterIds: starters, usePositions: true, positions: ['Left back', 'Right back', 'Midfield', 'Left wing', 'Right wing', 'Striker'], posIds: starters, fieldView: true } }));
+  };
+  for (const [label, width, height, cssWidth] of [['portrait', 820, 1180, 713], ['landscape', 1180, 820, 1180]]) {
+    const tablet = await browser.newPage({ viewport: { width, height }, screen: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+    tablet.on('pageerror', (e) => errors.push(e.message));
+    await tablet.goto(base);
+    await tablet.evaluate(tabletTeam);
+    await tablet.reload();
+    assert.ok(Math.abs((await tablet.evaluate(() => innerWidth)) - cssWidth) <= 1, `${label}: page width ${await tablet.evaluate(() => innerWidth)}`);
+    assert.ok((await tablet.evaluate(() => innerHeight)) >= Math.min(844, height), `${label}: at least as many rows as a phone (or the normal size, if the screen is shorter)`);
+    await tablet.click('#to-setup');
+    await tablet.click('#start-match');
+    await tablet.waitForTimeout(300);
+    await tablet.screenshot({ path: `${shots}/14-ipad-${label}.png` });
+    const sideBySide = await tablet.evaluate(() => {
+      const list = document.querySelector('#clock').getBoundingClientRect();
+      const field = document.querySelector('#pitch').getBoundingClientRect();
+      return field.left > list.right && field.right <= innerWidth && field.width > 0 && field.top < innerHeight;
+    });
+    assert.equal(sideBySide, label === 'landscape', `${label}: field beside the list`);
+    assert.equal(await tablet.isVisible('#page-dots'), label === 'portrait');
+    if (label === 'landscape') {
+      // The whole field fits on the screen, with no bench under it (the list has it), and positions can still be arranged
+      assert.ok(await tablet.evaluate(() => document.querySelector('#pitch').getBoundingClientRect().bottom <= innerHeight));
+      assert.ok(await tablet.isHidden('.field-bench'));
+      const m = await (await tablet.$('#pitch-markers .marker:nth-child(2)')).boundingBox();
+      const pb = await (await tablet.$('#pitch')).boundingBox();
+      await tablet.mouse.move(m.x + m.width / 2, m.y + m.height / 2);
+      await tablet.mouse.down();
+      await tablet.waitForTimeout(600);
+      await tablet.mouse.move(pb.x + pb.width * 0.3, pb.y + pb.height * 0.6, { steps: 5 });
+      await tablet.mouse.up();
+      const spot = await tablet.evaluate(() => JSON.parse(localStorage.getItem('substitutor.team')).settings.layout.spots[0]);
+      assert.ok(Math.abs(spot.x - 0.3) < 0.03 && Math.abs(spot.y - 0.6) < 0.03, `dragged to ${JSON.stringify(spot)}`);
+    }
+    await tablet.close();
+  }
+  // A phone keeps the normal size
+  const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await phone.goto(base);
+  assert.equal(await phone.evaluate(() => innerWidth), 390);
+  await phone.close();
 
   assert.deepEqual(errors, []);
   assert.deepEqual(nativeDialogs, [], 'the browser\'s own popups were used');
