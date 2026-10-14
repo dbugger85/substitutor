@@ -425,6 +425,17 @@ try {
       // The whole field fits on the screen, with no bench under it (the list has it), and positions can still be arranged
       assert.ok(await tablet.evaluate(() => document.querySelector('#pitch').getBoundingClientRect().bottom <= innerHeight));
       assert.ok(await tablet.isHidden('.field-bench'));
+      // Only the list scrolls: the page stays put, and the clock (with ↻) stays in view at the bottom of the list
+      assert.ok(await tablet.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), 'the page itself does not scroll');
+      await tablet.$eval('.match-scroll', (e) => e.scrollTo({ top: e.scrollHeight }));
+      await tablet.waitForTimeout(100);
+      assert.ok(await tablet.evaluate(() => {
+        const r = (s) => document.querySelector(s).getBoundingClientRect();
+        return r('#clock').top >= 0 && r('#restart-countdown').bottom <= r('#clock').bottom && r('#share-match').bottom <= innerHeight;
+      }), 'clock pinned, last button reachable');
+      await tablet.click('#restart-countdown');
+      await tablet.waitForSelector('#toast:not([hidden])');
+      assert.ok((await tablet.$eval('#clock', (e) => e.getBoundingClientRect().height)) < 150, 'the clock is one compact row');
       const m = await (await tablet.$('#pitch-markers .marker:nth-child(2)')).boundingBox();
       const pb = await (await tablet.$('#pitch')).boundingBox();
       await tablet.mouse.move(m.x + m.width / 2, m.y + m.height / 2);

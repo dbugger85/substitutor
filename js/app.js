@@ -64,6 +64,7 @@ function show(name) {
   for (const s of document.querySelectorAll('.screen')) s.hidden = s.id !== `screen-${name}`;
   window.scrollTo(0, 0);
   $('settings-btn').hidden = name !== 'match';
+  sideBySide();
   $('match-pages').scrollLeft = 0; // the match screen opens on the list
   $('match-pages').style.height = '';
   setArranging(false);
@@ -406,6 +407,7 @@ function renderMatch() {
   const fieldView = !!(match.settings.positions && team.settings.fieldView);
   $('field-page').hidden = !fieldView;
   $('page-dots').hidden = !fieldView;
+  sideBySide();
   if (fieldView) renderField();
   else if ($('match-pages').scrollLeft) {
     // The field view was switched off while showing: back to the list
@@ -413,6 +415,13 @@ function renderMatch() {
     $('match-pages').style.height = '';
   }
   updateClock();
+}
+
+// On a tablet sideways the match screen shows the list and the field side by
+// side (style.css, "Tablets"). The body gets a class while the match screen and
+// the field view are both showing, for those styles to hook onto.
+function sideBySide() {
+  document.body.classList.toggle('with-field', !$('screen-match').hidden && !$('field-page').hidden);
 }
 
 // ---------- field view ----------

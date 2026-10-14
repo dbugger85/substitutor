@@ -733,27 +733,53 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
    On a tablet upright the page is scaled up to 15% (the viewport script in index.html), never so
    much that fewer rows fit than on a phone.
    Upright, the column fills the width. Sideways (or a wide computer window), the
-   match screen shows the list and the field view side by side, with no swiping. */
+   match screen shows the list and the field view side by side, with no swiping
+   (body.with-field, set in app.js while the match screen and the field view show). */
 @media (min-width: 600px) {
   .topbar, .tagline, main { max-width: 680px; }
 }
 @media (min-width: 860px) and (min-height: 560px) and (orientation: landscape) {
-  body:has(#screen-match:not([hidden]) #field-page:not([hidden])) :is(.topbar, main) { max-width: 1180px; }
-  #screen-match .pages:has(#field-page:not([hidden])) {
+  /* The page itself doesn't scroll: the header, the clock with its buttons and the field
+     stay put, and only the list below the buttons scrolls (.match-scroll). */
+  body.with-field { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  body.with-field :is(.topbar, main) { max-width: 1180px; width: 100%; }
+  body.with-field main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  body.with-field #screen-match { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  body.with-field .pages {
+    flex: 1;
+    min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); /* the field gets a bit more room than the list */
+    grid-template-rows: minmax(0, 1fr); /* one row, exactly the height that is left */
+    align-items: stretch;
     gap: 28px;
-    align-items: start;
     margin: 0;
     overflow: visible;
     height: auto !important;
   }
-  #screen-match .pages:has(#field-page:not([hidden])) > .page { padding: 0; }
-  /* The field stays in view while the list scrolls; its small clock isn't needed next to the big one. */
-  #screen-match #field-page { position: sticky; top: 12px; }
-  /* …and fits the screen's height. No bench under it here: the list next to it shows the bench. */
-  #screen-match .pitch { width: min(100%, calc((100dvh - 90px) * 10 / 13)); margin: 0 auto; }
-  #screen-match .field-bench { display: none; }
-  #screen-match #field-clock,
-  #screen-match #page-dots { display: none !important; }
+  body.with-field .pages > .page { padding: 0; min-height: 0; display: flex; flex-direction: column; }
+  body.with-field .match-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -8px; padding: 0 8px 8px; } /* the padding keeps the lists' shadows */
+  body.with-field .match-scroll > h3:first-child { margin-top: 4px; }
+
+  /* The clock as one row: what it is and the match time on the left, the countdown and ↻ on the right, the progress bar below. */
+  body.with-field #clock {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas: "label count restart" "time count restart" "bar bar bar";
+    align-items: center;
+    column-gap: 12px;
+    padding: 10px 12px 12px 18px;
+    text-align: left;
+  }
+  body.with-field #clock > :nth-child(2) { grid-area: label; align-self: end; }
+  body.with-field #countdown { grid-area: count; font-size: 76px; }
+  body.with-field #clock > .progress { grid-area: bar; margin: 8px 0 0; }
+  body.with-field #clock > :nth-child(5) { grid-area: time; align-self: start; }
+  body.with-field #restart-countdown { grid-area: restart; position: static; }
+  body.with-field .controls { margin-top: 10px; }
+
+  /* The field: its small clock, the page dots and its bench aren't needed next to the list. */
+  body.with-field #field-page { overflow: hidden; }
+  body.with-field :is(#field-clock, #page-dots, .field-bench) { display: none !important; }
+  body.with-field .pitch { width: min(100%, calc((100dvh - 120px) * 10 / 13)); margin: 0 auto; }
 }

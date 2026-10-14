@@ -78,7 +78,7 @@ Your setup is remembered for the next match.
   <img src="screenshots/7-ipad-portrait-dark.png" width="230" alt="iPad upright in dark mode: one wide column, a little bigger than on a phone">
 </p>
 
-- **Sideways:** the match list and the field are side by side, so there's no swiping. The field gets a little more room and stays in view while you scroll the list. Its bench is left out, since the list next to it shows the bench. Press and hold a position to arrange them, as on a phone.
+- **Sideways:** the match list and the field are side by side, so there's no swiping. The field gets a little more room. The clock is one compact row (↻ next to the countdown), and the clock, its buttons and the field stay put: only the list of players scrolls, if it doesn't fit. Its bench is left out, since the list next to it shows the bench. Press and hold a position to arrange them, as on a phone.
 - **Upright:** one column using the full width. Everything is a little bigger than on a phone, but never so big that you see fewer players than on a phone. The field view is one swipe away, as on a phone.
 - The same applies to Android tablets, and to a wide computer window (side by side, normal size).
 
