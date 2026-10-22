@@ -18,6 +18,7 @@ On iPhone, the installed app keeps its own saved team, separate from Safari, so 
   <img src="screenshots/3-field.png" width="180" alt="The field view: every position and who plays there, with the bench below">
   <img src="screenshots/4-field-hockey-dark.png" width="180" alt="The field view for ice hockey, in dark mode">
   <img src="screenshots/5-settings-dark.png" width="180" alt="Match settings during a match, with sport and colour for the field view">
+  <img src="screenshots/8-score.png" width="180" alt="The score page: goals for both teams, who scored, and cards, with the match time">
 </p>
 
 **Language:** English or Norwegian. It follows your phone's language. The round flag in the top-right corner shows the current language; tap it to switch (it's hidden during a match). Each has its own address: substitutor.no/?lang=no for Norwegian, substitutor.no/?lang=en for English.
@@ -35,6 +36,7 @@ Add your players. The list is saved on the phone.
 - **Starting players.** After your first match, the players who played least last time are ticked for you. "Suggest starters from last match" ticks them again if you've changed them.
 - **Minutes between substitutions**
 - **Players per substitution**
+- **Score** (optional): tick the box next to "Score" to keep the score on a page of its own. Type your team's name (remembered) and the opponent's (cleared after each match). **Cards** adds yellow and red cards.
 - **Show who swaps next** (on by default): coloured pairs on the match screen showing who swaps at the next substitution.
 - **Positions** (optional): tick the box next to "Positions", type a name for each spot (like Left back or Forward), and choose who starts where. Picking a player who already has a spot swaps the two.
 - **Field view** (optional, needs positions): adds a picture of the field to the match screen. Choose the **sport** (Football, Bandy, Handball, Ice hockey, Floorball or Futsal) for its lines (red lines for bandy, red and blue for ice hockey), and a **colour**. Each sport comes with its own colour (green grass, ice, a blue or wooden floor), and you can pick another.
@@ -49,6 +51,13 @@ Your setup is remembered for the next match.
 - **Half time** stops the clock and shows how long the break has lasted. **Start 2nd half** first shows the next swaps (change them, tap Start 2nd half, or Skip), then starts the clock with a full countdown. The clock then says "2nd half".
 - **Tap the match time** (or the countdown) to adjust the clock: −1 min, −10 s, +10 s, +1 min, or type the time (`530` or `5.30` for 5:30, as Android's number keyboard has no colon), for both the match time and the countdown to the next substitution. Handy if you started the clock late. Changing the match time moves players' minutes with it (but not the countdown), and it can't go back before the last time someone came on or off. The countdown is changed on its own.
 
+**Score and cards** (if switched on). Swipe left (past the field view, if that's on), or tap the score in the clock's top-left corner.
+- **+ Goal** under each team. For your team, choose who scored (the players on the field are first), **Don't know**, or an own goal by the other team. The time is the match time when you tapped + Goal.
+- **Yellow card** / **Red card**, then choose the player. A second yellow is a red. A red card is for good: the player is out of the match and never suggested again. From the field, the app asks each time: **Bring on** someone from the bench, or **Play one short**.
+- Everything is listed with the match time and the score at that moment. Tap an entry to change the scorer or delete it (a mistake). Scorers get a "1 goal" tag on the list, and cards show as a small yellow or red card.
+- At the end, the summary shows the result and who scored.
+- On a tablet sideways, a **Field | Score** switch above the field picks which one shows beside the list.
+
 **Who's next.** Under the clock, **Next** shows who swaps at the next substitution, so you can answer the players straight away. Each pair has its own colour and number, also on the player list and the field view. Tap the strip to choose other players; your choice is used when it's time (and **Use the app's suggestion** goes back). Switch it off with **Show who swaps next** in setup or ⚙.
 
 **Substitutions.** When it's time, the phone beeps and vibrates and shows who goes **off** and who comes **on**.
@@ -56,7 +65,7 @@ Your setup is remembered for the next match.
 - **Done** makes the swaps and restarts the countdown. **Skip** restarts it without changes.
 
 **Other buttons and options:**
-- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, showing who swaps next, positions on or off and their names, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
+- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, showing who swaps next, the score (names and cards), positions on or off and their names, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
 - **Swap now** swaps players at any time, without changing the countdown.
 - **Tap a player** to substitute them now, take them off injured, make them goalkeeper, change position, rename them, or remove them from the match.
 - **Add player** (under the bench) is for a late arrival, who comes on at the next substitution.

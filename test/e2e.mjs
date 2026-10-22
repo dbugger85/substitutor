@@ -386,6 +386,60 @@ try {
   assert.equal(await page.$$eval('#pitch-markers .marker.selected, #pitch-markers .marker.target', (m) => m.length), 0);
   await page.$eval('#match-pages', (e) => e.scrollTo({ left: 0 }));
   await page.screenshot({ path: `${shots}/10-positions-match.png`, fullPage: true });
+
+  // Score and cards: switched on in the cog, a third page with goals for both teams and cards
+  await page.click('#settings-btn');
+  await page.click('label:has(#set-use-score)');
+  await page.fill('#set-team-name', 'Lions');
+  await page.fill('#set-opponent', 'Tigers');
+  await page.click('label:has(#set-use-cards)');
+  await page.click('#settings-done');
+  assert.equal(await page.locator('#page-dots button').count(), 3);
+  assert.equal(await page.textContent('#clock-score'), '0–0');
+  await page.click('#clock-score'); // goes to the score page
+  await page.waitForFunction(() => document.querySelector('#page-dots button:nth-child(3)').classList.contains('active'));
+  assert.equal(await page.textContent('#us-name'), 'Lions');
+  const scorer = (await names('#field-list .name'))[1];
+  await page.click('#goal-us');
+  await page.click(`#pick-list button:has-text("${scorer}")`);
+  await page.click('#goal-them');
+  await page.click('#goal-us');
+  await page.click('#pick-list button:has-text("Own goal by Tigers")');
+  assert.equal(await page.textContent('#us-score'), '2');
+  assert.equal(await page.textContent('#them-score'), '1');
+  assert.equal(await page.textContent('#clock-score'), '2–1');
+  assert.deepEqual(await page.$$eval('#event-list .ev-score', (e) => e.map((x) => x.textContent)), ['1–0', '1–1', '2–1']);
+  assert.equal(await page.textContent(`#field-list li:has-text("${scorer}") .badge.goals`), '1 goal');
+  // Tap an event to delete it
+  await page.click('#event-list li:nth-child(3) button');
+  await page.click('#action-list button:has-text("Delete")');
+  assert.equal(await page.textContent('#clock-score'), '1–1');
+  // Two yellows for a bench player: a red, out of the match for good
+  const benched = (await names('#bench-list .name'))[0];
+  for (let i = 0; i < 2; i++) {
+    await page.click('#card-yellow');
+    await page.click(`#pick-list button:has-text("${benched}")`);
+  }
+  assert.ok((await names('#out-list .name')).includes(benched));
+  assert.equal(await page.locator('#event-list .card.red').count(), 1);
+  // A red card on the field: asks, and someone comes on in their place
+  const redField = (await names('#field-list .name'))[2];
+  await page.click('#card-red');
+  await page.click(`#pick-list button:has-text("${redField}")`);
+  await page.waitForSelector('#ask-dialog[open]');
+  assert.equal(await page.textContent('#ask-cancel'), 'Play one short');
+  await popup('16-red-card-ask');
+  await page.click('#ask-ok');
+  await page.waitForSelector('#swap-dialog[open]');
+  await page.click('#swap-confirm');
+  assert.ok((await names('#out-list .name')).includes(redField));
+  assert.equal(await page.locator('#field-list li').count(), 5, 'still a full team');
+  await page.screenshot({ path: `${shots}/16-score.png`, fullPage: true });
+  // Sent off for good: no way back to the bench
+  await page.$eval('#match-pages', (e) => e.scrollTo({ left: 0 }));
+  await page.click(`#out-list li:has-text("${redField}") button`);
+  assert.equal(await page.locator('#action-list button:has-text("Back to bench")').count(), 0);
+  await page.click('#action-list button:has-text("Cancel")');
   // The cog: change settings during the match
   assert.ok(await page.isVisible('#settings-btn'));
   assert.ok(await page.isHidden('#lang-toggle'), 'no language flag on the match screen');
@@ -566,6 +620,18 @@ try {
       await tablet.screenshot({ path: `${shots}/14-ipad-${label}-arranging.png` });
       assert.ok(await tablet.$eval('#field-done', (e) => e.getBoundingClientRect().bottom <= innerHeight), 'Done is on the screen');
       await tablet.click('#field-done');
+      // With the score on too: a Field | Score switch above the field picks which one shows
+      await tablet.click('#settings-btn');
+      await tablet.click('label:has(#set-use-score)');
+      await tablet.click('#settings-done');
+      assert.ok(await tablet.isVisible('#field-page .side-switch'));
+      await tablet.click('#field-page .side-switch button:has-text("Score")');
+      assert.ok(await tablet.isVisible('#goal-us'));
+      assert.ok(await tablet.isHidden('#pitch'));
+      await tablet.click('#goal-them');
+      await tablet.screenshot({ path: `${shots}/14-ipad-${label}-score.png` });
+      await tablet.click('#score-page .side-switch button:has-text("Field")');
+      assert.ok(await tablet.isVisible('#pitch'));
     }
     await tablet.close();
   }

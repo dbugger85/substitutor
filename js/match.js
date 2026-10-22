@@ -202,6 +202,65 @@ export function endBreak(match, now = Date.now()) {
   scheduleNext(match, now);
 }
 
+// ---------- score and cards ----------
+// match.events, in time order: { id, t (match time), type, playerId? }
+// type 'goal' (our team; playerId is the scorer, null if unknown, or 'og' for
+// the other team's own goal), 'against' (the other team), 'yellow' or 'red'.
+// A red card that came from a second yellow has `second: true`.
+
+const events = (match) => match.events ?? [];
+
+export function addEvent(match, event) {
+  const e = { id: newId(), ...event };
+  match.events = [...events(match), e].sort((a, b) => a.t - b.t);
+  return e;
+}
+
+export function score(match) {
+  return {
+    us: events(match).filter((e) => e.type === 'goal').length,
+    them: events(match).filter((e) => e.type === 'against').length,
+  };
+}
+
+// The score just after an event (for the list of events)
+export function scoreAt(match, id) {
+  const upTo = events(match).slice(0, events(match).findIndex((e) => e.id === id) + 1);
+  return score({ events: upTo });
+}
+
+export const goalsBy = (match, id) => events(match).filter((e) => e.type === 'goal' && e.playerId === id).length;
+export const yellows = (match, id) => events(match).filter((e) => e.type === 'yellow' && e.playerId === id).length;
+export const sentOff = (match, id) => events(match).some((e) => e.type === 'red' && e.playerId === id);
+
+// A yellow or red card. The second yellow is a red too. Returns true when the
+// player is sent off: then call sendOff (or substitute them with injuredId).
+export function giveCard(match, id, color, t) {
+  addEvent(match, { t, type: color, playerId: id });
+  if (color === 'yellow' && yellows(match, id) === 2 && !sentOff(match, id)) {
+    addEvent(match, { t, type: 'red', playerId: id, second: true });
+  }
+  return sentOff(match, id);
+}
+
+// Off for good: out of the match, and never suggested to come on again
+// (rankOn only looks at the bench). The team plays one short.
+export function sendOff(match, id, t) {
+  const p = match.players.find((x) => x.id === id);
+  if (p.status !== 'out') setStatus(p, 'out', t);
+  fillSpots(match);
+}
+
+// Deleting a yellow that made a second-yellow red deletes that red too.
+// A player who's no longer sent off stays out, and can be put back on the bench.
+export function removeEvent(match, id) {
+  const e = events(match).find((x) => x.id === id);
+  match.events = events(match).filter((x) => x.id !== id);
+  if (e?.type === 'yellow' && yellows(match, e.playerId) < 2) {
+    match.events = match.events.filter((x) => !(x.type === 'red' && x.second && x.playerId === e.playerId));
+  }
+}
+
 // ---------- positions (only when match.settings.positions is set) ----------
 // Each outfield player on the field has `pos`, an index into settings.positions.
 // Everyone else has pos null, and `lastPos`: the spot they last played, or 'gk'.

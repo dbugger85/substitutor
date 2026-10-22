@@ -77,6 +77,26 @@ await scene('dark', 'icehockey', hockey, async (page) => {
   await page.waitForTimeout(200);
   await page.screenshot({ path: out('5-settings-dark') });
 });
+// The score page, with a few goals and a yellow card
+await scene('light', 'football', football, async (page) => {
+  await page.evaluate(() => {
+    const team = JSON.parse(localStorage.getItem('substitutor.team'));
+    Object.assign(team.settings, { score: true, cards: true, teamName: 'Lions', opponent: 'Tigers' });
+    localStorage.setItem('substitutor.team', JSON.stringify(team));
+    const m = JSON.parse(localStorage.getItem('substitutor.match'));
+    m.events = [
+      { id: 'a', t: 100000, type: 'goal', playerId: 'Lukas' },
+      { id: 'b', t: 185000, type: 'against' },
+      { id: 'c', t: 250000, type: 'yellow', playerId: 'Emil' },
+      { id: 'd', t: 380000, type: 'goal', playerId: 'Noah' },
+    ];
+    localStorage.setItem('substitutor.match', JSON.stringify(m));
+  });
+  await page.reload();
+  await page.$eval('#match-pages', (e) => e.scrollTo({ left: 2 * e.clientWidth }));
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: out('8-score') });
+});
 await scene('light', 'football', football, (page) => page.screenshot({ path: out('6-ipad-landscape') }), tablet(1180, 820));
 await scene('dark', 'football', football, (page) => page.screenshot({ path: out('7-ipad-portrait-dark') }), tablet(820, 1180));
 

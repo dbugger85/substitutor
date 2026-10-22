@@ -353,3 +353,36 @@ test('half time stops the clock, and the next half starts with a full countdown'
   assert.equal(M.elapsed(m, 31 * MIN), 21 * MIN);
   assert.equal(m.nextSubAt, 25 * MIN);
 });
+
+test('goals for both teams make the score, and the scorers are counted', () => {
+  const m = newMatch();
+  M.addEvent(m, { t: 2 * MIN, type: 'goal', playerId: 'A' });
+  M.addEvent(m, { t: 5 * MIN, type: 'against' });
+  const late = M.addEvent(m, { t: 3 * MIN, type: 'goal', playerId: 'og' }); // added afterwards, sorted by time
+  assert.deepEqual(M.score(m), { us: 2, them: 1 });
+  assert.deepEqual(M.scoreAt(m, late.id), { us: 2, them: 0 });
+  assert.equal(M.goalsBy(m, 'A'), 1);
+  assert.deepEqual(m.events.map((e) => e.t), [2 * MIN, 3 * MIN, 5 * MIN]);
+});
+
+test('a second yellow card is a red, and a sent-off player is never suggested again', () => {
+  const m = newMatch(1);
+  assert.equal(M.giveCard(m, 'E', 'yellow', MIN), false);
+  assert.equal(M.giveCard(m, 'E', 'yellow', 2 * MIN), true);
+  assert.ok(M.sentOff(m, 'E'));
+  M.sendOff(m, 'E', 2 * MIN);
+  assert.equal(m.players.find((p) => p.id === 'E').status, 'out');
+  assert.deepEqual(M.rankOn(m.players, 5 * MIN).map((p) => p.id), ['F']);
+  // Deleting the second yellow takes the red away too
+  M.removeEvent(m, m.events.filter((e) => e.type === 'yellow')[1].id);
+  assert.ok(!M.sentOff(m, 'E'));
+  assert.equal(m.events.length, 1);
+});
+
+test('a red card on the field can be replaced from the bench', () => {
+  const m = newMatch(1);
+  assert.ok(M.giveCard(m, 'A', 'red', MIN));
+  M.applySwaps(m, [{ offId: 'A', onId: 'E' }], MIN, 'A'); // like an injury: A goes out
+  assert.equal(status(m).A, 'out');
+  assert.equal(status(m).E, 'field');
+});

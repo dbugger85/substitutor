@@ -130,6 +130,17 @@
         </div>
         <div id="field-style" class="field-style" hidden></div>
       </fieldset>
+      <!-- Optional: goals for both teams and who scored, and cards; a page of its own on the match screen -->
+      <fieldset>
+        <legend class="choices toggle"><label><span data-t>Score</span><input id="use-score" type="checkbox" aria-label="Keep the score" data-t-label></label></legend>
+        <div id="score-options" hidden>
+          <div class="pos-row score-names">
+            <input id="team-name" type="text" autocomplete="off" enterkeyhint="done" maxlength="24" placeholder="Our team" data-t-placeholder aria-label="Our team" data-t-label>
+            <input id="opponent" type="text" autocomplete="off" enterkeyhint="done" maxlength="24" placeholder="Opponent" data-t-placeholder aria-label="Opponent" data-t-label>
+          </div>
+          <div class="choices"><label><input id="use-cards" type="checkbox"> <span><span data-t>Cards</span><span class="sub" data-t>Yellow and red</span></span></label></div>
+        </div>
+      </fieldset>
       <label class="field inline"><span data-t>Minutes between substitutions</span>
         <input id="interval" type="number" min="1" max="60" step="0.5" inputmode="decimal">
       </label>
@@ -146,10 +157,7 @@
 
     <!-- Screen 3: match -->
     <section id="screen-match" class="screen" hidden>
-      <div id="page-dots" class="page-dots" hidden>
-        <button type="button" data-page="0" class="active" aria-label="Show the list" data-t-label></button>
-        <button type="button" data-page="1" aria-label="Show the field" data-t-label></button>
-      </div>
+      <div id="page-dots" class="page-dots" hidden></div><!-- one dot per page, made in app.js -->
       <div id="match-pages" class="pages">
       <div class="page">
       <div id="clock" class="clock">
@@ -161,6 +169,8 @@
         <button id="edit-time" type="button" class="time-btn muted small"><span data-t>Match time</span> <span id="match-time">0:00</span>
           <span id="half-label" class="half" hidden></span>
           <span id="paused-badge" class="badge paused" hidden data-t>PAUSED</span><svg class="inline-icon edit" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
+        <!-- The score, top left (with the score switched on); tap to see the score page -->
+        <button id="clock-score" type="button" class="clock-score" hidden></button>
       </div>
       <!-- Who swaps at the next substitution, in coloured pairs; tap to change -->
       <button id="next-strip" type="button" class="next-strip" hidden></button>
@@ -188,6 +198,7 @@
 
       <!-- Field view (bench below the field): swipe left from the list (only with positions and the field view switched on) -->
       <div id="field-page" class="page" hidden>
+        <div class="side-switch" hidden></div><!-- tablet sideways with the score on: Field | Score -->
         <div id="field-clock" class="clock mini">
           <div class="mini-row">
             <div class="mini-labels">
@@ -214,6 +225,32 @@
           </div>
         </div>
         <p id="field-tip" class="field-tip muted small">Tip: press and hold a position to move it.</p>
+      </div>
+
+      <!-- Score: swipe left from the list (or the field). Only with the score switched on -->
+      <div id="score-page" class="page" hidden>
+        <div class="side-switch" hidden></div>
+        <div class="scoreboard">
+          <div class="score-side">
+            <div id="us-name" class="score-team"></div>
+            <div id="us-score" class="score-num">0</div>
+            <button id="goal-us" type="button" class="primary" data-t>+ Goal</button>
+          </div>
+          <div class="score-dash" aria-hidden="true">–</div>
+          <div class="score-side">
+            <div id="them-name" class="score-team"></div>
+            <div id="them-score" class="score-num">0</div>
+            <button id="goal-them" type="button" data-t>+ Goal</button>
+          </div>
+          <div class="score-time muted small"><span data-t>Match time</span> <span id="score-match-time">0:00</span></div>
+        </div>
+        <div id="card-buttons" class="controls">
+          <button id="card-yellow" type="button"><span class="card yellow" aria-hidden="true"></span> <span data-t>Yellow card</span></button>
+          <button id="card-red" type="button"><span class="card red" aria-hidden="true"></span> <span data-t>Red card</span></button>
+        </div>
+        <h3 data-t>Match events</h3>
+        <ul id="event-list" class="list events"></ul>
+        <p id="no-events" class="muted small" data-t>Goals and cards show up here, with the match time. Tap one to change it.</p>
       </div>
       </div>
     </section>
@@ -271,6 +308,8 @@
   <!-- End of match summary -->
   <dialog id="summary-dialog">
     <h2 data-t>Match over</h2>
+    <p id="summary-score" class="summary-score" hidden></p>
+    <p id="summary-events" class="muted small" hidden></p>
     <p class="muted"><span data-t>Match time</span> <span id="summary-time"></span>. <span data-t>Minutes played:</span></p>
     <ul id="summary-list" class="list"></ul>
     <p class="muted small" data-t>Next match, the players who played least will be suggested to start.</p>
@@ -296,6 +335,16 @@
         <label><input id="set-field-view" type="checkbox"> <span><span data-t>Field view</span><span class="sub" data-t>Swipe left to see it</span></span></label>
       </div>
       <div id="set-field-style" class="field-style" hidden></div>
+    </fieldset>
+    <fieldset>
+      <legend class="choices toggle"><label><span data-t>Score</span><input id="set-use-score" type="checkbox" aria-label="Keep the score" data-t-label></label></legend>
+      <div id="set-score-options" hidden>
+        <div class="pos-row score-names">
+          <input id="set-team-name" type="text" autocomplete="off" enterkeyhint="done" maxlength="24" placeholder="Our team" data-t-placeholder aria-label="Our team" data-t-label>
+          <input id="set-opponent" type="text" autocomplete="off" enterkeyhint="done" maxlength="24" placeholder="Opponent" data-t-placeholder aria-label="Opponent" data-t-label>
+        </div>
+        <div class="choices"><label><input id="set-use-cards" type="checkbox"> <span><span data-t>Cards</span><span class="sub" data-t>Yellow and red</span></span></label></div>
+      </div>
     </fieldset>
     </div>
     <div class="row dialog-buttons">

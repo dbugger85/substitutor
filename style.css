@@ -38,6 +38,8 @@
   --next-3: #c2255c;
   --next-4: #6741d9;
   --next-text: #ffffff;
+  --card-yellow: #f2c200; /* yellow and red cards: the same in light and dark */
+  --card-red: #d7263d;
   --line-red: rgb(206 36 48 / 0.8); /* bandy and ice hockey lines, on ice */
   --line-blue: rgb(28 84 196 / 0.75);
 }
@@ -561,6 +563,7 @@ button.danger-fill { background-color: var(--red); border-color: var(--red); col
 .list,
 fieldset,
 .clock,
+.scoreboard,
 dialog {
   background-color: var(--glass);
   background-image: linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.03) 40%, transparent 75%);
@@ -570,7 +573,7 @@ dialog {
   box-shadow: inset 0 1px 0 var(--glass-shine), inset 0 0 0 1px var(--glass-edge), var(--shadow);
 }
 .list, fieldset { border-radius: 14px; }
-.clock { border-radius: 18px; }
+.clock, .scoreboard { border-radius: 18px; }
 dialog {
   background-color: var(--glass-strong);
   border-radius: 18px;
@@ -869,7 +872,11 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
 
   /* The field: its small clock, the page dots and its bench aren't needed next to the list. */
   body.with-field #field-page { overflow: hidden; }
-  body.with-field :is(#field-clock, #field-next, #page-dots, .field-bench) { display: none !important; }
+  body.with-field :is(#field-clock, #field-next, #page-dots, .field-bench, #clock-score) { display: none !important; }
+  /* With the score on as well: one of the two beside the list, picked with the Field | Score switch */
+  body.with-field.side-score #field-page, body.with-field:not(.side-score) #score-page { display: none !important; }
+  body.with-field .side-switch { display: flex; }
+  body.with-field #score-page { overflow-y: auto; overscroll-behavior: contain; }
   body.with-field .pitch { width: min(100%, calc((100dvh - 120px) * 10 / 13)); margin: 0 auto; }
 }
 
@@ -882,3 +889,37 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
 .time-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .time-steps button { padding: 0 4px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 #time-dialog label.field.inline { grid-template-columns: 1fr 96px; }
+
+/* ---------- Score and cards ---------- */
+/* The score in the clock's top-left corner (↻ is top right); tap it for the score page */
+.clock button.clock-score { position: absolute; top: 4px; left: 4px; min-width: 48px; min-height: 48px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; font: 700 22px/1 "Barlow Condensed", system-ui, sans-serif; color: var(--text); font-variant-numeric: tabular-nums; }
+.scoreboard { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 8px; padding: 16px; text-align: center; }
+.score-side { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.score-team { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.score-num { font: 700 84px/1 "Barlow Condensed", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.score-dash { font: 700 48px/1 "Barlow Condensed", system-ui, sans-serif; color: var(--muted); }
+.score-side button { width: 100%; font-weight: 700; }
+.score-time { grid-column: 1 / -1; margin-top: 10px; }
+#card-buttons button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+/* A card: a small coloured rectangle */
+.card { display: inline-block; flex: none; width: 12px; height: 16px; border-radius: 2px; vertical-align: middle; box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); }
+.card.yellow { background: var(--card-yellow); }
+.card.red { background: var(--card-red); }
+.name .card { margin-left: 8px; }
+.badge.goals { border: 1px solid var(--line); color: var(--text); font-weight: 600; }
+/* What happened, in time order */
+.events li.event { padding: 0; }
+.events button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 0 16px; border: 0; border-radius: 0; text-align: left; background: transparent; box-shadow: none; }
+.ev-time { min-width: 44px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev-score { flex: none; width: 52px; padding: 1px 0; border-radius: 999px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ev-score.goal { background: var(--green-soft); color: var(--green); }
+.ev-score.against { border: 1px solid var(--line); color: var(--muted); }
+.events .card { margin: 0 20px; } /* as wide as the score pill, so the names line up */
+.ev-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#score-page h3 { margin-top: 16px; }
+#score-page .muted.small { margin: 10px 0 0; }
+/* Tablet sideways with field and score: which one shows beside the list */
+.side-switch { display: none; gap: 4px; margin-bottom: 10px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-line); }
+.side-switch button { flex: 1; min-height: 40px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; font-weight: 600; color: var(--muted); }
+.side-switch button[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
+.summary-score { margin: 0 0 4px; font: 700 26px/1.1 "Barlow Condensed", system-ui, sans-serif; }

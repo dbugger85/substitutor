@@ -29,7 +29,7 @@ function el(tag, props = {}, children = []) {
 
 // Our own popup instead of the browser's confirm() and prompt(). Resolves to true (or the typed text) for OK, or null.
 // `value` fills the text box in advance.
-function ask({ title, text = '', input = '', value = '', ok = tr('OK'), danger = false }) {
+function ask({ title, text = '', input = '', value = '', ok = tr('OK'), cancel = tr('Cancel'), danger = false }) {
   const dlg = $('ask-dialog');
   const field = $('ask-input');
   $('ask-title').textContent = title;
@@ -39,6 +39,7 @@ function ask({ title, text = '', input = '', value = '', ok = tr('OK'), danger =
   field.placeholder = input;
   field.value = value;
   $('ask-ok').textContent = ok;
+  $('ask-cancel').textContent = cancel;
   $('ask-ok').className = danger ? 'primary grow danger-fill' : 'primary grow';
   return new Promise((resolve) => {
     $('ask-form').onsubmit = (e) => {
@@ -172,6 +173,7 @@ function renderSetup() {
   $('interval').value = s.intervalMin ?? '';
   $('per-sub').value = s.perSub ?? '';
   $('show-next').checked = s.showNext;
+  renderScoreOptions();
 
   $('gk-list').classList.toggle('two-col', allShort(team.players.map((p) => p.name)));
   $('starter-list').classList.toggle('two-col', allShort(team.players.map((p) => p.name)));
@@ -373,11 +375,27 @@ $('start-match').addEventListener('click', () => {
 // bench the position they last played (grey outline).
 function tags(p) {
   if (!match) return [];
+  return [...placeTags(p), ...scoreTags(p)];
+}
+
+function placeTags(p) {
   if (p.status === 'gk') return [el('span', { class: 'badge gk' }, tr('GK'))];
   const pos = M.positionName(match, p);
   if (pos) return [el('span', { class: 'badge pos' }, posLabel(pos))];
   const last = p.status === 'bench' && M.lastPositionName(match, p);
   return last ? [el('span', { class: 'badge last', title: tr('Last played') }, posLabel(last))] : [];
+}
+
+// With the score on: how many goals they scored, and a yellow or red card.
+const cardTag = (color) => el('span', { class: `card ${color}`, title: color === 'red' ? tr('Red card') : tr('Yellow card') });
+function scoreTags(p) {
+  if (!team.settings.score || !p.status) return []; // not for "Don't know" in the scorer list
+  const out = [];
+  const goals = M.goalsBy(match, p.id);
+  if (goals) out.push(el('span', { class: 'badge goals' }, goals === 1 ? tr('1 goal') : tr('{n} goals', { n: goals })));
+  if (team.settings.cards && M.sentOff(match, p.id)) out.push(cardTag('red'));
+  else if (team.settings.cards && M.yellows(match, p.id)) out.push(cardTag('yellow'));
+  return out;
 }
 
 function playerRow(p) {
@@ -462,22 +480,221 @@ function renderMatch() {
 
   const fieldView = !!(match.settings.positions && team.settings.fieldView);
   $('field-page').hidden = !fieldView;
-  $('page-dots').hidden = !fieldView;
-  sideBySide();
   if (fieldView) renderField();
-  else if ($('match-pages').scrollLeft) {
-    // The field view was switched off while showing: back to the list
+  renderScore();
+  if (pageIndex() >= visiblePages().length) {
+    // The page showing was switched off: back to the list
     $('match-pages').scrollLeft = 0;
     $('match-pages').style.height = '';
   }
+  renderDots();
+  sideBySide();
   updateClock();
+}
+
+// The match screen's pages that are switched on: the list, then the field view and the score.
+const visiblePages = () => [...$('match-pages').children].filter((p) => !p.hidden);
+const pageIndex = () => Math.round($('match-pages').scrollLeft / ($('match-pages').clientWidth || 1));
+const sideLayout = () => getComputedStyle($('match-pages')).display === 'grid'; // tablet sideways
+
+// One dot per page, above the pages
+function renderDots() {
+  const pages = visiblePages();
+  const label = { 'field-page': tr('Show the field'), 'score-page': tr('Show the score') };
+  $('page-dots').hidden = pages.length < 2;
+  $('page-dots').replaceChildren(
+    ...pages.map((page, i) => el('button', { type: 'button', 'data-page': i, class: i === pageIndex() ? 'active' : '', 'aria-label': label[page.id] ?? tr('Show the list') })),
+  );
 }
 
 // On a tablet sideways the match screen shows the list and the field side by
 // side (style.css, "Tablets"). The body gets a class while the match screen and
-// the field view are both showing, for those styles to hook onto.
+// the field view or the score are showing, for those styles to hook onto. With
+// both switched on, a Field | Score switch above them picks which one shows.
+let side = 'field';
 function sideBySide() {
-  document.body.classList.toggle('with-field', !$('screen-match').hidden && !$('field-page').hidden);
+  const field = !$('field-page').hidden;
+  const score = !$('score-page').hidden;
+  document.body.classList.toggle('with-field', !$('screen-match').hidden && (field || score));
+  document.body.classList.toggle('side-score', score && (!field || side === 'score'));
+  for (const box of document.querySelectorAll('.side-switch')) {
+    box.hidden = !(field && score);
+    box.replaceChildren(
+      ...[['field', tr('Field')], ['score', tr('Score')]].map(([key, text]) =>
+        el('button', { type: 'button', 'aria-pressed': String(side === key), onclick: () => { side = key; sideBySide(); } }, text),
+      ),
+    );
+  }
+}
+
+// The score in the clock's corner opens the score page.
+function showScorePage() {
+  if (sideLayout()) {
+    side = 'score';
+    return sideBySide();
+  }
+  const pages = $('match-pages');
+  pages.scrollTo({ left: visiblePages().indexOf($('score-page')) * pages.clientWidth, behavior: 'smooth' });
+}
+$('clock-score').addEventListener('click', showScorePage);
+
+// ---------- score and cards ----------
+// Optional (the Score box in setup and the cog): goals for both teams, who
+// scored for us, and yellow and red cards, each with the match time. A red card
+// sends the player off for good (match.js, sendOff).
+
+const usName = () => team.settings.teamName?.trim() || tr('Us');
+const themName = () => team.settings.opponent?.trim() || tr('Them');
+const nameOf = (id) => match.players.find((p) => p.id === id)?.name ?? '?';
+const UNKNOWN = '?'; // "Don't know" in the scorer list
+
+function renderScore() {
+  const on = !!team.settings.score;
+  $('score-page').hidden = !on;
+  $('clock-score').hidden = !on;
+  if (!on) return;
+  const s = M.score(match);
+  $('us-name').textContent = usName();
+  $('them-name').textContent = themName();
+  $('us-score').textContent = s.us;
+  $('them-score').textContent = s.them;
+  $('clock-score').textContent = `${s.us}–${s.them}`;
+  $('clock-score').setAttribute('aria-label', `${usName()} ${s.us}, ${themName()} ${s.them}`);
+  $('card-buttons').hidden = !team.settings.cards;
+  const isGoal = (e) => e.type === 'goal' || e.type === 'against';
+  const shown = (match.events ?? []).filter((e) => team.settings.cards || isGoal(e));
+  $('event-list').replaceChildren(
+    ...shown.map((e) => {
+      const at = M.scoreAt(match, e.id);
+      return el('li', { class: `event ${e.type}` }, [
+        el('button', { type: 'button', onclick: () => eventOptions(e) }, [
+          el('span', { class: 'ev-time' }, fmt(e.t)),
+          isGoal(e) ? el('span', { class: `ev-score ${e.type}` }, `${at.us}–${at.them}`) : cardTag(e.type),
+          el('span', { class: 'ev-text' }, eventText(e)),
+        ]),
+      ]);
+    }),
+  );
+}
+
+function eventText(e) {
+  if (e.type === 'against') return themName();
+  if (e.type === 'goal') {
+    if (e.playerId === 'og') return tr('Own goal by {team}', { team: themName() });
+    return e.playerId ? nameOf(e.playerId) : tr('{team}, scorer not known', { team: usName() });
+  }
+  return e.second ? tr('{name} (second yellow)', { name: nameOf(e.playerId) }) : nameOf(e.playerId);
+}
+
+// A list of choices in the player options popup.
+function menu(title, items) {
+  $('action-title').textContent = title;
+  $('action-list').replaceChildren(
+    ...[...items, [tr('Cancel'), () => {}]].map(([label, fn]) =>
+      el('button', { type: 'button', onclick: () => { $('action-dialog').close(); fn(); } }, label),
+    ),
+  );
+  $('action-dialog').showModal();
+}
+
+// Tap an event to fix a mistake.
+function eventOptions(e) {
+  const items = [];
+  if (e.type === 'goal') {
+    items.push([tr('Change scorer'), async () => {
+      const id = await pickScorer(e.playerId ?? UNKNOWN);
+      if (id) change(() => (match.events.find((x) => x.id === e.id).playerId = id === UNKNOWN ? null : id));
+    }]);
+  }
+  items.push([tr('Delete'), () => change(() => M.removeEvent(match, e.id))]);
+  menu(`${fmt(e.t)} ${eventText(e)}`, items);
+}
+
+// Who scored: the players on the field first, then the bench, then "Don't know" and an own goal.
+function pickScorer(value = null) {
+  const players = [...match.players.filter((p) => M.onPitch(p.status)), ...M.rankOn(match.players, now())];
+  const other = [{ id: UNKNOWN, name: tr('Don’t know') }, { id: 'og', name: tr('Own goal by {team}', { team: themName() }) }];
+  return pickPlayer(tr('Who scored?'), [...players, ...other], value, null);
+}
+
+const scoreText = () => {
+  const s = M.score(match);
+  return `${usName()} ${s.us}–${s.them} ${themName()}`;
+};
+
+$('goal-us').addEventListener('click', async () => {
+  const t = now(); // when the goal was scored, not when the scorer was picked
+  const id = await pickScorer();
+  if (!id) return;
+  change(() => M.addEvent(match, { t, type: 'goal', playerId: id === UNKNOWN ? null : id }));
+  toast(tr('Goal! {score}', { score: scoreText() }));
+});
+
+$('goal-them').addEventListener('click', () => {
+  change(() => M.addEvent(match, { t: now(), type: 'against' }));
+  toast(tr('Goal for {team}: {score}. Tap it in the list to change it.', { team: themName(), score: scoreText() }));
+});
+
+// A card for a player on the field or the bench. A red card (or a second
+// yellow) sends them off: from the field, the coach chooses each time whether
+// someone comes on in their place or the team plays one short.
+async function giveCard(color) {
+  const t = now();
+  const players = [...match.players.filter((p) => M.onPitch(p.status)), ...M.rankOn(match.players, t)];
+  const id = await pickPlayer(color === 'red' ? tr('Red card for…') : tr('Yellow card for…'), players, null, null);
+  if (!id) return;
+  const p = player(id);
+  const red = M.giveCard(match, id, color, t);
+  saveMatch(match);
+  if (!red) {
+    renderMatch();
+    return toast(tr('Yellow card for {name}.', { name: p.name }));
+  }
+  const bench = M.rankOn(match.players, now());
+  if (M.onPitch(p.status) && bench.length) {
+    renderMatch();
+    const replace = await ask({
+      title: tr('{name} is sent off', { name: p.name }),
+      text: tr('Bring on someone from the bench, or play one short?'),
+      ok: tr('Bring on'),
+      cancel: tr('Play one short'),
+    });
+    if (replace) {
+      openSwap('adhoc', [{ offId: id, onId: bench[0].id }], id);
+      swap.redId = id; // closing without swapping still sends them off
+      $('swap-title').textContent = tr('Who comes on for {name}?', { name: p.name });
+      return;
+    }
+  }
+  change(() => M.sendOff(match, id, now()));
+  toast(tr('{name} is sent off.', { name: p.name }));
+}
+$('card-yellow').addEventListener('click', () => giveCard('yellow'));
+$('card-red').addEventListener('click', () => giveCard('red'));
+
+// The Score settings, in setup and the cog popup (same ids, "set-" in the popup).
+// The team's name is kept; the opponent is cleared when a match ends.
+function renderScoreOptions() {
+  const s = team.settings;
+  for (const pre of ['', 'set-']) {
+    $(`${pre}use-score`).checked = !!s.score;
+    $(`${pre}score-options`).hidden = !s.score;
+    $(`${pre}team-name`).value = s.teamName ?? '';
+    $(`${pre}opponent`).value = s.opponent ?? '';
+    $(`${pre}use-cards`).checked = !!s.cards;
+  }
+}
+for (const pre of ['', 'set-']) {
+  const set = (key) => (e) => {
+    team.settings[key] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    saveTeam(team);
+    if (e.target.type === 'checkbox') renderScoreOptions();
+    if (match) renderMatch();
+  };
+  $(`${pre}use-score`).addEventListener('change', set('score'));
+  $(`${pre}use-cards`).addEventListener('change', set('cards'));
+  $(`${pre}team-name`).addEventListener('input', set('teamName'));
+  $(`${pre}opponent`).addEventListener('input', set('opponent'));
 }
 
 // ---------- field view ----------
@@ -582,7 +799,8 @@ function swapWith(target) {
 // The field view is in front: swiped to, or beside the list on a tablet sideways
 // (its left edge is on the screen, not off to the right).
 function fieldShowing() {
-  return !$('field-page').hidden && $('field-page').getBoundingClientRect().left < innerWidth * 0.8;
+  const r = $('field-page').getBoundingClientRect();
+  return !$('field-page').hidden && r.width > 0 && r.left < innerWidth * 0.8 && r.right > innerWidth * 0.2;
 }
 
 // Press and hold a position to start arranging; while arranging, any position
@@ -655,15 +873,14 @@ $('pitch').addEventListener('click', (e) => {
 let fitTimer;
 function fitPages() {
   const pages = $('match-pages');
-  const i = Math.round(pages.scrollLeft / pages.clientWidth);
-  const height = i === 1 ? `${$('field-page').offsetHeight}px` : '';
+  const i = pageIndex();
+  const height = i > 0 && visiblePages()[i] ? `${visiblePages()[i].offsetHeight}px` : '';
   if (pages.style.height !== height) pages.style.height = height;
   if (pages.scrollTop) pages.scrollTop = 0; // never slid up or down inside (that left an empty gap under the field)
   if (!fieldShowing()) setPicking(null); // swiped back to the list
 }
 $('match-pages').addEventListener('scroll', () => {
-  const pages = $('match-pages');
-  const i = Math.round(pages.scrollLeft / pages.clientWidth);
+  const i = pageIndex();
   $('page-dots').querySelectorAll('button').forEach((b, j) => b.classList.toggle('active', i === j));
   clearTimeout(fitTimer);
   fitTimer = setTimeout(() => {
@@ -671,7 +888,9 @@ $('match-pages').addEventListener('scroll', () => {
     fitPages();
   }, 150);
 });
-new ResizeObserver(() => !fitTimer && fitPages()).observe($('field-page')); // at once, unless mid-swipe
+const resized = new ResizeObserver(() => !fitTimer && fitPages()); // at once, unless mid-swipe
+resized.observe($('field-page'));
+resized.observe($('score-page'));
 $('page-dots').addEventListener('click', (e) => {
   const page = e.target.closest('button')?.dataset.page;
   if (page == null) return;
@@ -696,6 +915,7 @@ function openSettings() {
   $('set-per-sub').value = s.perSub;
   $('set-per-sub').max = Math.max(1, s.fieldSize - 1);
   $('set-show-next').checked = team.settings.showNext;
+  renderScoreOptions();
   renderSettingsPositions();
   $('settings-dialog').showModal();
 }
@@ -799,6 +1019,7 @@ function updateClock() {
   $('pause').classList.toggle('primary', onBreak);
   $('half-time').hidden = onBreak;
   if ($('time-dialog').open) showTime();
+  $('score-match-time').textContent = fmt(t);
 
   for (const span of document.querySelectorAll('.mins[data-id]')) {
     const p = player(span.dataset.id);
@@ -810,7 +1031,7 @@ function updateClock() {
     span.textContent = p && M.onPitch(p.status) && p.fieldMs > 0 ? fmt(t - p.since) : '';
   }
 
-  if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open && !$('settings-dialog').open && !$('time-dialog').open) substitutionDue();
+  if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open && !$('settings-dialog').open && !$('time-dialog').open && !$('pick-dialog').open) substitutionDue();
 }
 
 // Halves: "2nd half", then "Period 3" if half time is pressed again.
@@ -879,12 +1100,26 @@ $('end-match').addEventListener('click', async () => {
   if (!sure) return;
   const t = now();
   $('summary-time').textContent = fmt(t);
+  // With the score on: the result and who scored
+  $('summary-score').hidden = $('summary-events').hidden = !team.settings.score;
+  if (team.settings.score) {
+    $('summary-score').textContent = scoreText();
+    const goals = (match.events ?? []).filter((e) => e.type === 'goal');
+    const scorers = [...new Set(goals.map((e) => e.playerId))].map((id) => {
+      const n = goals.filter((e) => e.playerId === id).length;
+      const name = id === 'og' ? tr('own goal') : id ? nameOf(id) : tr('not known');
+      return n > 1 ? `${name} (${n})` : name;
+    });
+    $('summary-events').textContent = scorers.length ? tr('Goals: {list}', { list: scorers.join(', ') }) : '';
+    $('summary-events').hidden = !scorers.length;
+  }
   $('summary-list').replaceChildren(
     ...[...match.players]
       .sort((a, b) => M.fieldTime(b, t) - M.fieldTime(a, t))
       .map((p) => el('li', {}, [el('span', {}, p.name), el('span', { class: 'mins' }, fmt(M.fieldTime(p, t)))])),
   );
   team.lastMinutes = M.minutesPlayed(match, t);
+  team.settings.opponent = ''; // a new opponent next match
   team.settings.autoStarters = true;
   saveTeam(team);
   clearMatch();
@@ -939,7 +1174,7 @@ function openActions(id) {
     action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, t)));
     action(tr('Remove from match'), () => change(() => M.setStatus(p, 'out', t)));
   } else {
-    action(tr('Back to bench'), () => change(() => M.setStatus(p, 'bench', t)));
+    if (!M.sentOff(match, id)) action(tr('Back to bench'), () => change(() => M.setStatus(p, 'bench', t))); // a red card is for good
   }
   action(tr('Rename'), () => renamePlayer(id));
   action(tr('Cancel'), () => {});
@@ -1063,6 +1298,7 @@ function renderSwap() {
 }
 
 function closeSwap() {
+  if (swap?.redId && M.onPitch(player(swap.redId).status)) M.sendOff(match, swap.redId, now()); // nobody came on: one short
   stopAlarm();
   swap = null;
   $('swap-dialog').close();
