@@ -33,6 +33,11 @@
   --chip-text: #ffffff;
   --chip-pos: #e3ffe9;
   --chip-gk: #ffe3a6;
+  --next-1: #d9480f; /* the next substitution's pairs: orange, blue, pink, violet */
+  --next-2: #1971c2;
+  --next-3: #c2255c;
+  --next-4: #6741d9;
+  --next-text: #ffffff;
   --line-red: rgb(206 36 48 / 0.8); /* bandy and ice hockey lines, on ice */
   --line-blue: rgb(28 84 196 / 0.75);
 }
@@ -71,6 +76,11 @@
     --chip-text: #ffffff;
     --chip-pos: #a8f0bf;
     --chip-gk: #f6d38a;
+    --next-1: #ff8c4a;
+    --next-2: #4dabf7;
+    --next-3: #f06595;
+    --next-4: #a48bff;
+    --next-text: #10131a;
     --line-red: rgb(225 240 255 / 0.38); /* dark mode: the lines stay white */
     --line-blue: rgb(225 240 255 / 0.38);
   }
@@ -109,6 +119,11 @@
   --chip-text: #ffffff;
   --chip-pos: #a8f0bf;
   --chip-gk: #f6d38a;
+  --next-1: #ff8c4a;
+  --next-2: #4dabf7;
+  --next-3: #f06595;
+  --next-4: #a48bff;
+  --next-text: #10131a;
   --line-red: rgb(225 240 255 / 0.38); /* dark mode: the lines stay white */
   --line-blue: rgb(225 240 255 / 0.38);
 }
@@ -259,7 +274,9 @@ input, select { width: 100%; padding: 0 12px; }
 .share-links { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .share-links button.link { min-height: 48px; }
 .stack { display: flex; flex-direction: column; gap: 8px; }
-.controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.controls { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin: 12px 0; } /* equal widths, however many show (two at half time) */
+button.add-late { width: 100%; margin-top: 8px; }
+.choices.show-next label { border-top: 0; }
 .controls button { padding: 0 8px; box-shadow: var(--shadow); font-weight: 600; }
 
 /* Lists */
@@ -431,6 +448,36 @@ legend.toggle label { justify-content: space-between; border-top: 0; }
 }
 .clock.due .progress > div { background: var(--red); }
 .clock.paused .progress > div { background: var(--amber); }
+/* Half time: the big number is the break's length */
+.clock.break { border-color: var(--amber); }
+.clock.break .countdown { color: var(--amber); }
+/* The match time is a button: tap to correct it. Taller than it looks (48px), without making the clock taller. */
+.clock button.time-btn { display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0 4px; min-height: 48px; margin: -14px 0; padding: 0 8px; border: 0; background: transparent; box-shadow: none; font-size: 14px; font-weight: 400; color: var(--muted); }
+.clock.mini button.time-btn { justify-content: flex-start; margin: -14px 0 -14px -8px; }
+.time-btn .badge { margin-left: 4px; }
+.time-btn .edit { width: 14px; height: 14px; margin-left: 2px; opacity: 0.7; }
+.half { color: var(--text); font-weight: 700; }
+.half::before { content: "· "; color: var(--muted); font-weight: 400; }
+
+/* The next substitution: a strip under the clock (and above the field), and the same
+   colour and number on each pair's players in the list and on the field. */
+.next-strip { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; margin-top: 10px; padding: 8px 14px; border-radius: 14px; text-align: left; font-weight: 600; }
+/* Above the field it's one line (the bench should still fit on the screen): smaller, and a pencil instead of "Change" */
+.next-strip.compact { gap: 10px; margin: 0 0 10px; padding: 4px 12px; font-size: 15px; }
+.next-strip.compact .next-edit, .next-strip:not(.compact) .next-edit-icon { display: none; }
+.next-edit-icon { display: grid; color: var(--green); }
+.next-edit-icon .edit { width: 18px; height: 18px; opacity: 1; }
+.next-strip.compact .pair { gap: 6px; }
+.next-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.next-strip .pairs { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.next-strip.compact .pairs { flex-direction: row; flex-wrap: wrap; column-gap: 14px; }
+.next-strip .pair { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.next-strip .pair-names { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.next-edit { font-size: 14px; color: var(--green); }
+.next-num { display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--next); color: var(--next-text); font-size: 12px; font-weight: 800; line-height: 1; text-shadow: none; }
+.player .name .next-num { margin-left: 8px; vertical-align: middle; }
+.player.next { box-shadow: inset 5px 0 var(--next); }
+.list .player.next button { background: color-mix(in srgb, var(--next) 12%, transparent); }
 
 /* Dialogs */
 dialog {
@@ -678,6 +725,13 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
 @keyframes swap-pulse-small { from { outline-offset: 1px; } to { outline-offset: 3px; } }
 .pitch.picking .marker:not(.selected, .target), .field-wrap:has(.pitch.picking) #field-bench button:not(.selected, .target) { opacity: 0.4; }
 #field-bench button.selected { outline: 3px solid var(--green); outline-offset: 2px; }
+/* The next substitution's pairs on the field: a ring and a number in the pair's colour (not while arranging) */
+.pitch .marker.next, #field-bench button.next { outline: 3px solid var(--next); outline-offset: 2px; }
+.pitch .marker .next-num, #field-bench .next-num { position: absolute; top: -9px; right: -9px; box-shadow: 0 0 0 2px var(--chip-text); }
+#field-bench button.next { position: relative; outline-width: 2px; }
+#field-bench .next-num { box-shadow: 0 0 0 2px var(--bg); }
+.pitch.arranging .marker.next { outline: none; }
+.pitch.arranging .next-num { display: none; }
 /* Done / Cancel: a solid pill in the toast's colours (dark on a light page, light on a dark
    one), so it can't be mistaken for a player. Bottom right, between the football goal box
    and the side line, below where the backs stand. */
@@ -809,11 +863,22 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
   body.with-field #countdown { grid-area: count; font-size: 76px; }
   body.with-field #clock > .progress { grid-area: bar; margin: 8px 0 0; }
   body.with-field #clock > :nth-child(5) { grid-area: time; align-self: start; }
+  body.with-field #clock > .time-btn { justify-self: start; justify-content: flex-start; margin-left: -8px; }
   body.with-field #restart-countdown { grid-area: restart; position: static; }
   body.with-field .controls { margin-top: 10px; }
 
   /* The field: its small clock, the page dots and its bench aren't needed next to the list. */
   body.with-field #field-page { overflow: hidden; }
-  body.with-field :is(#field-clock, #page-dots, .field-bench) { display: none !important; }
+  body.with-field :is(#field-clock, #field-next, #page-dots, .field-bench) { display: none !important; }
   body.with-field .pitch { width: min(100%, calc((100dvh - 120px) * 10 / 13)); margin: 0 auto; }
 }
+
+/* Correcting the match time */
+#screen-match .countdown { cursor: pointer; }
+#time-dialog .time-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 8px 0; font-weight: 600; }
+#time-dialog .time-value { font: 700 44px/1 "Barlow Condensed", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+#time-dialog .time-head:not(:first-of-type) { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+#time-dialog label.field.inline { margin: 10px 0; }
+.time-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.time-steps button { padding: 0 4px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#time-dialog label.field.inline { grid-template-columns: 1fr 96px; }

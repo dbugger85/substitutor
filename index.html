@@ -136,6 +136,7 @@
       <label class="field inline"><span data-t>Players per substitution</span>
         <input id="per-sub" type="number" min="1" inputmode="numeric">
       </label>
+      <div class="choices show-next"><label><input id="show-next" type="checkbox"> <span><span data-t>Show who swaps next</span><span class="sub" data-t>Coloured pairs on the list and the field</span></span></label></div>
       <p id="setup-error" class="error"></p>
       <div class="row">
         <button id="setup-back" type="button" data-t>Back</button>
@@ -153,23 +154,28 @@
       <div class="page">
       <div id="clock" class="clock">
         <button id="restart-countdown" type="button" class="icon restart" aria-label="Restart the countdown" data-t-label><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M18 2.8v4.4h-4.4"/></svg></button>
-        <div class="muted small" data-t>Next substitution</div>
+        <div id="clock-label" class="muted small" data-t>Next substitution</div>
         <div id="countdown" class="countdown">0:00</div>
         <div class="progress" aria-hidden="true"><div id="sub-progress"></div></div>
-        <div class="muted small"><span data-t>Match time</span> <span id="match-time">0:00</span>
-          <span id="paused-badge" class="badge paused" hidden data-t>PAUSED</span></div>
+        <!-- Tap to correct the match time -->
+        <button id="edit-time" type="button" class="time-btn muted small"><span data-t>Match time</span> <span id="match-time">0:00</span>
+          <span id="half-label" class="half" hidden></span>
+          <span id="paused-badge" class="badge paused" hidden data-t>PAUSED</span><svg class="inline-icon edit" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
       </div>
+      <!-- Who swaps at the next substitution, in coloured pairs; tap to change -->
+      <button id="next-strip" type="button" class="next-strip" hidden></button>
       <p id="match-warning" class="warning" hidden></p>
       <div class="controls">
         <button id="pause" type="button" data-t>Pause</button>
+        <button id="half-time" type="button" data-t>Half time</button>
         <button id="swap-now" type="button" data-t>Swap</button>
-        <button id="add-late" type="button" data-t>Add player</button>
       </div>
       <div class="match-scroll"><!-- scrolls on its own on a tablet sideways, below the pinned clock and buttons -->
       <h3 data-t>On the field</h3>
       <ul id="field-list" class="list"></ul>
       <h3 data-t>Bench</h3>
       <ul id="bench-list" class="list"></ul>
+      <button id="add-late" type="button" class="add-late" data-t>Add player</button>
       <div id="out-section" hidden>
         <h3 data-t>Out of the match</h3>
         <ul id="out-list" class="list"></ul>
@@ -185,14 +191,16 @@
         <div id="field-clock" class="clock mini">
           <div class="mini-row">
             <div class="mini-labels">
-              <div class="muted small" data-t>Next substitution</div>
-              <div class="muted small"><span data-t>Match time</span> <span id="field-match-time">0:00</span>
-                <span id="field-paused" class="badge paused" hidden data-t>PAUSED</span></div>
+              <div id="field-clock-label" class="muted small" data-t>Next substitution</div>
+              <button id="field-edit-time" type="button" class="time-btn muted small"><span data-t>Match time</span> <span id="field-match-time">0:00</span>
+                <span id="field-half" class="half" hidden></span>
+                <span id="field-paused" class="badge paused" hidden data-t>PAUSED</span><svg class="inline-icon edit" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>
             </div>
             <div id="field-countdown" class="countdown">0:00</div>
           </div>
           <div class="progress" aria-hidden="true"><div id="field-progress"></div></div>
         </div>
+        <button id="field-next" type="button" class="next-strip compact" hidden></button>
         <div class="field-wrap">
           <div id="pitch" class="pitch">
             <svg id="pitch-lines" class="pitch-lines" viewBox="0 0 200 260" aria-hidden="true"></svg><!-- drawn from js/pitch.js -->
@@ -218,10 +226,39 @@
     <div id="swap-rows"></div>
     <button id="swap-add" type="button" class="link" data-t>+ Add another swap</button>
     <p id="swap-error" class="error"></p>
+    <button id="swap-reset" type="button" class="link" hidden data-t>Use the app’s suggestion</button>
     <div class="row">
       <button id="swap-skip" type="button" data-t>Skip</button>
       <button id="swap-cancel" type="button" data-t>Cancel</button>
       <button id="swap-confirm" type="button" class="primary grow" data-t>Done</button>
+    </div>
+  </dialog>
+
+  <!-- Correct the match time: tap the match time on the clock -->
+  <dialog id="time-dialog">
+    <h2 data-t>Adjust the clock</h2>
+    <!-- Match time -->
+    <div class="time-head"><span data-t>Match time</span><span id="time-value" class="time-value">0:00</span></div>
+    <div class="time-steps">
+      <button type="button" data-step="-60000">−1 min</button>
+      <button type="button" data-step="-10000">−10 s</button>
+      <button type="button" data-step="10000">+10 s</button>
+      <button type="button" data-step="60000">+1 min</button>
+    </div>
+    <label class="field inline"><span data-t>Or type it (min:sec)</span><input id="time-input" type="text" inputmode="decimal" autocomplete="off" placeholder="12:00"></label>
+    <p id="time-note" class="muted small" data-t>Players’ minutes move with it.</p>
+    <!-- The countdown to the next substitution -->
+    <div class="time-head"><span data-t>Next substitution in</span><span id="count-value" class="time-value">0:00</span></div>
+    <div class="time-steps">
+      <button type="button" data-count="-60000">−1 min</button>
+      <button type="button" data-count="-10000">−10 s</button>
+      <button type="button" data-count="10000">+10 s</button>
+      <button type="button" data-count="60000">+1 min</button>
+    </div>
+    <label class="field inline"><span data-t>Or type it (min:sec)</span><input id="count-input" type="text" inputmode="decimal" autocomplete="off" placeholder="5:00"></label>
+    <div class="row">
+      <button id="time-cancel" type="button" data-t>Cancel</button>
+      <button id="time-save" type="button" class="primary grow" data-t>Save</button>
     </div>
   </dialog>
 
@@ -251,6 +288,7 @@
     <label class="field inline"><span data-t>Players per substitution</span>
       <input id="set-per-sub" type="number" min="1" inputmode="numeric">
     </label>
+    <div class="choices show-next"><label><input id="set-show-next" type="checkbox"> <span><span data-t>Show who swaps next</span><span class="sub" data-t>Coloured pairs on the list and the field</span></span></label></div>
     <fieldset>
       <legend class="choices toggle"><label><span data-t>Positions</span><input id="set-use-positions" type="checkbox" aria-label="Give players positions" data-t-label></label></legend>
       <div id="set-position-list" class="positions"></div>

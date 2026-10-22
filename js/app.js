@@ -171,6 +171,7 @@ function renderSetup() {
   $('field-size').value = s.fieldSize ?? '';
   $('interval').value = s.intervalMin ?? '';
   $('per-sub').value = s.perSub ?? '';
+  $('show-next').checked = s.showNext;
 
   $('gk-list').classList.toggle('two-col', allShort(team.players.map((p) => p.name)));
   $('starter-list').classList.toggle('two-col', allShort(team.players.map((p) => p.name)));
@@ -380,17 +381,64 @@ function tags(p) {
 }
 
 function playerRow(p) {
-  return el('li', { class: `player ${p.status}` }, [
+  const n = upcoming.get(p.id);
+  return el('li', { class: `player ${p.status}${n ? ' next' : ''}`, style: n ? pairColor(n) : '' }, [
     el('button', { type: 'button', onclick: () => openActions(p.id) }, [
-      el('span', { class: 'name' }, [p.name, ...tags(p)]),
+      el('span', { class: 'name' }, [p.name, ...tags(p), ...nextNum(n)]),
       el('span', { class: 'stint', 'data-stint': p.id }),
       el('span', { class: 'mins', 'data-id': p.id }),
     ]),
   ]);
 }
 
+// ---------- the next substitution ----------
+// Who swaps at the next substitution, shown all the time because the players
+// keep asking. Each pair has its own colour and number, on the list, the field
+// and the "Next" strip under the clock; tapping the strip changes them
+// (match.plan, used by M.nextSwaps).
+
+// The small pencil from the match time, for the one-line strip above the field
+const pencil = () => $('edit-time').querySelector('.edit').cloneNode(true);
+let upcoming = new Map(); // player id → pair number (1, 2...)
+const pairColor = (n) => `--next: var(--next-${((n - 1) % 4) + 1})`; // four colours, then they repeat
+const nextNum = (n) => (n ? [el('span', { class: 'next-num' }, String(n))] : []);
+
+function renderNext(t) {
+  const pairs = team.settings.showNext ? M.nextSwaps(match, t) : []; // the coach can switch it off
+  upcoming = new Map(pairs.flatMap((r, i) => [[r.offId, i + 1], [r.onId, i + 1]]));
+  const strip = () => [
+    el('span', { class: 'next-label' }, tr('Next')),
+    el('span', { class: 'pairs' }, pairs.map((r, i) =>
+      el('span', { class: 'pair', style: pairColor(i + 1) }, [
+        ...nextNum(i + 1),
+        el('span', { class: 'pair-names' }, `${player(r.offId).name} ⇄ ${player(r.onId).name}`),
+      ]),
+    )),
+    el('span', { class: 'next-edit' }, tr('Change')),
+    el('span', { class: 'next-edit-icon', 'aria-label': tr('Change') }, [pencil()]),
+  ];
+  for (const id of ['next-strip', 'field-next']) {
+    $(id).hidden = !pairs.length;
+    $(id).replaceChildren(...strip());
+  }
+}
+
+// On by default; in setup and the cog popup
+for (const id of ['show-next', 'set-show-next']) {
+  $(id).addEventListener('change', (e) => {
+    team.settings.showNext = e.target.checked;
+    saveTeam(team);
+    if (match) renderMatch();
+  });
+}
+
+for (const id of ['next-strip', 'field-next']) {
+  $(id).addEventListener('click', () => openSwap('plan', M.nextSwaps(match, now())));
+}
+
 function renderMatch() {
   const t = now();
+  renderNext(t);
   const gk = match.players.filter((p) => p.status === 'gk');
   const field = match.players.filter((p) => p.status === 'field').sort((a, b) => (a.pos ?? 99) - (b.pos ?? 99));
   const bench = M.rankOn(match.players, t);
@@ -460,16 +508,17 @@ function renderField() {
   if (!picked) picking = null; // e.g. substituted meanwhile
   $('pitch').classList.toggle('picking', !!picked);
   const pickClass = (p) => (!picked || !p ? '' : p.id === picked.id ? ' selected' : canSwap(picked, p) ? ' target' : '');
+  const next = (p) => (!picked && p && upcoming.get(p.id)) || 0; // the next swap's colours, but not while picking
   const tap = (p) => (picked ? swapWith(p) : p && openActions(p.id));
   const marker = (key, label, p, place) =>
     el('button', {
       type: 'button',
-      class: `marker${key === 'gk' ? ' gk' : ''}${p ? '' : ' empty'}${pickClass(p)}`,
-      style: `left: ${place.x * 100}%; top: ${place.y * 100}%`,
+      class: `marker${key === 'gk' ? ' gk' : ''}${p ? '' : ' empty'}${pickClass(p)}${next(p) ? ' next' : ''}`,
+      style: `left: ${place.x * 100}%; top: ${place.y * 100}%;${next(p) ? pairColor(next(p)) : ''}`,
       onclick: () => !arranging && !dragging && tap(p),
       onpointerdown: (e) => markerDown(e, key),
       oncontextmenu: (e) => e.preventDefault(), // Android's long-press menu
-    }, [el('span', { class: 'marker-pos' }, label), el('span', { class: 'marker-name' }, p ? p.name : '–')]);
+    }, [el('span', { class: 'marker-pos' }, label), el('span', { class: 'marker-name' }, p ? p.name : '–'), ...nextNum(next(p))]);
   $('pitch-markers').replaceChildren(
     marker('gk', tr('GK'), gk, layout.gk),
     ...names.map((name, i) => marker(i, posLabel(name), match.players.find((p) => p.status === 'field' && p.pos === i), layout.spots[i])),
@@ -479,9 +528,10 @@ function renderField() {
     ...M.rankOn(match.players, now()).map((p) => {
       const last = M.lastPositionName(match, p);
       return el('li', {}, [
-        el('button', { type: 'button', class: pickClass(p).trim(), onclick: () => tap(p) }, [
+        el('button', { type: 'button', class: `${pickClass(p)}${next(p) ? ' next' : ''}`.trim(), style: next(p) ? pairColor(next(p)) : '', onclick: () => tap(p) }, [
           el('span', { class: 'bench-name' }, p.name),
           ...(last ? [el('span', { class: 'bench-last' }, posLabel(last))] : []),
+          ...nextNum(next(p)),
         ]),
       ]);
     }),
@@ -645,6 +695,7 @@ function openSettings() {
   $('set-interval').value = s.intervalMs / 60000;
   $('set-per-sub').value = s.perSub;
   $('set-per-sub').max = Math.max(1, s.fieldSize - 1);
+  $('set-show-next').checked = team.settings.showNext;
   renderSettingsPositions();
   $('settings-dialog').showModal();
 }
@@ -720,23 +771,34 @@ function updateClock() {
   const t = now();
   const remaining = match.nextSubAt - t;
   const running = M.isRunning(match);
+  const onBreak = M.onBreak(match);
+  // At half time the big number is how long the break has lasted
+  const big = onBreak ? fmt(Date.now() - match.breakAt) : fmt(remaining, Math.ceil);
+  const half = M.halfOf(match);
 
-  $('countdown').textContent = fmt(remaining, Math.ceil);
-  $('field-countdown').textContent = fmt(remaining, Math.ceil);
+  $('countdown').textContent = big;
+  $('field-countdown').textContent = big;
   const done = `${Math.min(100, Math.max(0, (1 - remaining / match.settings.intervalMs) * 100))}%`;
   // The big clock on the list, and the small one above the field view
-  for (const [clock, countdown, progress, time, badge] of [
-    ['clock', 'countdown', 'sub-progress', 'match-time', 'paused-badge'],
-    ['field-clock', 'field-countdown', 'field-progress', 'field-match-time', 'field-paused'],
+  for (const [clock, label, countdown, progress, time, halfLabel, badge] of [
+    ['clock', 'clock-label', 'countdown', 'sub-progress', 'match-time', 'half-label', 'paused-badge'],
+    ['field-clock', 'field-clock-label', 'field-countdown', 'field-progress', 'field-match-time', 'field-half', 'field-paused'],
   ]) {
-    $(countdown).classList.toggle('due', remaining <= 0);
-    $(clock).classList.toggle('due', remaining <= 0);
+    $(countdown).classList.toggle('due', remaining <= 0 && !onBreak);
+    $(clock).classList.toggle('due', remaining <= 0 && !onBreak);
     $(clock).classList.toggle('paused', !running);
+    $(clock).classList.toggle('break', onBreak);
+    $(label).textContent = onBreak ? tr('Half time') : tr('Next substitution');
     $(progress).style.width = done;
     $(time).textContent = fmt(t);
-    $(badge).hidden = running;
+    $(halfLabel).textContent = halfName(half);
+    $(halfLabel).hidden = half < 2;
+    $(badge).hidden = running || onBreak;
   }
-  $('pause').textContent = running ? tr('Pause') : tr('Resume');
+  $('pause').textContent = onBreak ? startLabel(half + 1) : running ? tr('Pause') : tr('Resume');
+  $('pause').classList.toggle('primary', onBreak);
+  $('half-time').hidden = onBreak;
+  if ($('time-dialog').open) showTime();
 
   for (const span of document.querySelectorAll('.mins[data-id]')) {
     const p = player(span.dataset.id);
@@ -748,11 +810,15 @@ function updateClock() {
     span.textContent = p && M.onPitch(p.status) && p.fieldMs > 0 ? fmt(t - p.since) : '';
   }
 
-  if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open && !$('settings-dialog').open) substitutionDue();
+  if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open && !$('settings-dialog').open && !$('time-dialog').open) substitutionDue();
 }
 
+// Halves: "2nd half", then "Period 3" if half time is pressed again.
+const halfName = (n) => (n === 2 ? tr('2nd half') : tr('Period {n}', { n }));
+const startLabel = (n) => (n === 2 ? tr('Start 2nd half') : tr('Start period {n}', { n }));
+
 function substitutionDue() {
-  const pairs = M.pickSubstitution(match.players, match.settings.perSub, now());
+  const pairs = M.nextSwaps(match, now());
   if (!pairs.length) {
     M.scheduleNext(match);
     saveMatch(match);
@@ -770,7 +836,20 @@ function change(fn) {
   renderMatch();
 }
 
-$('pause').addEventListener('click', () => change(() => (M.isRunning(match) ? M.pause(match) : M.resume(match))));
+$('pause').addEventListener('click', () => {
+  if (M.onBreak(match)) return startNextHalf();
+  change(() => (M.isRunning(match) ? M.pause(match) : M.resume(match)));
+});
+
+// Half time stops the clock and shows how long the break has been. Starting
+// the next half offers the next swaps first, then starts a full countdown.
+$('half-time').addEventListener('click', () => change(() => M.startBreak(match)));
+
+function startNextHalf() {
+  const pairs = M.nextSwaps(match, now());
+  if (pairs.length) openSwap('half', pairs);
+  else change(() => M.endBreak(match));
+}
 
 // Start the countdown again from the full interval, without a substitution.
 $('restart-countdown').addEventListener('click', () => {
@@ -779,7 +858,8 @@ $('restart-countdown').addEventListener('click', () => {
 });
 
 $('swap-now').addEventListener('click', () => {
-  const pairs = M.pickSubstitution(match.players, 1, now());
+  const pairs = M.nextSwaps(match, now()).slice(0, 1); // the first of the next swaps
+  if (!pairs.length) pairs.push(...M.pickSubstitution(match.players, 1, now()));
   if (!pairs.length) return toast(tr('Nobody on the bench to swap with.'));
   openSwap('adhoc', pairs);
 });
@@ -871,13 +951,21 @@ function openActions(id) {
 
 // ---------- swap popup ----------
 
+// mode: 'scheduled' (the countdown ran out), 'adhoc' (the coach's own swap),
+// 'plan' (choosing the next swaps, from the "Next" strip) or 'half' (before the next half starts).
 function openSwap(mode, rows, injuredId = null) {
   swap = { mode, rows: rows.map((r) => ({ ...r })), injuredId };
-  $('swap-title').textContent =
-    mode === 'scheduled' ? tr('Substitution time!') : injuredId ? tr('Injury – swap player') : tr('Swap players');
-  $('swap-confirm').textContent = mode === 'scheduled' ? tr('Done') : tr('Swap');
-  $('swap-skip').hidden = mode !== 'scheduled';
-  $('swap-cancel').hidden = mode === 'scheduled';
+  const n = M.halfOf(match) + 1;
+  $('swap-title').textContent = {
+    scheduled: tr('Substitution time!'),
+    plan: tr('Next substitution'),
+    half: n === 2 ? tr('Swaps for the 2nd half') : tr('Swaps for period {n}', { n }),
+    adhoc: injuredId ? tr('Injury – swap player') : tr('Swap players'),
+  }[mode];
+  $('swap-confirm').textContent = { scheduled: tr('Done'), plan: tr('Save'), half: startLabel(n), adhoc: tr('Swap') }[mode];
+  $('swap-skip').hidden = mode !== 'scheduled' && mode !== 'half';
+  $('swap-cancel').hidden = mode === 'scheduled' || mode === 'half';
+  $('swap-reset').hidden = mode !== 'plan' || !match.plan;
   renderSwap();
   $('swap-dialog').showModal();
 }
@@ -995,24 +1083,127 @@ $('swap-confirm').addEventListener('click', () => {
     $('swap-error').textContent = tr('Each player can only be picked once.');
     return;
   }
+  if (swap.mode === 'plan') {
+    if (swap.rows.length) match.plan = swap.rows;
+    else delete match.plan; // nothing chosen: back to the app's suggestion
+    return closeSwap();
+  }
   M.applySwaps(match, swap.rows, now(), swap.injuredId);
+  if (swap.mode !== 'adhoc') delete match.plan; // done, so the next ones are suggested again
   if (swap.mode === 'scheduled') M.scheduleNext(match);
+  if (swap.mode === 'half') M.endBreak(match);
   closeSwap();
 });
 
+// Skip keeps the chosen next swaps for later.
 $('swap-skip').addEventListener('click', () => {
-  M.scheduleNext(match);
+  if (swap.mode === 'half') M.endBreak(match);
+  else M.scheduleNext(match);
   closeSwap();
+});
+
+$('swap-reset').addEventListener('click', () => {
+  delete match.plan;
+  closeSwap();
+  toast(tr('The next swaps are the app’s suggestion again.'));
 });
 
 $('swap-cancel').addEventListener('click', closeSwap);
 
-// Escape / back button: close a swap you started yourself, but a scheduled
-// substitution has to be answered with Done or Skip.
+// Escape / back button: close a swap you started yourself (at half time it
+// stays half time), but a scheduled substitution has to be answered with Done or Skip.
 $('swap-dialog').addEventListener('cancel', (e) => {
   e.preventDefault();
-  if (swap?.mode === 'adhoc') closeSwap();
+  if (swap && swap.mode !== 'scheduled') closeSwap();
 });
+
+// ---------- adjusting the clock ----------
+// Tap the match time on either clock: the match time and the countdown to the
+// next substitution can both be changed, each on its own. The steps and typed
+// times only change the numbers in the popup; Save moves the match clock
+// (M.setElapsed) and then sets the countdown to what the popup shows.
+
+let timeDelta = 0; // how far the popup's match time is from the match clock
+let countDelta = 0; // how far the popup's countdown is from the real one
+let timeLimited = false; // it was stopped at the earliest time allowed
+
+const shownTime = () => now() + timeDelta;
+const shownCount = () => match.nextSubAt - now() + countDelta;
+
+function openTime() {
+  timeDelta = 0;
+  countDelta = 0;
+  timeLimited = false;
+  $('time-input').value = '';
+  $('count-input').value = '';
+  showTime();
+  $('time-dialog').showModal();
+}
+
+// "12:30", "12.30" or just minutes ("12"), in ms; null while half-typed
+function typedTime(text) {
+  const m = text.trim().match(/^(\d{1,3})(?:[:.,](\d{1,2}))?$/);
+  return !m || (m[2] != null && Number(m[2]) > 59) ? null : (Number(m[1]) * 60 + Number(m[2] ?? 0)) * 1000;
+}
+
+// Not back before the last change of players: their minutes would go wrong.
+function showTime() {
+  const earliest = M.earliestTime(match);
+  if (now() + timeDelta < earliest) {
+    timeDelta = earliest - now();
+    timeLimited = true;
+  }
+  if (countDelta && shownCount() < 0) countDelta -= shownCount(); // the countdown stops at 0:00
+  $('time-value').textContent = fmt(shownTime());
+  $('count-value').textContent = fmt(shownCount(), Math.ceil);
+  $('time-note').textContent = timeLimited
+    ? tr('Can’t go back before {time}, when players last came on or off.', { time: fmt(earliest) })
+    : tr('Players’ minutes move with it.');
+}
+
+for (const b of document.querySelectorAll('#time-dialog [data-step]')) {
+  b.addEventListener('click', () => {
+    timeDelta += Number(b.dataset.step);
+    timeLimited = false;
+    $('time-input').value = '';
+    showTime();
+  });
+}
+for (const b of document.querySelectorAll('#time-dialog [data-count]')) {
+  b.addEventListener('click', () => {
+    countDelta += Number(b.dataset.count);
+    $('count-input').value = '';
+    showTime();
+  });
+}
+$('time-input').addEventListener('input', (e) => {
+  const ms = typedTime(e.target.value);
+  if (ms == null) return;
+  timeDelta = ms - now();
+  timeLimited = false;
+  showTime();
+});
+$('count-input').addEventListener('input', (e) => {
+  const ms = typedTime(e.target.value);
+  if (ms == null) return;
+  countDelta += ms - shownCount();
+  showTime();
+});
+$('time-save').addEventListener('click', () => {
+  const left = shownCount();
+  let t;
+  change(() => {
+    t = M.setElapsed(match, shownTime());
+    match.nextSubAt = t + left;
+  });
+  $('time-dialog').close();
+  toast(tr('Match time {time}, next substitution in {left}.', { time: fmt(t), left: fmt(left, Math.ceil) }));
+});
+$('time-cancel').addEventListener('click', () => $('time-dialog').close());
+$('edit-time').addEventListener('click', openTime);
+$('field-edit-time').addEventListener('click', openTime);
+// The big countdown numbers open it too (not at half time, when they show the break)
+for (const id of ['countdown', 'field-countdown']) $(id).addEventListener('click', () => !M.onBreak(match) && openTime());
 
 // ---------- moving to another phone ----------
 // A link with the team, the setup and the match in it (see share.js).

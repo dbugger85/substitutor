@@ -112,6 +112,81 @@ try {
   assert.equal(await page.textContent('#countdown'), '0:03');
   await page.screenshot({ path: `${shots}/6-paused.png`, fullPage: true });
 
+  // The next substitution: two coloured pairs, on the strip and in the list
+  const savedPlan = () => page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).plan ?? null);
+  assert.equal(await page.locator('#next-strip .pair').count(), 2);
+  assert.equal(await page.locator('#field-list .next-num, #bench-list .next-num').count(), 4);
+  // Change it: keep only the first pair
+  await page.click('#next-strip');
+  assert.equal(await page.textContent('#swap-title'), 'Next substitution');
+  await page.click('#swap-rows .swap-row:nth-child(2) button.icon');
+  await popup('15-next-edit');
+  await page.click('#swap-confirm');
+  assert.equal(await page.locator('#next-strip .pair').count(), 1);
+  assert.equal((await savedPlan()).length, 1);
+  // Back to the app's suggestion
+  await page.click('#next-strip');
+  await page.click('#swap-reset');
+  assert.equal(await savedPlan(), null);
+  assert.equal(await page.locator('#next-strip .pair').count(), 2);
+  // It can be switched off (and on again) in the match settings
+  await page.click('#settings-btn');
+  await page.click('label:has(#set-show-next)');
+  await page.click('#settings-done');
+  assert.ok(await page.isHidden('#next-strip'));
+  assert.equal(await page.locator('#field-list .next-num, #bench-list .next-num').count(), 0);
+  await page.click('#settings-btn');
+  await page.click('label:has(#set-show-next)');
+  await page.click('#settings-done');
+  assert.ok(await page.isVisible('#next-strip'));
+
+  // Correct the match time: +2 min, and not back before the last change of players
+  const before = await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).clockMs);
+  const countBefore = await page.textContent('#countdown');
+  await page.click('#edit-time');
+  await page.click('#time-dialog [data-step="60000"]');
+  await page.click('#time-dialog [data-step="60000"]');
+  await page.click('#time-save');
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).clockMs);
+  assert.equal(after - before, 120000);
+  assert.equal(await page.textContent('#countdown'), countBefore, 'the countdown keeps its time');
+  await page.click('#edit-time');
+  for (let i = 0; i < 4; i++) await page.click('#time-dialog [data-step="-60000"]');
+  assert.match(await page.textContent('#time-note'), /Can’t go back before/);
+  await page.fill('#time-input', '0:01');
+  assert.match(await page.textContent('#time-note'), /Can’t go back before/);
+  await page.click('#time-cancel');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).clockMs), after);
+  // Take the 2 minutes off again, so the minutes below stay as they were
+  await page.click('#edit-time');
+  await page.click('#time-dialog [data-step="-60000"]');
+  await page.click('#time-dialog [data-step="-60000"]');
+  await page.click('#time-save');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).clockMs), before);
+  // The countdown can be changed too, on its own
+  await page.click('#edit-time');
+  await page.fill('#count-input', '1:00');
+  await page.click('#time-dialog [data-count="10000"]');
+  assert.equal(await page.textContent('#count-value'), '1:10');
+  await popup('15-time');
+  await page.click('#time-save');
+  assert.equal(await page.textContent('#countdown'), '1:10');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).clockMs), before);
+
+  // Half time: the break's own timer, then the 2nd half (no swaps) with a fresh countdown
+  await page.click('#half-time');
+  assert.equal(await page.textContent('#clock-label'), 'Half time');
+  assert.ok(await page.isHidden('#half-time'));
+  assert.equal(await page.textContent('#pause'), 'Start 2nd half');
+  await page.screenshot({ path: `${shots}/15-half-time.png`, fullPage: true });
+  await page.click('#pause');
+  assert.equal(await page.textContent('#swap-title'), 'Swaps for the 2nd half');
+  await page.click('#swap-skip');
+  assert.equal(await page.textContent('#half-label'), '2nd half');
+  assert.equal(await page.textContent('#pause'), 'Pause');
+  await page.click('#pause'); // paused again for the steps below
+  await page.click('#restart-countdown');
+
   // Move to another phone: the link opens the same match on a fresh phone
   await page.evaluate(() => (navigator.share = async ({ url }) => (window.sharedUrl = url)));
   await page.click('#share-match');

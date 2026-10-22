@@ -311,3 +311,45 @@ test('field view: position names follow the sport', () => {
   const names = ['Venstre back', 'Strek'];
   assert.ok(M.layoutFor({}, names, 'handball').spots[0].y < M.layoutFor({}, names).spots[0].y);
 });
+
+test('the next swaps are the suggestion until the coach chooses them', () => {
+  const m = newMatch(2);
+  assert.deepEqual(M.nextSwaps(m, MIN), M.pickSubstitution(m.players, 2, MIN));
+  m.plan = [{ offId: 'D', onId: 'F' }];
+  assert.deepEqual(M.nextSwaps(m, MIN), [{ offId: 'D', onId: 'F' }]);
+});
+
+test('a chosen swap that no longer works is replaced by the next suggestion', () => {
+  const m = newMatch(2);
+  m.plan = [{ offId: 'D', onId: 'F' }, { offId: 'C', onId: 'E' }];
+  // E comes on for B by hand: the second pair can't happen, the others stay
+  M.applySwaps(m, [{ offId: 'B', onId: 'E' }], 2 * MIN);
+  // Next suggestion not using D or F: A off (on longest), and B, who just went off, is the only one left on the bench
+  assert.deepEqual(M.nextSwaps(m, 3 * MIN), [{ offId: 'D', onId: 'F' }, { offId: 'A', onId: 'B' }]);
+});
+
+test('correcting the match time moves everyone’s time but not the countdown, and not back past the last change', () => {
+  const m = newMatch(1);
+  // The clock was started 2 minutes late
+  assert.equal(M.setElapsed(m, 3 * MIN, MIN), 3 * MIN);
+  assert.equal(M.elapsed(m, MIN), 3 * MIN);
+  assert.equal(M.fieldTime(m.players.find((p) => p.id === 'A'), 3 * MIN), 3 * MIN);
+  assert.equal(m.nextSubAt - M.elapsed(m, MIN), 4 * MIN); // still 4 of the 5 minutes left
+  // A swap at 4 min: the clock can't go back before it
+  M.applySwaps(m, [{ offId: 'A', onId: 'E' }], 4 * MIN);
+  assert.equal(M.setElapsed(m, 1 * MIN, 2 * MIN), 4 * MIN);
+  assert.equal(M.elapsed(m, 2 * MIN), 4 * MIN);
+});
+
+test('half time stops the clock, and the next half starts with a full countdown', () => {
+  const m = newMatch(1);
+  M.startBreak(m, 20 * MIN);
+  assert.ok(M.onBreak(m));
+  assert.ok(!M.isRunning(m));
+  assert.equal(M.elapsed(m, 30 * MIN), 20 * MIN);
+  M.endBreak(m, 30 * MIN);
+  assert.ok(!M.onBreak(m));
+  assert.equal(M.halfOf(m), 2);
+  assert.equal(M.elapsed(m, 31 * MIN), 21 * MIN);
+  assert.equal(m.nextSubAt, 25 * MIN);
+});

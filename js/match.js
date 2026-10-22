@@ -105,6 +105,30 @@ export function pickSubstitution(players, perSub, t) {
   return Array.from({ length: k }, (_, i) => ({ offId: off[i].id, onId: on[i].id }));
 }
 
+// The swaps for the next substitution, shown before it's due so the players
+// know who's next. The coach can choose them (match.plan, from the "Next" strip
+// or the popup); a chosen pair that no longer works, because someone was
+// swapped or taken off meanwhile, is replaced by the next suggestion. Without a
+// choice it's the suggestion: pickSubstitution with perSub.
+export function nextSwaps(match, t) {
+  if (!match.plan?.length) return pickSubstitution(match.players, match.settings.perSub, t);
+  const byId = (id) => match.players.find((p) => p.id === id);
+  const usedOff = new Set();
+  const usedOn = new Set();
+  const rows = match.plan.map((r) => {
+    const ok = byId(r.offId)?.status === 'field' && byId(r.onId)?.status === 'bench' && !usedOff.has(r.offId) && !usedOn.has(r.onId);
+    if (!ok) return null;
+    usedOff.add(r.offId);
+    usedOn.add(r.onId);
+    return { offId: r.offId, onId: r.onId };
+  });
+  const off = rankOff(match.players, t).filter((p) => !usedOff.has(p.id));
+  const on = rankOn(match.players, t).filter((p) => !usedOn.has(p.id));
+  return rows
+    .map((r) => r ?? (off.length && on.length ? { offId: off.shift().id, onId: on.shift().id } : null))
+    .filter(Boolean);
+}
+
 // Apply swaps. A goalkeeper who comes off is replaced as goalkeeper.
 // The player with id `injuredId` goes out of the match instead of to the bench.
 export function applySwaps(match, pairs, t, injuredId = null) {
@@ -137,6 +161,45 @@ export function makeGoalkeeper(match, id, t) {
 
 export function addPlayer(match, { id, name }, t) {
   match.players.push({ id, name, status: 'bench', fieldMs: 0, benchMs: 0, since: t });
+}
+
+// ---------- correcting the clock, and half time ----------
+
+// The earliest the match clock can be set back to: the last time anyone came
+// on, went off or changed place. Going back further would take away time they
+// have already been given.
+export function earliestTime(match) {
+  return Math.max(0, ...match.players.map((p) => p.since));
+}
+
+// Correct the match time (the clock was started late, or the referee's watch
+// says otherwise). Everyone's time where they are now moves with it, but the
+// countdown to the next substitution keeps its time left (owner's wish).
+// Returns the time actually set.
+export function setElapsed(match, target, now = Date.now()) {
+  const t = Math.max(earliestTime(match), Math.round(target));
+  const shift = t - elapsed(match, now);
+  match.clockMs += shift;
+  match.nextSubAt += shift;
+  return t;
+}
+
+// Half time: the match clock stops, and the break gets its own timer
+// (breakAt is a Date.now() timestamp, as match time stands still).
+export const onBreak = (match) => match.breakAt != null;
+export const halfOf = (match) => match.half ?? 1;
+
+export function startBreak(match, now = Date.now()) {
+  pause(match, now);
+  match.breakAt = now;
+}
+
+// The next half starts with a full countdown.
+export function endBreak(match, now = Date.now()) {
+  delete match.breakAt;
+  match.half = halfOf(match) + 1;
+  resume(match, now);
+  scheduleNext(match, now);
 }
 
 // ---------- positions (only when match.settings.positions is set) ----------
