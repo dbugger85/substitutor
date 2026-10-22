@@ -35,6 +35,7 @@ Add your players. The list is saved on the phone.
 - **Starting players.** After your first match, the players who played least last time are ticked for you. "Suggest starters from last match" ticks them again if you've changed them.
 - **Minutes between substitutions**
 - **Players per substitution**
+- **Show who swaps next** (on by default): coloured pairs on the match screen showing who swaps at the next substitution.
 - **Positions** (optional): tick the box next to "Positions", type a name for each spot (like Left back or Forward), and choose who starts where. Picking a player who already has a spot swaps the two.
 - **Field view** (optional, needs positions): adds a picture of the field to the match screen. Choose the **sport** (Football, Bandy, Handball, Ice hockey, Floorball or Futsal) for its lines (red lines for bandy, red and blue for ice hockey), and a **colour**. Each sport comes with its own colour (green grass, ice, a blue or wooden floor), and you can pick another.
 
