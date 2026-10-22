@@ -165,7 +165,7 @@ try {
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).clockMs), before);
   // The countdown can be changed too, on its own
   await page.click('#edit-time');
-  await page.fill('#count-input', '1:00');
+  await page.fill('#count-input', '100'); // no colon on Android's number keyboard
   await page.click('#time-dialog [data-count="10000"]');
   assert.equal(await page.textContent('#count-value'), '1:10');
   await popup('15-time');

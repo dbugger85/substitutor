@@ -1140,9 +1140,11 @@ function openTime() {
   $('time-dialog').showModal();
 }
 
-// "12:30", "12.30" or just minutes ("12"), in ms; null while half-typed
+// "12:30", "12.30", "12,30", digits only ("1230", as Android's number keyboard
+// has no colon), or just minutes ("12"), in ms; null while half-typed
 function typedTime(text) {
-  const m = text.trim().match(/^(\d{1,3})(?:[:.,](\d{1,2}))?$/);
+  const t = text.trim();
+  const m = /^\d{3,4}$/.test(t) ? [t, t.slice(0, -2), t.slice(-2)] : t.match(/^(\d{1,3})(?:[:.,](\d{1,2}))?$/);
   return !m || (m[2] != null && Number(m[2]) > 59) ? null : (Number(m[1]) * 60 + Number(m[2] ?? 0)) * 1000;
 }
 

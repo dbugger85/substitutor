@@ -47,7 +47,7 @@ Your setup is remembered for the next match.
 - **↻** (top-right of the clock) restarts the countdown from the full time, without swapping anyone.
 - **Pause** stops the clock for a moment.
 - **Half time** stops the clock and shows how long the break has lasted. **Start 2nd half** first shows the next swaps (change them, tap Start 2nd half, or Skip), then starts the clock with a full countdown. The clock then says "2nd half".
-- **Tap the match time** (or the countdown) to adjust the clock: −1 min, −10 s, +10 s, +1 min, or type the time, for both the match time and the countdown to the next substitution. Handy if you started the clock late. Changing the match time moves players' minutes with it (but not the countdown), and it can't go back before the last time someone came on or off. The countdown is changed on its own.
+- **Tap the match time** (or the countdown) to adjust the clock: −1 min, −10 s, +10 s, +1 min, or type the time (`530` or `5.30` for 5:30, as Android's number keyboard has no colon), for both the match time and the countdown to the next substitution. Handy if you started the clock late. Changing the match time moves players' minutes with it (but not the countdown), and it can't go back before the last time someone came on or off. The countdown is changed on its own.
 
 **Who's next.** Under the clock, **Next** shows who swaps at the next substitution, so you can answer the players straight away. Each pair has its own colour and number, also on the player list and the field view. Tap the strip to choose other players; your choice is used when it's time (and **Use the app's suggestion** goes back). Switch it off with **Show who swaps next** in setup or ⚙.
 
@@ -57,7 +57,7 @@ Your setup is remembered for the next match.
 
 **Other buttons and options:**
 - **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, showing who swaps next, positions on or off and their names, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
-- **Swap** swaps players at any time, without changing the countdown.
+- **Swap now** swaps players at any time, without changing the countdown.
 - **Tap a player** to substitute them now, take them off injured, make them goalkeeper, change position, rename them, or remove them from the match.
 - **Add player** (under the bench) is for a late arrival, who comes on at the next substitution.
 - **End match** shows the minutes each player played.
