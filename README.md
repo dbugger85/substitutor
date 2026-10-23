@@ -107,6 +107,8 @@ Substitutions rotate:
 
 This means a player who was in goal for a long time isn't taken off again and again once they're back on the field. The goalkeeper is never substituted unless you choose to. Positions don't change who comes off or on; they only decide where the new player plays.
 
+The **Next** strip under the clock shows these choices before it's time, and you can change them there. Players who are injured, removed from the match or sent off with a red card are never suggested.
+
 ## Switching phones
 
 To hand over to another coach or another phone in the middle of a match:
