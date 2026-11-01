@@ -164,6 +164,63 @@ test('positions: the player coming on takes the spot of who went off', () => {
   assert.equal(M.lastPositionName(m, c), 'RB'); // shown on the bench
 });
 
+function boxMatch() {
+  // Two at the back, two up front: A left back, B right back, C left front, D right front
+  return M.createMatch(team, {
+    fieldSize: 5, intervalMin: 5, perSub: 2, gkId: 'GK', starterIds: ['A', 'B', 'C', 'D'],
+    usePositions: true, positions: ['Left back', 'Right back', 'Left front', 'Right front'], posIds: ['A', 'B', 'C', 'D'],
+  }, 0);
+}
+function rotate(m, pairs) {
+  M.applySwaps(m, pairs, MIN);
+  return M.rotatePositions(m, pairs);
+}
+
+test('rotate positions: two who stay on the same side swap front and back', () => {
+  const m = boxMatch();
+  rotate(m, [{ offId: 'B', onId: 'E' }, { offId: 'D', onId: 'F' }]); // A and C stay, both on the left
+  assert.deepEqual(spots(m), { 'Left back': 'C', 'Right back': 'E', 'Left front': 'A', 'Right front': 'F' });
+});
+
+test('rotate positions: front and back first, so two backs both move forward', () => {
+  const m = boxMatch();
+  const moved = rotate(m, [{ offId: 'C', onId: 'E' }, { offId: 'D', onId: 'F' }]); // A and B stay, both at the back
+  assert.deepEqual(moved.map((p) => p.id), ['A', 'B']);
+  assert.deepEqual(spots(m), { 'Left back': 'E', 'Right back': 'F', 'Left front': 'A', 'Right front': 'B' });
+});
+
+test('rotate positions: players keep their side, and those coming on fill the rest', () => {
+  const m = boxMatch();
+  rotate(m, [{ offId: 'B', onId: 'E' }, { offId: 'C', onId: 'F' }]); // A (left back) and D (right front) stay
+  assert.equal(spots(m)['Left front'], 'A');
+  assert.equal(spots(m)['Right back'], 'D');
+  assert.deepEqual([spots(m)['Left back'], spots(m)['Right front']].sort(), ['E', 'F']);
+});
+
+test('rotate positions: with three staying on, each moves front or back on their side', () => {
+  const m = boxMatch();
+  rotate(m, [{ offId: 'D', onId: 'E' }]); // A, B and C stay
+  assert.deepEqual(spots(m), { 'Left back': 'C', 'Right back': 'E', 'Left front': 'A', 'Right front': 'B' });
+});
+
+test('rotate positions: without names it uses the plain rows (1 and 2 at the back, 3 and 4 in front)', () => {
+  const m = positionMatch();
+  m.settings.positions = ['Position 1', 'Position 2', 'Position 3', 'Position 4'];
+  // D in 1, C in 2, B in 3, A in 4; C and A (both on the right) stay
+  rotate(m, [{ offId: 'D', onId: 'E' }, { offId: 'B', onId: 'F' }]);
+  assert.equal(spots(m)['Position 2'], 'A');
+  assert.equal(spots(m)['Position 4'], 'C');
+});
+
+test('rotate positions: nothing moves with one player staying, no swaps or no positions', () => {
+  const m = positionMatch();
+  const pairs = [{ offId: 'A', onId: 'E' }, { offId: 'B', onId: 'F' }];
+  M.applySwaps(m, pairs, MIN);
+  assert.equal(M.rotatePositions(m, []).length, 0);
+  const plain = newMatch();
+  assert.equal(M.rotatePositions(plain, [{ offId: 'A', onId: 'E' }]).length, 0);
+});
+
 test('positions: two players can swap', () => {
   const m = positionMatch();
   M.swapPositions(m, 'A', 'D');

@@ -259,6 +259,8 @@ function renderPositions() {
   $('use-positions').checked = s.usePositions;
   $('use-field-view').checked = s.fieldView;
   $('field-view-option').hidden = !s.usePositions;
+  $('use-rotate').checked = !!s.rotatePositions;
+  $('rotate-option').hidden = !s.usePositions;
   renderFieldStyle();
   if (!s.usePositions) return $('position-list').replaceChildren();
   const starters = team.players.filter((p) => s.starterIds.includes(p.id));
@@ -288,6 +290,11 @@ function renderPositions() {
     ),
   );
 }
+
+$('use-rotate').addEventListener('change', (e) => {
+  team.settings.rotatePositions = e.target.checked;
+  saveTeam(team);
+});
 
 $('use-field-view').addEventListener('change', (e) => {
   team.settings.fieldView = e.target.checked;
@@ -925,6 +932,8 @@ function renderSettingsPositions() {
   $('set-use-positions').checked = !!names;
   $('set-field-view').checked = !!team.settings.fieldView;
   $('set-field-view-option').hidden = !names;
+  $('set-rotate').checked = !!team.settings.rotatePositions;
+  $('set-rotate-option').hidden = !names;
   renderFieldStyle();
   $('set-position-list').classList.toggle('two-col', allShort(names ?? []));
   $('set-position-list').replaceChildren(
@@ -977,6 +986,10 @@ $('set-use-positions').addEventListener('change', (e) => {
   saveTeam(team);
   change(() => M.setPositions(match, e.target.checked, team.settings.positions));
   renderSettingsPositions();
+});
+$('set-rotate').addEventListener('change', (e) => {
+  team.settings.rotatePositions = e.target.checked;
+  saveTeam(team);
 });
 $('set-field-view').addEventListener('change', (e) => {
   team.settings.fieldView = e.target.checked;
@@ -1325,6 +1338,13 @@ $('swap-confirm').addEventListener('click', () => {
     return closeSwap();
   }
   M.applySwaps(match, swap.rows, now(), swap.injuredId);
+  // Rotate positions: at a planned substitution or half time (not an ad-hoc swap), the players who stayed on move round their spots
+  if (swap.mode !== 'adhoc' && team.settings.rotatePositions && match.settings.positions) {
+    const names = match.settings.positions;
+    const places = M.layoutFor(team.settings.layout, names, sportOf(team.settings)).spots; // where the field view puts them
+    const moved = M.rotatePositions(match, swap.rows, places);
+    if (moved.length) toast(tr('New positions: {list}', { list: moved.map((p) => `${p.name} ${posLabel(names[p.pos])}`).join(', ') }));
+  }
   if (swap.mode !== 'adhoc') delete match.plan; // done, so the next ones are suggested again
   if (swap.mode === 'scheduled') M.scheduleNext(match);
   if (swap.mode === 'half') M.endBreak(match);

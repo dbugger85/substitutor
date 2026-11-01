@@ -39,6 +39,7 @@ Add your players. The list is saved on the phone.
 - **Score** (optional): tick the box next to "Score" to keep the score on a page of its own. Type your team's name (remembered) and the opponent's (cleared after each match). **Cards** adds yellow and red cards.
 - **Show who swaps next** (on by default): coloured pairs on the match screen showing who swaps at the next substitution.
 - **Positions** (optional): tick the box next to "Positions", type a name for each spot (like Left back or Forward), and choose who starts where. Picking a player who already has a spot swaps the two.
+- **Rotate positions** (optional, needs positions): at each substitution, the players who stay on move to another position, so nobody plays the same spot all match. They move between front and back first, and stay on their own side (left back goes to left front). The app uses where the positions sit on the field: guessed from their names, or where you dragged them in the field view.
 - **Field view** (optional, needs positions): adds a picture of the field to the match screen. Choose the **sport** (Football, Bandy, Handball, Ice hockey, Floorball or Futsal) for its lines (red lines for bandy, red and blue for ice hockey), and a **colour**. Each sport comes with its own colour (green grass, ice, a blue or wooden floor), and you can pick another.
 
 Your setup is remembered for the next match.
@@ -65,7 +66,7 @@ Your setup is remembered for the next match.
 - **Done** makes the swaps and restarts the countdown. **Skip** restarts it without changes.
 
 **Other buttons and options:**
-- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, showing who swaps next, the score (names and cards), positions on or off and their names, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
+- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, showing who swaps next, the score (names and cards), positions on or off, their names and rotating them, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
 - **Swap now** swaps players at any time, without changing the countdown.
 - **Tap a player** to substitute them now, take them off injured, make them goalkeeper, change position, rename them, or remove them from the match.
 - **Add player** (under the bench) is for a late arrival, who comes on at the next substitution.
@@ -79,6 +80,7 @@ Your setup is remembered for the next match.
 **Positions** (if switched on):
 - Each player on the field has a green position tag.
 - The player who comes on takes the position of the player who went off.
+- With **Rotate positions** on, the players who stay on swap positions at each planned substitution and at half time (not when you swap someone yourself), and a message shows their new positions.
 - To swap two players' positions, tap a player and choose **Change position with…**. The goalkeeper is in the list too: swap with them and the other player goes in goal.
 - Bench players show where they last played in a grey tag. The swap lists show positions too, so you can bring on someone for a particular position.
 

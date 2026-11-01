@@ -299,6 +299,25 @@ try {
   assert.equal(await page.textContent(`#bench-list li:has-text("${frontPlayer}") .badge.last`), 'Front');
   assert.equal(await page.$$eval('#field-list .badge.pos', (b) => b.filter((x) => x.textContent === 'Front').length), 1);
   assert.ok(await page.isVisible('#last-pos-hint'));
+  // Rotate positions (in the cog): at half time two come off, and the two who stay move to other positions
+  await page.click('#settings-btn');
+  await page.waitForSelector('#settings-dialog[open]');
+  assert.ok(await page.isVisible('#set-rotate-option'));
+  await page.click('label:has(#set-rotate)');
+  await page.fill('#set-per-sub', '2');
+  await page.click('#settings-done');
+  const posMap = () => page.$$eval('#field-list li', (lis) => Object.fromEntries(lis.filter((li) => li.querySelector('.badge.pos')).map((li) => [li.querySelector('.name').firstChild.textContent, li.querySelector('.badge.pos').textContent])));
+  const beforeRotate = await posMap();
+  await page.click('#half-time');
+  await page.click('#pause');
+  await page.waitForSelector('#swap-dialog[open]');
+  await page.click('#swap-confirm');
+  const afterRotate = await posMap();
+  const stayed = Object.keys(afterRotate).filter((n) => n in beforeRotate);
+  assert.equal(stayed.length, 2);
+  for (const n of stayed) assert.notEqual(afterRotate[n], beforeRotate[n], `${n} moved to another position`);
+  assert.match(await page.textContent('#toast'), /New positions:/);
+  await page.screenshot({ path: `${shots}/10-positions-rotated.png`, fullPage: true });
 
   // Field view: swipe left to see the positions on a field, with the bench beside it
   assert.ok(await page.isVisible('#page-dots'));

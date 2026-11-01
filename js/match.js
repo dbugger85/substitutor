@@ -311,6 +311,69 @@ export function swapPositions(match, aId, bId, t) {
   [a.pos, b.pos] = [b.pos, a.pos];
 }
 
+// "Rotate positions" (owner's wishes 2026-11-01): after a substitution, every
+// field player who stayed on moves to another position, so nobody keeps the
+// same one all match. Front ↔ back comes first, staying on their own side of
+// the field (left back goes to left front, not right front or right back). `places` is where each position sits on the
+// field ({x, y} by spot, as in the field view; guessed from the names if left
+// out). The players who came on fill the positions left over, the one of the
+// player they replaced if it's free. Call after applySwaps with the same pairs.
+// Returns the players who stayed on (who all moved), or [] if fewer than two
+// stayed on.
+export function rotatePositions(match, pairs, places) {
+  const names = match.settings.positions;
+  if (!names || !pairs.length) return [];
+  const swapped = new Set(pairs.flatMap((r) => [r.offId, r.onId]));
+  const field = match.players.filter((p) => p.status === 'field' && p.pos != null);
+  const stay = field.filter((p) => !swapped.has(p.id)).sort((a, b) => a.pos - b.pos);
+  if (stay.length < 2) return [];
+  const xy = places ?? guessLayout(names).spots;
+  const n = names.length;
+  // What a move costs (lowest wins): keeping your spot is worst; then a move
+  // across the same row (rotating is front ↔ back first, owner's wish); then
+  // changing sides, by how far.
+  const at = (s) => xy[s] ?? { x: 0.5, y: 0.5 };
+  const cost = (p, s) => {
+    if (s === p.pos) return 1000;
+    const from = at(p.pos);
+    const to = at(s);
+    return (Math.abs(to.y - from.y) < 0.05 ? 100 : 0) + 10 * Math.abs(to.x - from.x);
+  };
+  // Tries every way to give the players who stayed new spots, and keeps the
+  // cheapest. Each player tries the spots after their own first, so a tie
+  // goes to plain turn-taking. Few players, so this is quick.
+  let best = null;
+  let bestCost = Infinity;
+  const pick = [];
+  const used = new Set();
+  (function next(i, sum) {
+    if (sum >= bestCost) return;
+    if (i === stay.length) return void ((best = [...pick]), (bestCost = sum));
+    for (let k = 1; k <= n; k++) {
+      const s = (stay[i].pos + k) % n;
+      if (used.has(s)) continue;
+      used.add(s);
+      pick.push(s);
+      next(i + 1, sum + cost(stay[i], s));
+      pick.pop();
+      used.delete(s);
+    }
+  })(0, 0);
+  stay.forEach((p, i) => (p.pos = best[i]));
+  // Players who came on keep their spot (the one of who went off) if it's still free...
+  const taken = new Set(best);
+  const moving = [];
+  for (const p of field.filter((x) => swapped.has(x.id))) {
+    if (taken.has(p.pos)) moving.push(p);
+    else taken.add(p.pos);
+  }
+  // ...and otherwise take the ones left over.
+  const free = Array.from({ length: n }, (_, s) => s).filter((s) => !taken.has(s));
+  for (const p of moving) p.pos = free.shift() ?? null;
+  fillSpots(match);
+  return stay;
+}
+
 // ---------- field view ----------
 // Where the markers sit on the field picture: x and y are fractions of the
 // field's width and height, with our own goal at the bottom.
