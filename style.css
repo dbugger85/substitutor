@@ -450,6 +450,11 @@ legend.toggle label { justify-content: space-between; border-top: 0; }
 }
 .clock.due .progress > div { background: var(--red); }
 .clock.paused .progress > div { background: var(--amber); }
+/* Before the match: a big Start match button where the countdown is (owner's wish 2026-11-01) */
+.kickoff { display: none; }
+.clock.waiting .kickoff { display: block; width: 100%; min-height: 88px; margin: 8px 0 4px; border-radius: 18px; font-size: 26px; }
+.clock.waiting :is(.countdown, .progress, .time-btn, .restart) { display: none; }
+.clock.mini.waiting .kickoff { width: auto; min-height: 56px; margin: 4px 0 8px; padding: 0 28px; font-size: 20px; }
 /* Half time: the big number is the break's length */
 .clock.break { border-color: var(--amber); }
 .clock.break .countdown { color: var(--amber); }
@@ -868,6 +873,8 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
   body.with-field #clock > :nth-child(5) { grid-area: time; align-self: start; }
   body.with-field #clock > .time-btn { justify-self: start; justify-content: flex-start; margin-left: -8px; }
   body.with-field #restart-countdown { grid-area: restart; position: static; }
+  body.with-field #clock.waiting { grid-template-areas: "label" "start"; grid-template-columns: 1fr; }
+  body.with-field #kickoff { grid-area: start; }
   body.with-field .controls { margin-top: 10px; }
 
   /* The field: its small clock, the page dots and its bench aren't needed next to the list. */

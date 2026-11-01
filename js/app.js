@@ -369,7 +369,7 @@ $('setup-back').addEventListener('click', () => {
 $('start-match').addEventListener('click', () => {
   if (setupError()) return;
   unlockAudio();
-  match = M.createMatch(team.players, team.settings);
+  match = M.createMatch(team.players, { ...team.settings, waitToStart: true }); // the clock waits for Start match
   saveMatch(match);
   keepScreenOn();
   renderMatch();
@@ -1008,6 +1008,7 @@ function updateClock() {
   // At half time the big number is how long the break has lasted
   const big = onBreak ? fmt(Date.now() - match.breakAt) : fmt(remaining, Math.ceil);
   const half = M.halfOf(match);
+  const waiting = M.notStarted(match);
 
   $('countdown').textContent = big;
   $('field-countdown').textContent = big;
@@ -1021,16 +1022,18 @@ function updateClock() {
     $(clock).classList.toggle('due', remaining <= 0 && !onBreak);
     $(clock).classList.toggle('paused', !running);
     $(clock).classList.toggle('break', onBreak);
-    $(label).textContent = onBreak ? tr('Half time') : tr('Next substitution');
+    $(clock).classList.toggle('waiting', waiting); // the Start match button instead of the countdown
+    $(label).textContent = waiting ? tr('Not started yet') : onBreak ? tr('Half time') : tr('Next substitution');
     $(progress).style.width = done;
     $(time).textContent = fmt(t);
     $(halfLabel).textContent = halfName(half);
     $(halfLabel).hidden = half < 2;
-    $(badge).hidden = running || onBreak;
+    $(badge).hidden = running || onBreak || waiting;
   }
   $('pause').textContent = onBreak ? startLabel(half + 1) : running ? tr('Pause') : tr('Resume');
   $('pause').classList.toggle('primary', onBreak);
-  $('half-time').hidden = onBreak;
+  $('half-time').hidden = onBreak || waiting;
+  $('pause').hidden = waiting;
   if ($('time-dialog').open) showTime();
   $('score-match-time').textContent = fmt(t);
 
@@ -1068,6 +1071,15 @@ function change(fn) {
   M.fillSpots(match);
   saveMatch(match);
   renderMatch();
+}
+
+// The big Start match button (and the small Start on the field view) starts the clock.
+for (const id of ['kickoff', 'field-kickoff']) {
+  $(id).addEventListener('click', () => {
+    unlockAudio();
+    change(() => M.startMatch(match));
+    keepScreenOn();
+  });
 }
 
 $('pause').addEventListener('click', () => {

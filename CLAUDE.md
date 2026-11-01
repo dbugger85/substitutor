@@ -127,6 +127,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 - The e2e test runs iPad sizes upright and sideways as a touch device, and checks the scale, the side-by-side field, a drag, and that a phone keeps the normal size.
 
 ### Time
+- **Start match** (owner's wish 2026-11-01): a new match is made with `waitToStart` (`createMatch`), so the clock stands still (`runningSince` null, `match.notStarted` true) while the coach sets things up (swaps, positions, next swaps, settings). The clock gets `.waiting`: its countdown, bar, match time and ↻ are hidden, and a big green `#kickoff` ("Start match") takes the countdown's place; the field view's mini clock has a small `#field-kickoff` ("Start"). The label says "Not started yet", and Pause and Half time are hidden (Swap now stays). Either button calls `M.startMatch()`: clears `notStarted`, starts the clock and a full countdown with the current interval. Matches saved before this have no `notStarted`, so they count as started.
 - Everything is **match time** in ms, meaning time the clock has run excluding pauses: `elapsed = clockMs + (now − runningSince)`. `runningSince` is null while paused.
 - Timing uses timestamps, never tick counting, so it stays correct when the screen is locked, the tab is in the background, or the page reloads.
 - Each player has `fieldMs` / `benchMs` plus `since` (the match time of their last status change). `setStatus()` settles the elapsed time into the old status before switching. Never change `status` directly.
@@ -152,7 +153,7 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 
 ### State (localStorage)
 - `substitutor.team`: `{ v: 1, players: [{id, name}], settings: {fieldSize, intervalMin, perSub, gkId, starterIds, autoStarters, usePositions, positions: [name], posIds: [id by spot], fieldView, rotatePositions, layout, sport, pitchColor, showNext, score, cards, teamName, opponent}, lastMinutes?: {[id]: ms} }`. Saved on every edit.
-- `substitutor.match`: `{ v: 1, settings: {fieldSize, intervalMs, perSub, positions?: [name]}, players: [{id, name, status: 'gk'|'field'|'bench'|'out', fieldMs, benchMs, since, pos?, lastPos?}], clockMs, runningSince, nextSubAt, plan?: [{offId, onId}], half?: n, breakAt?: timestamp, events?: [{id, t, type, playerId?, second?}] }`. Saved after every change. If present on load, the app goes straight back to the match screen.
+- `substitutor.match`: `{ v: 1, settings: {fieldSize, intervalMs, perSub, positions?: [name]}, players: [{id, name, status: 'gk'|'field'|'bench'|'out', fieldMs, benchMs, since, pos?, lastPos?}], clockMs, runningSince, nextSubAt, notStarted?: true, plan?: [{offId, onId}], half?: n, breakAt?: timestamp, events?: [{id, t, type, playerId?, second?}] }`. Saved after every change. If present on load, the app goes straight back to the match screen.
   `positions`, `pos` (index into `positions`, null when not in a spot) and `lastPos` (last spot, or `'gk'`) only exist when positions are switched on.
 - `substitutor.theme`: `'light'` or `'dark'`, a plain string. If it's missing, the app follows the phone (Auto). The theme button in the top bar cycles Auto → Light → Dark (`applyTheme` in `app.js`).
 - `substitutor.lang`: `'en'` or `'no'`, once chosen (or opened with `?lang=`).

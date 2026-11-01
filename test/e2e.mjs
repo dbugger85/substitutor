@@ -67,6 +67,17 @@ try {
   assert.equal(await page.textContent('#setup-error'), '');
   await page.screenshot({ path: `${shots}/2-setup.png`, fullPage: true });
   await page.click('#start-match');
+  // The clock waits for Start match, so the coach can set things up first
+  assert.ok(await page.isVisible('#kickoff'));
+  assert.ok(await page.isHidden('#countdown'));
+  assert.ok(await page.isHidden('#pause'));
+  assert.equal(await page.textContent('#clock-label'), 'Not started yet');
+  await page.screenshot({ path: `${shots}/3-before-start.png`, fullPage: true });
+  await page.waitForTimeout(700);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('substitutor.match')).runningSince), null, 'the clock stands still');
+  await page.click('#kickoff');
+  assert.ok(await page.isHidden('#kickoff'));
+  assert.ok(await page.isVisible('#pause'));
   await page.screenshot({ path: `${shots}/3-match.png`, fullPage: true });
 
   // Scheduled substitution
@@ -278,6 +289,16 @@ try {
   await page.screenshot({ path: `${shots}/10-positions-setup.png`, fullPage: true });
   await page.click('label:has(#use-field-view)');
   await page.click('#start-match');
+  // The field view has its own small Start button
+  await page.$eval('#match-pages', (e) => e.scrollTo({ left: e.clientWidth }));
+  await page.waitForFunction(() => document.querySelector('#page-dots button:nth-child(2)').classList.contains('active'));
+  await page.waitForFunction(() => { const e = document.querySelector("#match-pages"); return Math.abs(e.scrollLeft - e.clientWidth) < 2; });
+  await page.waitForTimeout(300); // the page fits itself to the field after the swipe
+  await page.locator("#field-page").screenshot({ path: `${shots}/10-field-before-start.png` });
+  await page.click('#field-kickoff');
+  assert.ok(await page.isHidden('#field-kickoff'));
+  await page.$eval('#match-pages', (e) => e.scrollTo({ left: 0 }));
+  await page.waitForFunction(() => document.querySelector('#page-dots button:nth-child(1)').classList.contains('active'));
   const posOf = (n) => page.textContent(`#field-list li:has-text("${n}") .badge.pos`);
   assert.equal(await posOf(thirdStarter), 'Left');
   assert.equal(await posOf(firstStarter), 'Middle');
@@ -602,6 +623,9 @@ try {
     assert.ok((await tablet.evaluate(() => innerHeight)) >= Math.min(844, height), `${label}: at least as many rows as a phone (or the normal size, if the screen is shorter)`);
     await tablet.click('#to-setup');
     await tablet.click('#start-match');
+    await tablet.waitForTimeout(300);
+    if (label === 'landscape') await tablet.screenshot({ path: `${shots}/14-ipad-before-start.png` });
+    await tablet.click('#kickoff');
     await tablet.waitForTimeout(300);
     await tablet.screenshot({ path: `${shots}/14-ipad-${label}.png` });
     const sideBySide = await tablet.evaluate(() => {

@@ -48,6 +48,8 @@ export const NO = {
   'Give players positions': 'Gi spillerne posisjoner',
   'Field view': 'Banevisning',
   'Rotate positions': 'Bytt posisjoner',
+  'Not started yet': 'Ikke startet ennå',
+  'Start': 'Start',
   'Those who stay on swap spots': 'De som blir på, bytter plass',
   'New positions: {list}': 'Nye posisjoner: {list}',
   'Swipe left': 'Sveip til venstre',

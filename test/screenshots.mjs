@@ -29,6 +29,7 @@ async function scene(scheme, sport, positions, fn, device = phone) {
   await page.reload();
   await page.click('#to-setup');
   await page.click('#start-match');
+  await page.click('#kickoff');
   // Play 5 minutes, make the first substitution, then play 2:12 more
   const shift = (ms) => page.evaluate((ms) => {
     const m = JSON.parse(localStorage.getItem('substitutor.match'));

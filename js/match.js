@@ -10,7 +10,9 @@ export function newId() {
 
 export const onPitch = (status) => status === 'field' || status === 'gk';
 
-export function createMatch(players, { fieldSize, intervalMin, perSub, gkId, starterIds, usePositions, positions = [], posIds = [] }, now = Date.now()) {
+// With waitToStart the clock stands still until startMatch (the Start match
+// button), so the coach can set things up first.
+export function createMatch(players, { fieldSize, intervalMin, perSub, gkId, starterIds, usePositions, positions = [], posIds = [], waitToStart = false }, now = Date.now()) {
   const intervalMs = Math.round(intervalMin * 60000);
   const spots = fieldSize - 1;
   const ids = usePositions ? assignSpots(starterIds, posIds, spots) : [];
@@ -27,8 +29,9 @@ export function createMatch(players, { fieldSize, intervalMin, perSub, gkId, sta
       ...(usePositions && { pos: ids.includes(p.id) ? ids.indexOf(p.id) : null }),
     })),
     clockMs: 0,
-    runningSince: now,
+    runningSince: waitToStart ? null : now,
     nextSubAt: intervalMs,
+    ...(waitToStart && { notStarted: true }),
   };
   if (usePositions) match.settings.positions = Array.from({ length: spots }, (_, i) => positions[i]?.trim() || `Position ${i + 1}`);
   return match;
@@ -50,6 +53,16 @@ export function pause(match, now = Date.now()) {
 
 export function resume(match, now = Date.now()) {
   if (match.runningSince == null) match.runningSince = now;
+}
+
+// Before the Start match button is pressed (owner's wish 2026-11-01).
+export const notStarted = (match) => !!match.notStarted;
+
+// Starts the clock, with a full countdown (any interval changed meanwhile counts).
+export function startMatch(match, now = Date.now()) {
+  delete match.notStarted;
+  resume(match, now);
+  scheduleNext(match, now);
 }
 
 export function scheduleNext(match, now = Date.now()) {

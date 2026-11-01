@@ -46,6 +46,8 @@ Your setup is remembered for the next match.
 
 ## 3. During the match
 
+**Before the start.** The clock doesn't start by itself. Set things up first: swap players, change positions, choose who swaps first (tap the Next strip) or change settings. Then tap the big green **Start match** button where the countdown will be (or **Start** on the field view).
+
 **The clock.** The big countdown shows the time to the next substitution, with the match time underneath.
 - **↻** (top-right of the clock) restarts the countdown from the full time, without swapping anyone.
 - **Pause** stops the clock for a moment.

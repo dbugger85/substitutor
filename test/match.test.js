@@ -443,3 +443,16 @@ test('a red card on the field can be replaced from the bench', () => {
   assert.equal(status(m).A, 'out');
   assert.equal(status(m).E, 'field');
 });
+
+test('waitToStart: the clock stands still until the match is started, then a full countdown', () => {
+  const m = M.createMatch(team, { fieldSize: 5, intervalMin: 5, perSub: 2, gkId: 'GK', starterIds: ['A', 'B', 'C', 'D'], waitToStart: true }, 0);
+  assert.ok(M.notStarted(m));
+  assert.equal(M.elapsed(m, 10 * MIN), 0);
+  M.applySwaps(m, [{ offId: 'A', onId: 'E' }], 0); // setting up before the start works
+  M.setIntervalMin(m, 4);
+  M.startMatch(m, 10 * MIN);
+  assert.ok(!M.notStarted(m));
+  assert.equal(M.elapsed(m, 11 * MIN), MIN);
+  assert.equal(m.nextSubAt, 4 * MIN);
+  assert.equal(M.fieldTime(m.players.find((p) => p.id === 'E'), MIN), MIN);
+});
