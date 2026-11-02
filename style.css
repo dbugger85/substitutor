@@ -450,6 +450,14 @@ legend.toggle label { justify-content: space-between; border-top: 0; }
 }
 .clock.due .progress > div { background: var(--red); }
 .clock.paused .progress > div { background: var(--amber); }
+/* Auto swap's countdown in the substitution popup */
+.swap-auto { margin: 4px 0 12px; color: var(--green); font-weight: 600; text-align: center; }
+/* Glove mode (owner's wish 2026-11-02): big targets for cold hands and gloves */
+body.glove .controls button { min-height: 72px; font-size: 18px; }
+body.glove #swap-dialog .row { flex-direction: column-reverse; align-items: stretch; }
+body.glove #swap-dialog .row button { min-height: 72px; font-size: 20px; }
+body.glove #swap-dialog .row button.primary { min-height: 140px; font-size: 30px; }
+body.glove #swap-dialog .picker { min-height: 60px; }
 /* Before the match: a big Start match button where the countdown is (owner's wish 2026-11-01) */
 .kickoff { display: none; }
 .clock.waiting .kickoff { display: block; width: 100%; min-height: 88px; margin: 8px 0 4px; border-radius: 18px; font-size: 26px; }
@@ -509,13 +517,22 @@ dialog h2 { margin-top: 0; }
 
 .swap-row {
   display: grid;
-  grid-template-columns: 1fr 48px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 40px; /* minmax: every row the full width, however long the names (owner's wish 2026-11-02) */
+  gap: 4px;
   align-items: center;
   padding: 12px 0;
   border-top: 1px solid var(--line);
 }
-.swap-row .pick { display: flex; flex-direction: column; gap: 8px; }
+.swap-row .pick { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.swap-row .tag { flex: none; width: 40px; text-align: center; } /* OFF and ON the same width, so the dropdowns line up */
+.swap-row .pick-row { gap: 6px; }
+/* A long name keeps its place; the position tag gets shortened first ("Right b…") */
+.swap-row .pick-name { display: flex; align-items: center; gap: 6px; }
+.swap-row .pick-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.swap-row .pick-name .badge { flex: none; margin-left: 0; }
+.swap-row .pick-name .badge:is(.pos, .last) { flex: 0 100 auto; min-width: 3em; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* shrinks first, down to "Ri…", then the name gets a … */
+.swap-row .pick-row button.picker { padding: 0 10px; }
+.swap-row > button.icon { width: 48px; margin-right: -8px; } /* still 48px to tap, reaching into the popup's edge */
 .pick-row { display: flex; align-items: center; gap: 8px; }
 /* The button that opens the player list */
 button.picker {
@@ -760,6 +777,8 @@ h2 { font: 700 28px/1.1 "Barlow Condensed", system-ui, sans-serif; text-transfor
 }
 .pitch .marker:active { transform: translate(-50%, -50%); }
 .field-bench { padding: 8px 10px 10px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-line); }
+.field-bench-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bench-side { display: none; }
 .field-bench-title { margin-bottom: 6px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 #field-bench { list-style: none; margin: 0; padding: 4px; display: flex; flex-wrap: wrap; gap: 12px; } /* room for the swap rings */
 #field-bench li { flex: 0 1 auto; min-width: 0; }
@@ -885,6 +904,23 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
   body.with-field .side-switch { display: flex; }
   body.with-field #score-page { overflow-y: auto; overscroll-behavior: contain; }
   body.with-field .pitch { width: min(100%, calc((100dvh - 120px) * 10 / 13)); margin: 0 auto; }
+  /* The whole field in the height that is left, also below the Field | Score switch (owner's wish 2026-11-03) */
+  body.with-field #field-page .field-wrap { flex: 1; min-height: 0; container-type: size; }
+  body.with-field .pitch { width: min(100cqw, 100cqh * 10 / 13); }
+}
+
+/* Tablet upright (owner's wish 2026-11-03): the whole field and the bench without scrolling. The bench is a
+   column beside the field (right, or left with ⇄), and fitField() in app.js sets the height that is left (--wrap-h). */
+@media (min-width: 600px) and (orientation: portrait) {
+  #field-page .field-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 160px; grid-template-rows: var(--wrap-h, auto); align-items: start; gap: 10px; }
+  #field-page .field-wrap.bench-left { grid-template-columns: 160px minmax(0, 1fr); }
+  #field-page .field-wrap.bench-left .field-bench { order: -1; }
+  #field-page .pitch { width: min(100%, calc(var(--wrap-h, 9999px) * 10 / 13)); justify-self: center; }
+  #field-page .field-bench { display: flex; flex-direction: column; max-height: 100%; min-height: 0; padding: 8px 6px 8px 8px; }
+  #field-page .bench-side { display: inline-flex; width: 40px; height: 40px; min-height: 40px; margin: -6px -2px 0 0; font-size: 18px; }
+  #field-page #field-bench { flex: 1; min-height: 0; overflow-y: auto; flex-direction: column; flex-wrap: nowrap; gap: 14px; padding: 12px 14px 8px 4px; } /* room for the 1, 2 circles (top right), which the scrolling would cut */
+  #field-page #field-bench li { flex: none; }
+  #field-page #field-bench button { width: 100%; max-width: none; }
 }
 
 /* Correcting the match time */
@@ -930,3 +966,9 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
 .side-switch button { flex: 1; min-height: 40px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; font-weight: 600; color: var(--muted); }
 .side-switch button[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
 .summary-score { margin: 0 0 4px; font: 700 26px/1.1 "Barlow Condensed", system-ui, sans-serif; }
+
+/* Keyboard shortcuts in the cog (shown once a key has been pressed) */
+.shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin: 0; align-items: center; }
+.shortcuts dt { white-space: nowrap; }
+.shortcuts dd { margin: 0; }
+kbd { display: inline-block; min-width: 28px; padding: 2px 8px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: center; background: var(--card, transparent); }

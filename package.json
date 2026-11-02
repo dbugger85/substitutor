@@ -6,7 +6,7 @@
   "description": "Fair substitutions for kids' sports matches",
   "scripts": {
     "start": "python3 -m http.server 8000",
-    "test": "node --test test/match.test.js test/share.test.js test/pitch.test.js test/i18n.test.js",
+    "test": "node --test test/match.test.js test/share.test.js test/pitch.test.js test/i18n.test.js test/storage.test.js",
     "e2e": "node test/e2e.mjs",
     "screenshots": "node test/screenshots.mjs"
   },

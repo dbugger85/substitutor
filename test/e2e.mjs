@@ -277,9 +277,20 @@ try {
   // Positions: switched on in setup, shown on the match screen, and two players can swap
   await page.click('#to-setup');
   await page.fill('#interval', '10');
+  // Tapping a number box selects the number, so typing replaces it
+  await page.$eval('#interval', (e) => e.blur()); // fill() above left it focused
+  await page.click('#interval');
+  await page.waitForTimeout(50); // a person is never this fast; the selection comes just after the tap
+  await page.keyboard.type('12');
+  assert.equal(await page.inputValue('#interval'), '12');
+  await page.fill('#interval', '10');
   await page.click('label:has(#use-positions)');
   const posInputs = await page.$$('#position-list input');
   assert.equal(posInputs.length, 4);
+  // Suggested names fill the empty boxes, and every box has the suggestions in its dropdown
+  assert.deepEqual(await page.$$eval('#position-list input', (l) => l.map((i) => i.value)), ['Left back', 'Right back', 'Left forward', 'Right forward']);
+  assert.ok((await page.$$eval('#position-suggestions option', (l) => l.length)) > 10);
+  assert.equal(await page.getAttribute('#position-list input', 'list'), 'position-suggestions');
   for (const [i, n] of ['Left', 'Right', 'Middle', 'Front'].entries()) await posInputs[i].fill(n);
   const firstStarter = await page.textContent('#position-list .pos-row:nth-child(1) .pick-name');
   const thirdStarter = await page.textContent('#position-list .pos-row:nth-child(3) .pick-name');
@@ -480,6 +491,84 @@ try {
   await page.click(`#out-list li:has-text("${redField}") button`);
   assert.equal(await page.locator('#action-list button:has-text("Back to bench")').count(), 0);
   await page.click('#action-list button:has-text("Cancel")');
+  // For cold hands: auto swap confirms a substitution by itself, glove mode makes a tap anywhere confirm
+  await page.click('#settings-btn');
+  await page.waitForSelector('#settings-dialog[open]');
+  assert.ok(await page.isHidden('#set-auto-sec-row'));
+  await page.click('label:has(#set-auto-swap)');
+  await page.fill('#set-auto-sec', '3');
+  await page.click('label:has(#set-glove)');
+  await page.click('#settings-done');
+  assert.ok(await page.evaluate(() => document.body.classList.contains('glove')));
+  const dueNow = async () => {
+    await page.evaluate(() => {
+      const m = JSON.parse(localStorage.getItem('substitutor.match'));
+      m.nextSubAt = 0;
+      localStorage.setItem('substitutor.match', JSON.stringify(m));
+    });
+    await page.reload();
+    await page.waitForSelector('#swap-dialog[open]');
+  };
+  const benchBefore = await names('#bench-list .name');
+  await dueNow();
+  assert.match(await page.textContent('#swap-auto'), /Swapping automatically in \d s · Tap anywhere to confirm/);
+  assert.ok((await page.$eval('#swap-confirm', (b) => b.offsetHeight)) >= 120, 'a big Done button in glove mode');
+  await popup('17-auto-swap');
+  await page.waitForSelector('#swap-dialog', { state: 'hidden', timeout: 6000 }); // confirmed by itself
+  assert.match(await page.textContent('#toast'), /Swapped automatically: .+ in for /);
+  assert.notDeepEqual(await names('#bench-list .name'), benchBefore);
+  // Touching a player stops the countdown; then a tap outside the popup confirms
+  await dueNow();
+  await page.click('#swap-rows .pick-row:nth-child(1) button.picker');
+  await page.click('#pick-cancel');
+  assert.doesNotMatch(await page.textContent('#swap-auto'), /automatically/);
+  await page.waitForTimeout(3500);
+  assert.ok(await page.isVisible('#swap-dialog'), 'no auto swap after a touch');
+  const benchMid = await names('#bench-list .name');
+  await page.mouse.click(5, 5);
+  await page.waitForSelector('#swap-dialog', { state: 'hidden' });
+  assert.notDeepEqual(await names('#bench-list .name'), benchMid);
+  await page.screenshot({ path: `${shots}/17-glove.png`, fullPage: true });
+  // The reloads above open the popup before any tap, so the browser blocks its vibration; that's only the test
+  for (let i = errors.length - 1; i >= 0; i--) if (errors[i].includes('navigator.vibrate')) errors.splice(i, 1);
+  await page.click('#settings-btn');
+  await page.waitForSelector('#settings-dialog[open]');
+  await page.click('label:has(#set-auto-swap)');
+  await page.click('label:has(#set-glove)');
+  await page.click('#settings-done');
+
+  // Keyboard shortcuts (an iPad keyboard): the list in the cog only shows once a key has been pressed
+  await page.click('#settings-btn');
+  assert.ok(await page.isHidden('#shortcuts'));
+  await page.click('#settings-done');
+  await page.keyboard.press('Space');
+  assert.ok(await page.isVisible('#paused-badge'), 'Space pauses');
+  await page.keyboard.press('Space');
+  assert.ok(await page.isHidden('#paused-badge'), 'Space resumes');
+  const benchKeys = await names('#bench-list .name');
+  await page.keyboard.press('s');
+  await page.waitForSelector('#swap-dialog[open]');
+  await page.keyboard.press('Escape'); // your own swap: Esc closes it
+  await page.waitForSelector('#swap-dialog', { state: 'hidden' });
+  assert.deepEqual(await names('#bench-list .name'), benchKeys);
+  await page.keyboard.press('s');
+  await page.waitForSelector('#swap-dialog[open]');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('#swap-dialog', { state: 'hidden' });
+  assert.notDeepEqual(await names('#bench-list .name'), benchKeys);
+  await dueNow();
+  const benchDue = await names('#bench-list .name');
+  await page.keyboard.press('Escape'); // a planned substitution: Esc skips it
+  await page.waitForSelector('#swap-dialog', { state: 'hidden' });
+  assert.deepEqual(await names('#bench-list .name'), benchDue);
+  for (let i = errors.length - 1; i >= 0; i--) if (errors[i].includes('navigator.vibrate')) errors.splice(i, 1);
+  await page.click('#settings-btn');
+  assert.ok(await page.isVisible('#shortcuts'));
+  await page.fill('#set-interval', '5'); // typing a number isn't a shortcut
+  await page.focus('#set-interval');
+  await page.keyboard.press('s');
+  assert.ok(await page.isHidden('#swap-dialog'));
+  await page.click('#settings-cancel');
   // The cog: change settings during the match
   assert.ok(await page.isVisible('#settings-btn'));
   assert.ok(await page.isHidden('#lang-toggle'), 'no language flag on the match screen');
@@ -635,6 +724,23 @@ try {
     });
     assert.equal(sideBySide, label === 'landscape', `${label}: field beside the list`);
     assert.equal(await tablet.isVisible('#page-dots'), label === 'portrait');
+    if (label === 'portrait') {
+      // Upright: swipe to the field; the whole field and the bench (a column beside it) fit on the screen
+      await tablet.$eval('#match-pages', (e) => e.scrollTo({ left: e.clientWidth }));
+      await tablet.waitForTimeout(500);
+      const fits = await tablet.evaluate(() => {
+        const f = document.querySelector('#pitch').getBoundingClientRect();
+        const b = document.querySelector('#field-page .field-bench').getBoundingClientRect();
+        return f.bottom <= innerHeight && b.left > f.right && b.top < f.bottom;
+      });
+      assert.ok(fits, 'portrait: whole field with the bench beside it');
+      await tablet.click('#bench-side');
+      assert.ok(await tablet.evaluate(() => document.querySelector('#field-page .field-bench').getBoundingClientRect().right < document.querySelector('#pitch').getBoundingClientRect().left), 'the bench moves to the left');
+      await tablet.screenshot({ path: `${shots}/14-ipad-portrait-field.png` });
+      await tablet.click('#bench-side');
+      await tablet.$eval('#match-pages', (e) => e.scrollTo({ left: 0 }));
+      await tablet.waitForTimeout(500);
+    }
     if (label === 'landscape') {
       // The whole field fits on the screen, with no bench under it (the list has it), and positions can still be arranged
       assert.ok(await tablet.evaluate(() => document.querySelector('#pitch').getBoundingClientRect().bottom <= innerHeight));

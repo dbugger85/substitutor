@@ -1,10 +1,10 @@
 // Screens, buttons and popups. The match rules live in match.js.
 
-import { loadTeam, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTheme, loadInstallHidden, saveInstallHidden } from './storage.js';
+import { loadTeam, withDefaults, saveTeam, loadMatch, saveMatch, clearMatch, loadTheme, saveTheme, loadInstallHidden, saveInstallHidden, loadKeyboardSeen, saveKeyboardSeen, loadBenchLeft, saveBenchLeft } from './storage.js';
 import * as M from './match.js';
 import { makeLink, readLink, hasShare } from './share.js';
-import { SPORTS, COLORS, sportOf, colorOf } from './pitch.js';
-import { lang, LANGS, FLAGS, tr, posLabel, setLang, translatePage } from './i18n.js';
+import { SPORTS, COLORS, sportOf, colorOf, defaultPositions, positionSuggestions, isDefaultLineup } from './pitch.js';
+import { lang, LANGS, FLAGS, tr, trPos, posLabel, setLang, translatePage } from './i18n.js';
 import { unlockAudio, startAlarm, stopAlarm, keepScreenOn, releaseScreen } from './alerts.js';
 
 const $ = (id) => document.getElementById(id);
@@ -168,11 +168,14 @@ function renderSetup() {
   s.starterIds = s.starterIds.filter((id) => ids.has(id) && id !== s.gkId);
   // A small squad: fewer players on the field than the default five, so everyone plays.
   if (team.players.length >= 2 && s.fieldSize > team.players.length) s.fieldSize = team.players.length;
+  // An emptied box was saved as nothing; without a bench the box can't be fixed, and a late player would never come on
+  if (!(Number.isInteger(s.perSub) && s.perSub >= 1)) s.perSub = 1;
 
   $('field-size').value = s.fieldSize ?? '';
   $('interval').value = s.intervalMin ?? '';
   $('per-sub').value = s.perSub ?? '';
   $('show-next').checked = s.showNext;
+  renderColdOptions();
   renderScoreOptions();
 
   $('gk-list').classList.toggle('two-col', allShort(team.players.map((p) => p.name)));
@@ -251,11 +254,35 @@ function renderStarterNote() {
   }
 }
 
+// Suggested position names (owner's wish 2026-11-02): a usual line-up for the sport and number of players,
+// in the chosen language, and every suggestion in the dropdown of each position box (typing works too).
+const suggestedLineup = (n) => {
+  const sport = sportOf(team.settings);
+  return defaultPositions(sport, n).map((name) => trPos(name, sport));
+};
+function fillSuggestions() {
+  const sport = sportOf(team.settings);
+  $('position-suggestions').replaceChildren(...positionSuggestions(sport).map((name) => el('option', { value: trPos(name, sport) })));
+}
+// Empty boxes, or a suggested line-up the coach hasn't changed, get the line-up that fits now
+// (after a change of team size or sport); names the coach typed are kept.
+function fillLineup(s) {
+  const n = Math.max(0, (s.fieldSize || 0) - 1);
+  const names = [...(s.positions ?? [])];
+  while (names.length && !String(names.at(-1) ?? '').trim()) names.pop();
+  const lineup = suggestedLineup(n);
+  if (lineup.length && isDefaultLineup(names, trPos) && names.join('|') !== lineup.join('|')) s.positions = lineup;
+}
+
 // Optional positions: a name for each outfield spot, and which starter plays there.
 function renderPositions() {
   const s = team.settings;
   const needed = Math.max(0, (s.fieldSize || 0) - 1);
   s.posIds = M.assignSpots(s.starterIds, s.posIds, needed);
+  if (s.usePositions) {
+    fillLineup(s);
+    fillSuggestions();
+  }
   $('use-positions').checked = s.usePositions;
   $('use-field-view').checked = s.fieldView;
   $('field-view-option').hidden = !s.usePositions;
@@ -271,6 +298,7 @@ function renderPositions() {
           value: s.positions[i] ?? '',
           placeholder: tr('Position {n}', { n: i + 1 }),
           'aria-label': tr('Name of position {n}', { n: i + 1 }),
+          list: 'position-suggestions',
           autocomplete: 'off',
           enterkeyhint: 'done',
           oninput: (e) => {
@@ -326,6 +354,7 @@ function renderFieldStyle() {
 
 function setFieldStyle(change) {
   Object.assign(team.settings, change);
+  if (!$('screen-setup').hidden) renderPositions(); // a new sport may bring its own suggested positions
   saveTeam(team);
   renderFieldStyle();
   if (match) renderMatch();
@@ -429,7 +458,7 @@ const pairColor = (n) => `--next: var(--next-${((n - 1) % 4) + 1})`; // four col
 const nextNum = (n) => (n ? [el('span', { class: 'next-num' }, String(n))] : []);
 
 function renderNext(t) {
-  const pairs = team.settings.showNext ? M.nextSwaps(match, t) : []; // the coach can switch it off
+  const pairs = team.settings.showNext ? M.nextSwaps(match, t, frontDepth()) : []; // the coach can switch it off
   upcoming = new Map(pairs.flatMap((r, i) => [[r.offId, i + 1], [r.onId, i + 1]]));
   const strip = () => [
     el('span', { class: 'next-label' }, tr('Next')),
@@ -448,6 +477,39 @@ function renderNext(t) {
   }
 }
 
+// For cold hands (owner's wish 2026-11-02), in setup and the cog popup (prefix
+// '' or 'set-'): auto swap confirms a scheduled substitution by itself after a
+// countdown; glove mode makes the buttons big and a tap anywhere confirms.
+function renderColdOptions() {
+  const s = team.settings;
+  for (const pre of ['', 'set-']) {
+    $(`${pre}auto-swap`).checked = s.autoSwap;
+    $(`${pre}auto-sec-row`).hidden = !s.autoSwap;
+    if (document.activeElement !== $(`${pre}auto-sec`)) $(`${pre}auto-sec`).value = s.autoSwapSec;
+    $(`${pre}glove`).checked = s.gloveMode;
+  }
+  document.body.classList.toggle('glove', !!s.gloveMode);
+}
+
+for (const pre of ['', 'set-']) {
+  $(`${pre}auto-swap`).addEventListener('change', (e) => {
+    team.settings.autoSwap = e.target.checked;
+    saveTeam(team);
+    renderColdOptions();
+  });
+  $(`${pre}auto-sec`).addEventListener('input', (e) => {
+    const n = parseInt(e.target.value, 10);
+    if (!(n >= 3 && n <= 60)) return; // half-typed: wait for a real number
+    team.settings.autoSwapSec = n;
+    saveTeam(team);
+  });
+  $(`${pre}glove`).addEventListener('change', (e) => {
+    team.settings.gloveMode = e.target.checked;
+    saveTeam(team);
+    renderColdOptions();
+  });
+}
+
 // On by default; in setup and the cog popup
 for (const id of ['show-next', 'set-show-next']) {
   $(id).addEventListener('change', (e) => {
@@ -458,7 +520,7 @@ for (const id of ['show-next', 'set-show-next']) {
 }
 
 for (const id of ['next-strip', 'field-next']) {
-  $(id).addEventListener('click', () => openSwap('plan', M.nextSwaps(match, now())));
+  $(id).addEventListener('click', () => openSwap('plan', M.nextSwaps(match, now(), frontDepth())));
 }
 
 function renderMatch() {
@@ -541,6 +603,7 @@ function showScorePage() {
     return sideBySide();
   }
   const pages = $('match-pages');
+  openPages(visiblePages().indexOf($('score-page')));
   pages.scrollTo({ left: visiblePages().indexOf($('score-page')) * pages.clientWidth, behavior: 'smooth' });
 }
 $('clock-score').addEventListener('click', showScorePage);
@@ -878,7 +941,36 @@ $('pitch').addEventListener('click', (e) => {
 // Changing the box's height or scroll position mid-swipe stops the swipe half-way
 // on iPhones, so that waits until the swipe has settled.
 let fitTimer;
+// Tablet upright (owner's wish 2026-11-03): the whole field and the bench in view without scrolling. The field
+// box gets the height that is left below it (minus the tip), and the CSS fits the field and a bench column in it.
+const tabletUpright = matchMedia('(min-width: 600px) and (orientation: portrait)');
+function fitField() {
+  const wrap = $('field-page').querySelector('.field-wrap');
+  let height = '';
+  if (tabletUpright.matches && !$('field-page').hidden && !$('screen-match').hidden) {
+    const top = wrap.getBoundingClientRect().top + scrollY;
+    const tip = $('field-tip').hidden ? 0 : $('field-tip').offsetHeight + 10;
+    height = `${Math.max(320, Math.floor(innerHeight - top - tip - 20))}px`;
+  }
+  if (wrap.style.getPropertyValue('--wrap-h') !== height) wrap.style.setProperty('--wrap-h', height);
+}
+// Before a swipe (a finger down, or a tap on a dot): the box gets the height of the tallest page next to this one,
+// so the page coming in isn't cropped and then stretched (owner's report 2026-11-03). Done before the swipe
+// starts, as changing it mid-swipe stops the swipe on iPhones; fitPages() trims it again once it settles.
+function openPages(toIndex = null) {
+  const pages = $('match-pages');
+  if (sideLayout() || pages.style.height === '') return;
+  const list = visiblePages();
+  const i = pageIndex();
+  const near = toIndex != null ? [i, toIndex] : [i - 1, i, i + 1];
+  if (near.includes(0)) return void (pages.style.height = ''); // the list: its own height
+  const tallest = Math.max(...near.map((j) => list[j]?.offsetHeight ?? 0));
+  if (tallest > pages.offsetHeight) pages.style.height = `${tallest}px`;
+}
+$('match-pages').addEventListener('touchstart', () => openPages(), { passive: true });
+$('match-pages').addEventListener('pointerdown', (e) => e.pointerType === 'mouse' || openPages());
 function fitPages() {
+  fitField();
   const pages = $('match-pages');
   const i = pageIndex();
   const height = i > 0 && visiblePages()[i] ? `${visiblePages()[i].offsetHeight}px` : '';
@@ -896,6 +988,17 @@ $('match-pages').addEventListener('scroll', () => {
   }, 150);
 });
 const resized = new ResizeObserver(() => !fitTimer && fitPages()); // at once, unless mid-swipe
+tabletUpright.addEventListener('change', () => fitPages());
+addEventListener('resize', () => !fitTimer && fitPages());
+// The ⇄ in the bench's heading (tablet upright) moves the bench to the other side of the field, remembered on this device
+let benchLeft = loadBenchLeft();
+const placeBench = () => $('field-page').querySelector('.field-wrap').classList.toggle('bench-left', benchLeft);
+placeBench();
+$('bench-side').addEventListener('click', () => {
+  benchLeft = !benchLeft;
+  saveBenchLeft(benchLeft);
+  placeBench();
+});
 resized.observe($('field-page'));
 resized.observe($('score-page'));
 $('page-dots').addEventListener('click', (e) => {
@@ -904,6 +1007,7 @@ $('page-dots').addEventListener('click', (e) => {
   setArranging(false);
   setPicking(null);
   const pages = $('match-pages');
+  openPages(Number(page));
   pages.scrollTo({ left: page * pages.clientWidth, behavior: 'smooth' });
 });
 
@@ -922,6 +1026,7 @@ function openSettings() {
   $('set-per-sub').value = s.perSub;
   $('set-per-sub').max = Math.max(1, s.fieldSize - 1);
   $('set-show-next').checked = team.settings.showNext;
+  renderColdOptions();
   renderScoreOptions();
   renderSettingsPositions();
   $('settings-dialog').showModal();
@@ -935,6 +1040,7 @@ function renderSettingsPositions() {
   $('set-rotate').checked = !!team.settings.rotatePositions;
   $('set-rotate-option').hidden = !names;
   renderFieldStyle();
+  fillSuggestions();
   $('set-position-list').classList.toggle('two-col', allShort(names ?? []));
   $('set-position-list').replaceChildren(
     ...(names ?? []).map((name, i) =>
@@ -943,6 +1049,7 @@ function renderSettingsPositions() {
         value: name === `Position ${i + 1}` ? '' : name,
         placeholder: tr('Position {n}', { n: i + 1 }),
         'aria-label': tr('Name of position {n}', { n: i + 1 }),
+        list: 'position-suggestions',
         autocomplete: 'off',
         enterkeyhint: 'done',
         oninput: (e) => {
@@ -962,6 +1069,7 @@ $('settings-cancel').addEventListener('click', () => {
   ({ team, match } = settingsBefore);
   saveTeam(team);
   saveMatch(match);
+  renderColdOptions();
   renderFieldStyle();
   renderMatch();
   $('settings-dialog').close();
@@ -983,6 +1091,12 @@ $('set-per-sub').addEventListener('input', (e) => {
 $('set-use-positions').addEventListener('change', (e) => {
   team.settings.usePositions = e.target.checked;
   team.settings.positions ??= [];
+  if (e.target.checked) {
+    // Switched on mid-match: suggested names for the match's number of players (names typed earlier are kept)
+    const s = { fieldSize: match.settings.fieldSize, positions: team.settings.positions };
+    fillLineup(s);
+    team.settings.positions = s.positions;
+  }
   saveTeam(team);
   change(() => M.setPositions(match, e.target.checked, team.settings.positions));
   renderSettingsPositions();
@@ -1048,6 +1162,7 @@ function updateClock() {
   }
 
   if (remaining <= 0 && running && !swap && !$('action-dialog').open && !$('ask-dialog').open && !$('settings-dialog').open && !$('time-dialog').open && !$('pick-dialog').open) substitutionDue();
+  checkAuto(); // last: `remaining` above is from before an auto swap
 }
 
 // Halves: "2nd half", then "Period 3" if half time is pressed again.
@@ -1055,7 +1170,7 @@ const halfName = (n) => (n === 2 ? tr('2nd half') : tr('Period {n}', { n }));
 const startLabel = (n) => (n === 2 ? tr('Start 2nd half') : tr('Start period {n}', { n }));
 
 function substitutionDue() {
-  const pairs = M.nextSwaps(match, now());
+  const pairs = M.nextSwaps(match, now(), frontDepth());
   if (!pairs.length) {
     M.scheduleNext(match);
     saveMatch(match);
@@ -1092,7 +1207,7 @@ $('pause').addEventListener('click', () => {
 $('half-time').addEventListener('click', () => change(() => M.startBreak(match)));
 
 function startNextHalf() {
-  const pairs = M.nextSwaps(match, now());
+  const pairs = M.nextSwaps(match, now(), frontDepth());
   if (pairs.length) openSwap('half', pairs);
   else change(() => M.endBreak(match));
 }
@@ -1104,8 +1219,8 @@ $('restart-countdown').addEventListener('click', () => {
 });
 
 $('swap-now').addEventListener('click', () => {
-  const pairs = M.nextSwaps(match, now()).slice(0, 1); // the first of the next swaps
-  if (!pairs.length) pairs.push(...M.pickSubstitution(match.players, 1, now()));
+  const pairs = M.nextSwaps(match, now(), frontDepth()).slice(0, 1); // the first of the next swaps
+  if (!pairs.length) pairs.push(...M.pickSubstitution(match.players, 1, now(), frontDepth()));
   if (!pairs.length) return toast(tr('Nobody on the bench to swap with.'));
   openSwap('adhoc', pairs);
 });
@@ -1163,10 +1278,10 @@ $('summary-dialog').addEventListener('close', () => {
 // ---------- player options popup ----------
 
 function openActions(id) {
-  const t = now();
+  const t = now(); // for the lists; the actions use now() when tapped, as the popup may stay open a while
   const p = player(id);
   const bench = M.rankOn(match.players, t);
-  const off = M.rankOff(match.players, t);
+  const off = M.rankOff(match.players, t, frontDepth());
   const onField = match.players.filter((x) => M.onPitch(x.status)).length;
   const items = [];
   const action = (label, fn, cls = '') =>
@@ -1182,24 +1297,24 @@ function openActions(id) {
     action(tr('Injured – take off'), () =>
       bench.length
         ? openSwap('adhoc', [{ offId: id, onId: bench[0].id }], id)
-        : change(() => M.setStatus(p, 'out', t)),
+        : change(() => M.setStatus(p, 'out', now())),
     );
     // Anyone on the field, the goalkeeper included: swapping with the goalkeeper puts the other player in goal.
     if (!fieldShowing() && (p.status === 'gk' || match.settings.positions) && others.length) {
       action(tr('Change position with…'), () =>
         pickPlayer(tr('Who swaps positions with {name}?', { name: p.name }), others, null, t).then((otherId) => {
-          if (otherId) change(() => M.swapPositions(match, id, otherId, t));
+          if (otherId) change(() => M.swapPositions(match, id, otherId, now()));
         }),
       );
     }
-    if (p.status === 'field') action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, t)));
+    if (p.status === 'field') action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, now())));
   } else if (p.status === 'bench') {
-    if (onField < match.settings.fieldSize) action(tr('Put on the field'), () => change(() => M.setStatus(p, 'field', t)));
+    if (onField < match.settings.fieldSize) action(tr('Put on the field'), () => change(() => M.setStatus(p, 'field', now())));
     if (off.length) action(tr('Bring on now'), () => openSwap('adhoc', [{ offId: off[0].id, onId: id }]));
-    action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, t)));
-    action(tr('Remove from match'), () => change(() => M.setStatus(p, 'out', t)));
+    action(tr('Make goalkeeper'), () => change(() => M.makeGoalkeeper(match, id, now())));
+    action(tr('Remove from match'), () => change(() => M.setStatus(p, 'out', now())));
   } else {
-    if (!M.sentOff(match, id)) action(tr('Back to bench'), () => change(() => M.setStatus(p, 'bench', t))); // a red card is for good
+    if (!M.sentOff(match, id)) action(tr('Back to bench'), () => change(() => M.setStatus(p, 'bench', now()))); // a red card is for good
   }
   action(tr('Rename'), () => renamePlayer(id));
   action(tr('Cancel'), () => {});
@@ -1214,7 +1329,7 @@ function openActions(id) {
 // mode: 'scheduled' (the countdown ran out), 'adhoc' (the coach's own swap),
 // 'plan' (choosing the next swaps, from the "Next" strip) or 'half' (before the next half starts).
 function openSwap(mode, rows, injuredId = null) {
-  swap = { mode, rows: rows.map((r) => ({ ...r })), injuredId };
+  swap = { mode, rows: rows.map((r) => ({ ...r })), injuredId, tabbed: false };
   const n = M.halfOf(match) + 1;
   $('swap-title').textContent = {
     scheduled: tr('Substitution time!'),
@@ -1226,8 +1341,42 @@ function openSwap(mode, rows, injuredId = null) {
   $('swap-skip').hidden = mode !== 'scheduled' && mode !== 'half';
   $('swap-cancel').hidden = mode === 'scheduled' || mode === 'half';
   $('swap-reset').hidden = mode !== 'plan' || !match.plan;
+  // Auto swap: a scheduled substitution confirms itself at autoAt (a Date.now() time) unless the coach touches anything
+  if (mode === 'scheduled' && team.settings.autoSwap) swap.autoAt = Date.now() + team.settings.autoSwapSec * 1000;
   renderSwap();
+  showAuto();
   $('swap-dialog').showModal();
+}
+
+// Glove mode: a tap outside the popup confirms it, when it's a substitution (not choosing or a swap of your own)
+const gloveConfirms = () => team.settings.gloveMode && (swap?.mode === 'scheduled' || swap?.mode === 'half');
+
+// The line above the buttons: auto swap's countdown, and glove mode's tip. Called by the clock tick too.
+function showAuto() {
+  if (!swap) return;
+  const parts = [];
+  if (swap.autoAt) parts.push(tr('Swapping automatically in {n} s', { n: Math.max(0, Math.ceil((swap.autoAt - Date.now()) / 1000)) }));
+  if (gloveConfirms()) parts.push(tr('Tap anywhere to confirm'));
+  $('swap-auto').textContent = parts.join(' · ');
+  $('swap-auto').hidden = !parts.length;
+}
+
+// Touching anything in the popup (a player, add, remove) stops auto swap, so a change is never confirmed half-done.
+function stopAuto() {
+  if (!swap?.autoAt) return;
+  swap.autoAt = null;
+  showAuto();
+}
+// click too, for a keyboard or switch that opens the player list without a touch
+for (const id of ['swap-rows', 'swap-add']) for (const ev of ['pointerdown', 'click']) $(id).addEventListener(ev, stopAuto, true);
+
+// Called by the clock tick: confirm once the countdown is over (not while a player list or a question is open).
+function checkAuto() {
+  if (!swap?.autoAt) return;
+  showAuto();
+  if (Date.now() < swap.autoAt || $('pick-dialog').open || $('ask-dialog').open) return;
+  swap.autoAt = null; // only once, even if something stops the swap
+  confirmSwap(true);
 }
 
 // Playing time next to the name, only during a match (t is null in setup).
@@ -1235,7 +1384,7 @@ const pickMins = (p, t) => (t == null ? [] : [el('span', { class: 'mins' }, fmt(
 
 // A button that shows the chosen player and opens a list to pick another (instead of the phone's own dropdown).
 function playerPicker(players, value, onchange, t, title) {
-  const label = (p) => [el('span', { class: 'pick-name' }, [p.name, ...tags(p)]), ...pickMins(p, t)];
+  const label = (p) => [el('span', { class: 'pick-name' }, [el('span', { class: 'pick-text' }, p.name), ...tags(p)]), ...pickMins(p, t)];
   const chosen = players.find((p) => p.id === value);
   return el(
     'button',
@@ -1279,7 +1428,7 @@ function pickPlayer(title, players, value, t) {
 function nextFreePair(t) {
   const usedOff = new Set(swap.rows.map((r) => r.offId));
   const usedOn = new Set(swap.rows.map((r) => r.onId));
-  const off = M.rankOff(match.players, t).find((p) => !usedOff.has(p.id));
+  const off = M.rankOff(match.players, t, frontDepth()).find((p) => !usedOff.has(p.id));
   const on = M.rankOn(match.players, t).find((p) => !usedOn.has(p.id));
   return off && on ? { offId: off.id, onId: on.id } : null;
 }
@@ -1337,7 +1486,17 @@ $('swap-add').addEventListener('click', () => {
   renderSwap();
 });
 
-$('swap-confirm').addEventListener('click', () => {
+$('swap-confirm').addEventListener('click', () => confirmSwap());
+
+// With Rotate positions: how far back each spot is on the field view, so the front players come off together first
+function frontDepth() {
+  const names = match?.settings.positions;
+  if (!names || !team.settings.rotatePositions) return null;
+  return M.layoutFor(team.settings.layout, names, sportOf(team.settings)).spots.map((p) => p.y);
+}
+
+// auto: confirmed by auto swap's countdown, so a message says who swapped
+function confirmSwap(auto = false) {
   const offs = swap.rows.map((r) => r.offId);
   const ons = swap.rows.map((r) => r.onId);
   if (new Set(offs).size !== offs.length || new Set(ons).size !== ons.length) {
@@ -1349,18 +1508,31 @@ $('swap-confirm').addEventListener('click', () => {
     else delete match.plan; // nothing chosen: back to the app's suggestion
     return closeSwap();
   }
+  const messages = [];
+  if (auto) messages.push(tr('Swapped automatically: {list}', { list: swap.rows.map((r) => tr('{on} in for {off}', { on: player(r.onId).name, off: player(r.offId).name })).join(', ') }));
   M.applySwaps(match, swap.rows, now(), swap.injuredId);
   // Rotate positions: at a planned substitution or half time (not an ad-hoc swap), the players who stayed on move round their spots
   if (swap.mode !== 'adhoc' && team.settings.rotatePositions && match.settings.positions) {
     const names = match.settings.positions;
     const places = M.layoutFor(team.settings.layout, names, sportOf(team.settings)).spots; // where the field view puts them
     const moved = M.rotatePositions(match, swap.rows, places);
-    if (moved.length) toast(tr('New positions: {list}', { list: moved.map((p) => `${p.name} ${posLabel(names[p.pos])}`).join(', ') }));
+    if (moved.length) messages.push(tr('New positions: {list}', { list: moved.map((p) => `${p.name} ${posLabel(names[p.pos])}`).join(', ') }));
   }
+  if (messages.length) toast(messages.join('. '));
   if (swap.mode !== 'adhoc') delete match.plan; // done, so the next ones are suggested again
   if (swap.mode === 'scheduled') M.scheduleNext(match);
   if (swap.mode === 'half') M.endBreak(match);
   closeSwap();
+}
+
+// Glove mode: a tap anywhere that isn't a button or a player (the dark area around, the title, the text) confirms it.
+// Both the press and the release must be there, so a slip off a button (or a mouse drag) doesn't confirm.
+const emptySpot = (e) => !e.target.closest('button, input, select, label, a, #swap-rows');
+let pressedEmpty = false;
+$('swap-dialog').addEventListener('pointerdown', (e) => (pressedEmpty = emptySpot(e)));
+$('swap-dialog').addEventListener('click', (e) => {
+  if (pressedEmpty && emptySpot(e) && gloveConfirms()) confirmSwap();
+  pressedEmpty = false;
 });
 
 // Skip keeps the chosen next swaps for later.
@@ -1523,9 +1695,8 @@ async function loadShared(text) {
     $('swap-dialog').close();
   }
   stopAlarm();
-  team = shared.team;
+  team = withDefaults(shared.team); // fills in any missing settings, even if this phone can't save
   saveTeam(team);
-  team = loadTeam(); // fills in any missing settings
   match = shared.match;
   if (match) saveMatch(match);
   else clearMatch();
@@ -1561,7 +1732,65 @@ applyTheme();
 // ---------- start ----------
 
 document.addEventListener('pointerdown', unlockAudio);
+// Tapping a number box selects its number, so typing replaces it (owner's wish 2026-11-02).
+// After a tick, as iPhone and Android move the cursor themselves just after focusing.
+// Again on the tap's own click, since letting go of the finger or mouse puts the cursor back.
+// Position boxes too: typing a letter then shows the suggestions that start with it.
+const numberBox = (t) => t.matches?.('input[type="number"], input[inputmode="numeric"], input[inputmode="decimal"], input[list]');
+let justFocused = null;
+document.addEventListener('focusin', (e) => {
+  const box = e.target;
+  if (!numberBox(box)) return;
+  justFocused = box;
+  setTimeout(() => {
+    if (document.activeElement === box) box.select();
+  });
+});
+document.addEventListener('click', (e) => {
+  if (e.target === justFocused && document.activeElement === e.target) e.target.select();
+  justFocused = null;
+});
 document.addEventListener('click', unlockAudio);
+
+// ---------- keyboard shortcuts (owner's wish 2026-11-02: an iPad keyboard is easier than the screen with gloves) ----------
+// Match screen: Space starts the match, then pauses and resumes (at half time: starts the next half), S = Swap now,
+// H = Half time. Substitution popup: Space or Enter = Done, Esc = Skip (planned substitutions only).
+// Never while typing, with Ctrl/Cmd/Alt, or while another popup is open.
+const typing = (e) => e.target.closest?.('input, textarea, select, [contenteditable]');
+const openDialogs = () => [...document.querySelectorAll('dialog[open]')];
+const visible = (id) => !$(id).hidden && $(id).offsetParent !== null;
+document.addEventListener('keydown', (e) => {
+  unlockAudio(); // a key press counts as a tap for the sound
+  // Outside a text box: a real keyboard (the phone's own keyboard only shows for text boxes), so show the list in the cog
+  if (!keyboardSeen && !typing(e)) {
+    keyboardSeen = true;
+    saveKeyboardSeen();
+    $('shortcuts').hidden = false;
+  }
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat || typing(e) || !match || $('screen-match').hidden) return;
+  const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  const dialogs = openDialogs();
+  if (dialogs.length === 1 && dialogs[0].id === 'swap-dialog' && swap) {
+    if (key === 'Tab') swap.tabbed = true; // moving round the popup: Enter and Space work on the chosen button again
+    if (key === 'Escape' && swap.mode === 'scheduled') {
+      e.preventDefault();
+      return $('swap-skip').click();
+    }
+    if ((key === ' ' || key === 'Enter') && !swap.tabbed) {
+      e.preventDefault();
+      return confirmSwap();
+    }
+    if (key !== 'Escape') stopAuto(); // any other key, like a touch, stops auto swap
+    return;
+  }
+  if (dialogs.length) return;
+  const press = { ' ': visible('kickoff') ? 'kickoff' : 'pause', s: 'swap-now', h: M.onBreak(match) ? 'pause' : 'half-time' }[key];
+  if (!press || !visible(press)) return;
+  e.preventDefault(); // Space would scroll the page, or press a button that has focus
+  $(press).click();
+});
+let keyboardSeen = loadKeyboardSeen();
+$('shortcuts').hidden = !keyboardSeen;
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && match) {
     keepScreenOn();
@@ -1628,6 +1857,7 @@ for (const note of document.querySelectorAll('[data-restart-icon]')) {
 }
 
 function start() {
+  renderColdOptions(); // glove mode's big buttons
   if (match) {
     renderMatch();
     show('match');

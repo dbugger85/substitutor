@@ -38,15 +38,22 @@ Add your players. The list is saved on the phone.
 - **Players per substitution**
 - **Score** (optional): tick the box next to "Score" to keep the score on a page of its own. Type your team's name (remembered) and the opponent's (cleared after each match). **Cards** adds yellow and red cards.
 - **Show who swaps next** (on by default): coloured pairs on the match screen showing who swaps at the next substitution.
-- **Positions** (optional): tick the box next to "Positions", type a name for each spot (like Left back or Forward), and choose who starts where. Picking a player who already has a spot swaps the two.
-- **Rotate positions** (optional, needs positions): at each substitution, the players who stay on move to another position, so nobody plays the same spot all match. They move between front and back first, and stay on their own side (left back goes to left front). The app uses where the positions sit on the field: guessed from their names, or where you dragged them in the field view.
+- **Positions** (optional): tick the box next to "Positions" and the spots get a usual line-up for your sport and number of players (like Left back, Right back, Left forward, Right forward). Change any name by typing, or pick one from the box's list of suggestions. Then choose who starts where. Picking a player who already has a spot swaps the two.
+- **Rotate positions** (optional, needs positions): at each substitution, the players who stay on move to another position, so nobody plays the same spot all match. They move between front and back first, and stay on their own side (left back goes to left front). When several come off at once, the first substitution takes the front players together; those who stay move forward, and the new ones start at the back. The app uses where the positions sit on the field: guessed from their names, or where you dragged them in the field view.
 - **Field view** (optional, needs positions): adds a picture of the field to the match screen. Choose the **sport** (Football, Bandy, Handball, Ice hockey, Floorball or Futsal) for its lines (red lines for bandy, red and blue for ice hockey), and a **colour**. Each sport comes with its own colour (green grass, ice, a blue or wooden floor), and you can pick another.
 
 Your setup is remembered for the next match.
 
 ## 3. During the match
 
-**Before the start.** The clock doesn't start by itself. Set things up first: swap players, change positions, choose who swaps first (tap the Next strip) or change settings. Then tap the big green **Start match** button where the countdown will be (or **Start** on the field view).
+**Before the start.** The clock doesn't start by itself. Set things up first: swap players, change positions, choose who swaps first (tap the Next strip) or change settings. Tap **Finish match setup** in setup, set things up on the match screen, then tap the big green **Start match** button where the countdown will be (or **Start** on the field view).
+
+**Cold hands (an ice rink in winter).** Two options in setup and ⚙:
+- **Swap automatically:** when it's time, the popup counts down (10 seconds, or what you choose) and then makes the suggested swaps by itself. Touch a player in the popup to stop it and change things yourself.
+- **Glove mode:** big buttons, and a tap anywhere that isn't a button or a player confirms the substitution, so a glove or a knuckle is enough.
+- **Keyboard (for example on an iPad):** Space starts, pauses and resumes the match, S is Swap now, H is Half time. In the substitution popup, Space or Enter is Done and Esc is Skip. The list is under ⚙ once you've used a key.
+
+**On an iPad.** Sideways, the list and the field sit side by side. Upright, swipe left for the field: the whole field fits, with the bench in a column beside it (⇄ moves it to the other side).
 
 **The clock.** The big countdown shows the time to the next substitution, with the match time underneath.
 - **↻** (top-right of the clock) restarts the countdown from the full time, without swapping anyone.
@@ -136,7 +143,7 @@ The first phone keeps its match until someone ends it there, so end it once the 
 
 ```sh
 npm start        # run locally at http://localhost:8000
-npm test         # tests for the substitution rules, share links, sports and translations
+npm test         # tests for the substitution rules, share links, sports, saved teams and translations
 npm install      # once, for the browser test
 npm run e2e      # browser test of a whole match
 npm run screenshots   # remake the screenshots above and the link preview picture

@@ -15,6 +15,8 @@ export function unlockAudio() {
 
 function beep() {
   if (!audio) return;
+  // Phones pause the sound while the app is in the background; once unlocked by a tap it may be resumed without one
+  if (audio.state !== 'running') audio.resume().catch(() => {});
   const start = audio.currentTime;
   [880, 880, 1175].forEach((freq, i) => {
     const t = start + i * 0.25;

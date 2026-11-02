@@ -49,6 +49,23 @@ export const NO = {
   'Field view': 'Banevisning',
   'Rotate positions': 'Bytt posisjoner',
   'Not started yet': 'Ikke startet ennå',
+  'Swap automatically': 'Bytt automatisk',
+  'When it’s time, after a short countdown': 'Når det er tid, etter en kort nedtelling',
+  'Seconds before it swaps': 'Sekunder før den bytter',
+  'Glove mode': 'Hanskemodus',
+  'Big buttons, tap anywhere to confirm': 'Store knapper, trykk hvor som helst for å bekrefte',
+  'Swapping automatically in {n} s': 'Bytter automatisk om {n} s',
+  'Tap anywhere to confirm': 'Trykk hvor som helst for å bekrefte',
+  'Finish match setup': 'Fullfør kampoppsett',
+  'Move the bench to the other side': 'Flytt benken til den andre siden',
+  'Keyboard shortcuts': 'Hurtigtaster',
+  Space: 'Mellomrom',
+  'Start, pause and resume': 'Start, stopp og fortsett',
+  'Half time, then start the next half': 'Pause, så start neste omgang',
+  'Done in the substitution popup': 'Ferdig i bytte-vinduet',
+  'Skip the substitution': 'Hopp over byttet',
+  'Swapped automatically: {list}': 'Byttet automatisk: {list}',
+  '{on} in for {off}': '{on} inn for {off}',
   'Start': 'Start',
   'Those who stay on swap spots': 'De som blir på, bytter plass',
   'New positions: {list}': 'Nye posisjoner: {list}',
@@ -293,6 +310,22 @@ export function tr(text, vars) {
   const s = (lang === 'no' && NO[text]) || text;
   return vars ? s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '') : s;
 }
+
+// Suggested position names (js/pitch.js) in Norwegian. Kept apart from NO, as "Back" is "Tilbake" there, and some
+// sports say it their own way (handball's pivot is "Strek"). trPos(name, sport) gives the name in the chosen language.
+export const POS_NO = {
+  Midfield: 'Midtbane', Back: 'Back', Forward: 'Spiss', Striker: 'Spiss',
+  'Left back': 'Venstre back', 'Right back': 'Høyre back', 'Centre back': 'Midtstopper',
+  'Left centre back': 'Venstre midtstopper', 'Right centre back': 'Høyre midtstopper',
+  'Left midfield': 'Venstre midtbane', 'Centre midfield': 'Sentral midtbane', 'Right midfield': 'Høyre midtbane',
+  'Left forward': 'Venstre spiss', 'Right forward': 'Høyre spiss', 'Left wing': 'Venstre kant', 'Right wing': 'Høyre kant',
+  Pivot: 'Pivot', Defence: 'Back', 'Left defence': 'Venstre back', 'Right defence': 'Høyre back', Centre: 'Senter',
+};
+export const POS_NO_SPORT = {
+  handball: { 'Centre back': 'Midtback', Pivot: 'Strek' },
+  icehockey: { 'Left wing': 'Venstre wing', 'Right wing': 'Høyre wing' },
+};
+export const trPos = (name, sport) => (lang === 'no' ? POS_NO_SPORT[sport]?.[name] ?? POS_NO[name] ?? name : name);
 
 // The default position names are stored in English ("Position 2"), and shown in the chosen language.
 export const posLabel = (name) => {

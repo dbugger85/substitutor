@@ -67,3 +67,63 @@ export const COLORS = { green: 'Green', blue: 'Blue', ice: 'Ice', wood: 'Wood', 
 
 export const sportOf = (settings) => (SPORTS[settings?.sport] ? settings.sport : 'football');
 export const colorOf = (settings) => (COLORS[settings?.pitchColor] ? settings.pitchColor : SPORTS[sportOf(settings)].color);
+
+// Suggested position names (owner's wish 2026-11-02, so they needn't all be typed): a usual line-up for each
+// number of outfield players, from the back to the front, for each sport. English here; the app translates
+// them with tr(), and guessPlace() knows every word, so the field view puts them in the right place.
+// Futsal and bandy use football's lists where they have none of their own. Handball, ice hockey and
+// floorball only use their own ("back" and "centre" mean something else there), so other sizes get none.
+const FOOTBALL = {
+  1: ['Midfield'],
+  2: ['Back', 'Forward'],
+  3: ['Back', 'Midfield', 'Forward'],
+  4: ['Left back', 'Right back', 'Left forward', 'Right forward'],
+  5: ['Left back', 'Right back', 'Midfield', 'Left forward', 'Right forward'],
+  6: ['Left back', 'Right back', 'Left wing', 'Centre midfield', 'Right wing', 'Striker'],
+  7: ['Left back', 'Centre back', 'Right back', 'Left midfield', 'Centre midfield', 'Right midfield', 'Striker'],
+  8: ['Left back', 'Centre back', 'Right back', 'Left midfield', 'Right midfield', 'Left wing', 'Striker', 'Right wing'],
+  9: ['Left back', 'Left centre back', 'Right centre back', 'Right back', 'Left midfield', 'Right midfield', 'Left wing', 'Striker', 'Right wing'],
+  10: ['Left back', 'Left centre back', 'Right centre back', 'Right back', 'Left midfield', 'Centre midfield', 'Right midfield', 'Left wing', 'Striker', 'Right wing'],
+};
+const POSITIONS = {
+  football: FOOTBALL,
+  futsal: { 4: ['Back', 'Left wing', 'Right wing', 'Pivot'] },
+  handball: {
+    4: ['Left back', 'Right back', 'Left wing', 'Right wing'],
+    5: ['Left back', 'Centre back', 'Right back', 'Left wing', 'Right wing'],
+    6: ['Left back', 'Centre back', 'Right back', 'Left wing', 'Pivot', 'Right wing'],
+  },
+  icehockey: {
+    2: ['Defence', 'Centre'],
+    3: ['Defence', 'Left wing', 'Right wing'],
+    4: ['Left defence', 'Right defence', 'Left wing', 'Right wing'],
+    5: ['Left defence', 'Right defence', 'Left wing', 'Centre', 'Right wing'],
+  },
+  floorball: {
+    3: ['Defence', 'Left forward', 'Right forward'],
+    4: ['Left defence', 'Right defence', 'Left forward', 'Right forward'],
+    5: ['Left defence', 'Right defence', 'Left forward', 'Centre', 'Right forward'],
+  },
+};
+
+const OWN_ONLY = new Set(['handball', 'icehockey', 'floorball']);
+const listsFor = (sport) => [...Object.values(POSITIONS[sport] ?? {}), ...(OWN_ONLY.has(sport) ? [] : Object.values(FOOTBALL))];
+
+export function defaultPositions(sport, n) {
+  return [...(POSITIONS[sport]?.[n] ?? (OWN_ONLY.has(sport) ? null : FOOTBALL[n]) ?? [])];
+}
+
+// Every suggested name for a sport, for the dropdown on each position box (its own names first).
+export function positionSuggestions(sport) {
+  return [...new Set(listsFor(sport).flat())];
+}
+
+// True when the names are empty or one of the suggested line-ups (any sport, any size, in English or
+// translated by `translate(name, sport)`), so a change of sport or team size may replace them with a fitting one.
+export function isDefaultLineup(names, translate = (x) => x) {
+  const clean = names.map((n) => String(n ?? '').trim());
+  if (clean.every((n) => !n)) return true;
+  const key = clean.join('|');
+  return Object.keys(SPORTS).some((sport) => listsFor(sport).some((list) =>
+    list.join('|') === key || list.map((n) => translate(n, sport)).join('|') === key));
+}

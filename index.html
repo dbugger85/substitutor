@@ -151,10 +151,16 @@
         <input id="per-sub" type="number" min="1" inputmode="numeric">
       </label>
       <div class="choices show-next"><label><input id="show-next" type="checkbox"> <span><span data-t>Show who swaps next</span><span class="sub" data-t>Coloured pairs on the list and the field</span></span></label></div>
+      <!-- For cold hands (owner's wish 2026-11-02): substitutions without touching the screen, and big targets for gloves -->
+      <div class="choices"><label><input id="auto-swap" type="checkbox"> <span><span data-t>Swap automatically</span><span class="sub" data-t>When it’s time, after a short countdown</span></span></label></div>
+      <label id="auto-sec-row" class="field inline" hidden><span data-t>Seconds before it swaps</span>
+        <input id="auto-sec" type="number" min="3" max="60" inputmode="numeric">
+      </label>
+      <div class="choices"><label><input id="glove" type="checkbox"> <span><span data-t>Glove mode</span><span class="sub" data-t>Big buttons, tap anywhere to confirm</span></span></label></div>
       <p id="setup-error" class="error"></p>
       <div class="row">
         <button id="setup-back" type="button" data-t>Back</button>
-        <button id="start-match" type="button" class="primary grow" data-t>Start match</button>
+        <button id="start-match" type="button" class="primary grow" data-t>Finish match setup</button>
       </div>
     </section>
 
@@ -226,7 +232,9 @@
             <button id="field-done" type="button" class="field-done" hidden data-t>Done</button>
           </div>
           <div class="field-bench">
-            <div class="field-bench-title" data-t>Bench</div>
+            <div class="field-bench-head"><span class="field-bench-title" data-t>Bench</span>
+              <!-- Tablet upright: the bench is a column beside the field; this moves it to the other side -->
+              <button id="bench-side" type="button" class="icon bench-side" aria-label="Move the bench to the other side" data-t-label>⇄</button></div>
             <ul id="field-bench"></ul>
           </div>
         </div>
@@ -269,6 +277,8 @@
     <div id="swap-rows"></div>
     <button id="swap-add" type="button" class="link" data-t>+ Add another swap</button>
     <p id="swap-error" class="error"></p>
+    <!-- Auto swap's countdown, and in glove mode that a tap anywhere confirms -->
+    <p id="swap-auto" class="swap-auto" hidden></p>
     <button id="swap-reset" type="button" class="link" hidden data-t>Use the app’s suggestion</button>
     <div class="row">
       <button id="swap-skip" type="button" data-t>Skip</button>
@@ -334,6 +344,12 @@
       <input id="set-per-sub" type="number" min="1" inputmode="numeric">
     </label>
     <div class="choices show-next"><label><input id="set-show-next" type="checkbox"> <span><span data-t>Show who swaps next</span><span class="sub" data-t>Coloured pairs on the list and the field</span></span></label></div>
+    <!-- For cold hands (owner's wish 2026-11-02): substitutions without touching the screen, and big targets for gloves -->
+    <div class="choices"><label><input id="set-auto-swap" type="checkbox"> <span><span data-t>Swap automatically</span><span class="sub" data-t>When it’s time, after a short countdown</span></span></label></div>
+    <label id="set-auto-sec-row" class="field inline" hidden><span data-t>Seconds before it swaps</span>
+      <input id="set-auto-sec" type="number" min="3" max="60" inputmode="numeric">
+    </label>
+    <div class="choices"><label><input id="set-glove" type="checkbox"> <span><span data-t>Glove mode</span><span class="sub" data-t>Big buttons, tap anywhere to confirm</span></span></label></div>
     <fieldset>
       <legend class="choices toggle"><label><span data-t>Positions</span><input id="set-use-positions" type="checkbox" aria-label="Give players positions" data-t-label></label></legend>
       <div id="set-position-list" class="positions"></div>
@@ -355,12 +371,26 @@
         <div class="choices"><label><input id="set-use-cards" type="checkbox"> <span><span data-t>Cards</span><span class="sub" data-t>Yellow and red</span></span></label></div>
       </div>
     </fieldset>
+    <!-- Shown once a key has been pressed on this device (an iPad keyboard, owner's wish 2026-11-02) -->
+    <section id="shortcuts" class="shortcuts" hidden>
+      <h3 data-t>Keyboard shortcuts</h3>
+      <dl>
+        <dt><kbd data-t>Space</kbd></dt><dd data-t>Start, pause and resume</dd>
+        <dt><kbd>S</kbd></dt><dd data-t>Swap now</dd>
+        <dt><kbd>H</kbd></dt><dd data-t>Half time, then start the next half</dd>
+        <dt><kbd data-t>Space</kbd> <kbd>Enter</kbd></dt><dd data-t>Done in the substitution popup</dd>
+        <dt><kbd>Esc</kbd></dt><dd data-t>Skip the substitution</dd>
+      </dl>
+    </section>
     </div>
     <div class="row dialog-buttons">
       <button id="settings-cancel" type="button" data-t>Cancel</button>
       <button id="settings-done" type="button" class="primary grow" data-t>Done</button>
     </div>
   </dialog>
+
+  <!-- Suggested position names for every position box (filled by fillSuggestions(); typing your own works too) -->
+  <datalist id="position-suggestions"></datalist>
 
   <!-- Pick a player for a swap -->
   <dialog id="pick-dialog">

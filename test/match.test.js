@@ -456,3 +456,16 @@ test('waitToStart: the clock stands still until the match is started, then a ful
   assert.equal(m.nextSubAt, 4 * MIN);
   assert.equal(M.fieldTime(m.players.find((p) => p.id === 'E'), MIN), MIN);
 });
+
+test('with rotate positions, the players up front come off together first; then those who moved forward', () => {
+  const m = boxMatch();
+  const depth = M.guessLayout(m.settings.positions).spots.map((p) => p.y);
+  const offs = (t) => M.nextSwaps(m, t, depth).map((r) => r.offId).sort();
+  assert.deepEqual(M.nextSwaps(m, 5 * MIN).map((r) => r.offId).sort(), ['A', 'B'], 'without depth: roster order');
+  assert.deepEqual(offs(5 * MIN), ['C', 'D'], 'the two in front');
+  const pairs = M.nextSwaps(m, 5 * MIN, depth);
+  M.applySwaps(m, pairs, 5 * MIN);
+  M.rotatePositions(m, pairs);
+  assert.deepEqual(spots(m), { 'Left back': 'E', 'Right back': 'F', 'Left front': 'A', 'Right front': 'B' });
+  assert.deepEqual(offs(10 * MIN), ['A', 'B'], 'next time the backs who moved forward');
+});

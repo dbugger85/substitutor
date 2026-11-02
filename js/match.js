@@ -92,11 +92,15 @@ export function setStatus(p, status, t) {
 
 // Outfield players on the field, best candidate to come off first:
 // longest current spell, then most total playing time, then roster order.
-export function rankOff(players, t) {
+// depth (optional, with Rotate positions): how far back each spot is (0 = the far end), so among players with
+// the same time the ones furthest forward come off first, together (owner's wish 2026-11-02); those who stay
+// then rotate forward, and the newcomers start at the back.
+export function rankOff(players, t, depth = null) {
+  const d = (p) => (depth && p.pos != null ? depth[p.pos] ?? 1 : 0);
   return players
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => p.status === 'field')
-    .sort((a, b) => a.p.since - b.p.since || fieldTime(b.p, t) - fieldTime(a.p, t) || a.i - b.i)
+    .sort((a, b) => a.p.since - b.p.since || fieldTime(b.p, t) - fieldTime(a.p, t) || d(a.p) - d(b.p) || a.i - b.i)
     .map(({ p }) => p);
 }
 
@@ -111,8 +115,8 @@ export function rankOn(players, t) {
 }
 
 // Suggested swaps: [{ offId, onId }]. Empty if nobody can be swapped.
-export function pickSubstitution(players, perSub, t) {
-  const off = rankOff(players, t);
+export function pickSubstitution(players, perSub, t, depth = null) {
+  const off = rankOff(players, t, depth);
   const on = rankOn(players, t);
   const k = Math.max(0, Math.min(perSub, off.length, on.length));
   return Array.from({ length: k }, (_, i) => ({ offId: off[i].id, onId: on[i].id }));
@@ -123,8 +127,8 @@ export function pickSubstitution(players, perSub, t) {
 // or the popup); a chosen pair that no longer works, because someone was
 // swapped or taken off meanwhile, is replaced by the next suggestion. Without a
 // choice it's the suggestion: pickSubstitution with perSub.
-export function nextSwaps(match, t) {
-  if (!match.plan?.length) return pickSubstitution(match.players, match.settings.perSub, t);
+export function nextSwaps(match, t, depth = null) {
+  if (!match.plan?.length) return pickSubstitution(match.players, match.settings.perSub, t, depth);
   const byId = (id) => match.players.find((p) => p.id === id);
   const usedOff = new Set();
   const usedOn = new Set();
@@ -135,7 +139,7 @@ export function nextSwaps(match, t) {
     usedOn.add(r.onId);
     return { offId: r.offId, onId: r.onId };
   });
-  const off = rankOff(match.players, t).filter((p) => !usedOff.has(p.id));
+  const off = rankOff(match.players, t, depth).filter((p) => !usedOff.has(p.id));
   const on = rankOn(match.players, t).filter((p) => !usedOn.has(p.id));
   return rows
     .map((r) => r ?? (off.length && on.length ? { offId: off.shift().id, onId: on.shift().id } : null))
