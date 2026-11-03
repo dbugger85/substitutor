@@ -912,11 +912,11 @@ body:has(#screen-match:not([hidden])) .lang-toggle { display: none; }
 /* Tablet upright (owner's wish 2026-11-03): the whole field and the bench without scrolling. The bench is a
    column beside the field (right, or left with ⇄), and fitField() in app.js sets the height that is left (--wrap-h). */
 @media (min-width: 600px) and (orientation: portrait) {
-  #field-page .field-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 160px; grid-template-rows: var(--wrap-h, auto); align-items: start; gap: 10px; }
+  #field-page .field-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 160px; align-items: start; gap: 10px; } /* as tall as the field, so the tip sits right under it */
   #field-page .field-wrap.bench-left { grid-template-columns: 160px minmax(0, 1fr); }
   #field-page .field-wrap.bench-left .field-bench { order: -1; }
   #field-page .pitch { width: min(100%, calc(var(--wrap-h, 9999px) * 10 / 13)); justify-self: center; }
-  #field-page .field-bench { display: flex; flex-direction: column; max-height: 100%; min-height: 0; padding: 8px 6px 8px 8px; }
+  #field-page .field-bench { display: flex; flex-direction: column; max-height: var(--wrap-h, none); min-height: 0; padding: 8px 6px 8px 8px; }
   #field-page .bench-side { display: inline-flex; width: 40px; height: 40px; min-height: 40px; margin: -6px -2px 0 0; font-size: 18px; }
   #field-page #field-bench { flex: 1; min-height: 0; overflow-y: auto; flex-direction: column; flex-wrap: nowrap; gap: 14px; padding: 12px 14px 8px 4px; } /* room for the 1, 2 circles (top right), which the scrolling would cut */
   #field-page #field-bench li { flex: none; }

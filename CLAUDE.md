@@ -45,18 +45,18 @@ GitHub Pages serves `main` / root as-is, with no build step. `git push` redeploy
 | `style.css` | All styles; colours are CSS variables (light and dark sets) |
 | `js/app.js` | UI, in sections: helpers (`el`, `ask`, `toast`), team screen (incl. renaming), match setup (incl. positions), the next substitution (`renderNext`), match screen (pages, dots and `sideBySide`), score and cards (`renderScore`, `giveCard`, `renderScoreOptions`), field view, match settings, the clock (`updateClock`, half time), player options, swap popup (modes `scheduled`, `adhoc`, `plan`, `half`), adjusting the clock (`openTime`), moving to another phone (`shareLink`, `loadShared`), theme, install card, and start-up. The 500 ms tick (`updateClock`) updates the clocks and opens the substitution popup |
 | `js/match.js` | Pure match logic: time accounting, ranking (rotation), swaps, the next swaps (`nextSwaps`), adjusting the clock and half time (`setElapsed`, `earliestTime`, `startBreak`, `endBreak`), score and cards (`addEvent`, `score`, `scoreAt`, `giveCard`, `sendOff`, `removeEvent`), positions (`assignSpots`, `fillSpots`, `swapPositions`, `rotatePositions`) and the field view's layout (guessed from position names, or plain rows) |
-| `js/storage.js` | localStorage load and save |
+| `js/storage.js` | localStorage load and save; `withDefaults()` gives older saved teams and share links the newer settings |
 | `js/share.js` | Packs the team and match into a link and reads it back (no DOM code) |
 | `js/i18n.js` | English and Norwegian: `tr()` (English text is the key), `posLabel()`, the language choice (`?lang=`, saved choice, phone language), `setLang()` and `translatePage()` (no DOM code at import) |
-| `js/pitch.js` | The field view's sports (name, default colour, SVG lines) and colour names; `sportOf()` / `colorOf()` (no DOM code) |
-| `js/alerts.js` | Beep (Web Audio), vibration, Screen Wake Lock |
+| `js/pitch.js` | The field view's sports (name, default colour, SVG lines) and colour names; `sportOf()` / `colorOf()`; suggested position names (`defaultPositions()`, `positionSuggestions()`, `isDefaultLineup()`) (no DOM code) |
+| `js/alerts.js` | Beep (Web Audio, resumed if the phone paused it), vibration, Screen Wake Lock |
 | `fonts/` | Inter and Barlow Condensed (bold), stored with the app so they work offline (both under the SIL Open Font License) |
 | `sw.js` | Service worker for offline use: network first, falls back to the cache after 3 s or when offline |
 | `manifest.webmanifest`, `icons/` | Makes the app installable. An install card on the team screen (`setupInstall()` in `app.js`) uses Chrome's `beforeinstallprompt`, or on iPhone/iPad opens `#ios-install-dialog` with the Share → Add to Home Screen steps; it's hidden in the installed app and after "Not now" (`substitutor.installHidden`). `icons/icon.svg` is the source; the PNGs are made from it with `rsvg-convert`. The manifest's `background_color`/`theme_color` are the dark navy on purpose (owner's choice, 2026-10-14): Android colours the bottom navigation strip of the installed app from the manifest, which can't follow light/dark mode, and a light strip made the handle grey. |
 | `test/match.test.js` | Unit tests for the rules |
 | `test/storage.test.js` | Older saved teams get new settings' defaults (`withDefaults()`, also used for share links) |
 | `test/share.test.js` | Unit tests for share links |
-| `test/pitch.test.js` | Unit tests for sports and colours |
+| `test/pitch.test.js` | Unit tests for sports, colours and the suggested position names |
 | `test/i18n.test.js` | Checks that every text in `app.js` and `index.html` has a Norwegian version |
 | `robots.txt`, `sitemap.xml`, `icons/preview.png` | For Google and for link previews (see Languages and Google) |
 | `test/e2e.mjs` | Playwright browser test |

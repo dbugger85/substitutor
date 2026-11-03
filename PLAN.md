@@ -7,7 +7,7 @@ Plain HTML + CSS + JavaScript (ES modules). No framework, no build step. It depl
 
 ## 2. Screens (mobile-first, large tap targets)
 1. **Team**: add and remove players. Saved automatically.
-2. **Match setup**: goalkeeper, outfield players on the field, starting players (exactly N), substitution interval (minutes), players per substitution. "Start match" stays disabled until the setup is valid.
+2. **Match setup**: goalkeeper, outfield players on the field, starting players (exactly N), substitution interval (minutes), players per substitution. "Finish match setup" (was "Start match") stays disabled until the setup is valid.
 3. **Match**: big countdown to the next substitution, total match clock, "On field" and "Bench" lists with minutes, and GK shown separately. Buttons: Pause/Resume, Sub now, Add player, tap a player to remove (injured) or move them, End match.
    - **Substitution prompt**: pairs like "Anna → Carl", with **Done** (apply and restart timer) and **Skip**.
    - **End summary**: minutes played per player.

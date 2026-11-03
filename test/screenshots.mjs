@@ -99,7 +99,11 @@ await scene('light', 'football', football, async (page) => {
   await page.screenshot({ path: out('8-score') });
 });
 await scene('light', 'football', football, (page) => page.screenshot({ path: out('6-ipad-landscape') }), tablet(1180, 820));
-await scene('dark', 'football', football, (page) => page.screenshot({ path: out('7-ipad-portrait-dark') }), tablet(820, 1180));
+// Upright: the field page, with the whole field and the bench beside it
+await scene('dark', 'football', football, async (page) => {
+  await toField(page);
+  await page.screenshot({ path: out('7-ipad-portrait-dark') });
+}, tablet(820, 1180));
 
 // The link preview: logo, tagline in both languages, the sports, and two of the screenshots above
 {

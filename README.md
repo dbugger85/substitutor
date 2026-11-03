@@ -42,16 +42,16 @@ Add your players. The list is saved on the phone.
 - **Rotate positions** (optional, needs positions): at each substitution, the players who stay on move to another position, so nobody plays the same spot all match. They move between front and back first, and stay on their own side (left back goes to left front). When several come off at once, the first substitution takes the front players together; those who stay move forward, and the new ones start at the back. The app uses where the positions sit on the field: guessed from their names, or where you dragged them in the field view.
 - **Field view** (optional, needs positions): adds a picture of the field to the match screen. Choose the **sport** (Football, Bandy, Handball, Ice hockey, Floorball or Futsal) for its lines (red lines for bandy, red and blue for ice hockey), and a **colour**. Each sport comes with its own colour (green grass, ice, a blue or wooden floor), and you can pick another.
 
-Your setup is remembered for the next match.
+Tapping a number box selects its number, so you just type the new one. Your setup is remembered for the next match. When you're ready, tap **Finish match setup**.
 
 ## 3. During the match
 
-**Before the start.** The clock doesn't start by itself. Set things up first: swap players, change positions, choose who swaps first (tap the Next strip) or change settings. Tap **Finish match setup** in setup, set things up on the match screen, then tap the big green **Start match** button where the countdown will be (or **Start** on the field view).
+**Before the start.** The clock doesn't start by itself. Set things up first on the match screen: swap players, change positions, choose who swaps first (tap the Next strip) or change settings. Then tap the big green **Start match** button where the countdown will be (or **Start** on the field view).
 
-**Cold hands (an ice rink in winter).** Two options in setup and ⚙:
-- **Swap automatically:** when it's time, the popup counts down (10 seconds, or what you choose) and then makes the suggested swaps by itself. Touch a player in the popup to stop it and change things yourself.
+**Cold hands (an ice rink in winter).** Two options in setup and ⚙ (both off until you tick them, then remembered), and the keyboard:
+- **Swap automatically:** when it's time, the popup counts down (10 seconds, or what you choose) and then makes the suggested swaps by itself, and a message says who swapped. Touch a player in the popup (or press a key) to stop it and change things yourself. Only for planned substitutions, not half time.
 - **Glove mode:** big buttons, and a tap anywhere that isn't a button or a player confirms the substitution, so a glove or a knuckle is enough.
-- **Keyboard (for example on an iPad):** Space starts, pauses and resumes the match, S is Swap now, H is Half time. In the substitution popup, Space or Enter is Done and Esc is Skip. The list is under ⚙ once you've used a key.
+- **Keyboard (for example on an iPad):** Space starts, pauses and resumes the match (and starts the next half after half time), S is Swap now, H is Half time. In the substitution popup, Space or Enter is Done and Esc is Skip. Not while you type in a box. The list is at the bottom of ⚙ once you've used a key.
 
 **On an iPad.** Sideways, the list and the field sit side by side. Upright, swipe left for the field: the whole field fits, with the bench in a column beside it (⇄ moves it to the other side).
 
@@ -75,7 +75,7 @@ Your setup is remembered for the next match.
 - **Done** makes the swaps and restarts the countdown. **Skip** restarts it without changes.
 
 **Other buttons and options:**
-- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, showing who swaps next, the score (names and cards), positions on or off, their names and rotating them, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
+- **⚙** (top right) opens the match settings: minutes between substitutions (from the next substitution; ↻ starts it now), players per substitution, showing who swaps next, swap automatically and glove mode, the score (names and cards), positions on or off, their names and rotating them, and the field view with its sport and colour. Changes apply at once and are remembered for the next match; **Cancel** undoes everything changed since you opened it. The number of players on the field and the goalkeeper aren't here: use Add player, Remove from match or Make goalkeeper.
 - **Swap now** swaps players at any time, without changing the countdown.
 - **Tap a player** to substitute them now, take them off injured, make them goalkeeper, change position, rename them, or remove them from the match.
 - **Add player** (under the bench) is for a late arrival, who comes on at the next substitution.
@@ -93,7 +93,7 @@ Your setup is remembered for the next match.
 - To swap two players' positions, tap a player and choose **Change position with…**. The goalkeeper is in the list too: swap with them and the other player goes in goal.
 - Bench players show where they last played in a grey tag. The swap lists show positions too, so you can bring on someone for a particular position.
 
-**Field view** (if switched on): **swipe left** on the match screen to see a field with every position and who plays there, the bench below it, and a smaller clock. It's handy for showing the kids. Swipe right, or tap the dots at the top, to go back.
+**Field view** (if switched on): **swipe left** on the match screen to see a field with every position and who plays there, the bench below it (beside it on an iPad upright), and a smaller clock. It's handy for showing the kids. Swipe right, or tap the dots at the top, to go back.
 - **Tap a player and choose Swap with…** (the first option) to swap by tapping, like in Fantasy Premier League: the player is highlighted and everyone they can swap with gets a ring. Tap another position to swap places (the goalkeeper too), or a bench player to substitute them straight away. You can also start from a bench player. Tap **Cancel** (bottom right on the field) or the empty field to stop. The countdown isn't restarted.
 - **Press and hold** a position to arrange them. They wiggle like app icons on an iPhone, and you can drag any of them where you want.
 - The positions start where their names suggest: "Spiss", "Striker" or "ST" at the front, "Høyre back" or "RB" at the back on the right, "Venstre kant" or "LW" out on the left, and so on. English and Norwegian names and the usual short forms work, for every sport: in handball "fløy" and "strek" go up front and a "back" in the middle; in ice hockey C, LW and RW are forwards and LD and RD defenders. Names it doesn't recognise start in the middle.
@@ -103,7 +103,7 @@ Your setup is remembered for the next match.
 
 <p>
   <img src="screenshots/6-ipad-landscape.png" width="480" alt="iPad sideways: the match list on the left and the field on the right">
-  <img src="screenshots/7-ipad-portrait-dark.png" width="230" alt="iPad upright in dark mode: one wide column, a little bigger than on a phone">
+  <img src="screenshots/7-ipad-portrait-dark.png" width="230" alt="iPad upright in dark mode: the whole field with the bench in a column beside it">
 </p>
 
 - **Sideways:** the match list and the field are side by side, so there's no swiping. The field gets a little more room. The clock is one compact row (↻ next to the countdown), and the clock, its buttons and the field stay put: only the list of players scrolls, if it doesn't fit. Its bench is left out, since the list next to it shows the bench. Press and hold a position to arrange them, as on a phone.
